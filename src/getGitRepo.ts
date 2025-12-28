@@ -16,25 +16,13 @@ const getTimestamp = () => {
  */
 const getRepoData = async (repo: string, branch: string, targetPath: string) => {
     console.log(`[${getTimestamp()}] 正在克隆仓库: ${repo} (分支: ${branch}) -> ${targetPath}`);
-    const repoUrl = `git@github.com:${repo}.git`;
+    const repoUrl = `https://github.com/${repo}.git`;
     const tempDir = './temp-git-clone';
 
     try {
         console.log(`[${getTimestamp()}] 清理临时目录...`);
         // 移除临时目录
         await fs.rm(tempDir, { recursive: true, force: true });
-
-        console.log(`[${getTimestamp()}] 测试SSH连接...`);
-        // 测试SSH可用性
-        try {
-            execSync('ssh -T git@github.com', { stdio: 'pipe', timeout: 10000 });
-        } catch (sshTest: any) {
-            const output = sshTest.stdout?.toString() || sshTest.stderr?.toString() || '';
-            if (output.includes('Permission denied')) {
-                console.error(`[${getTimestamp()}] SSH 权限被拒绝 - 请检查你的SSH密钥`);
-                return;
-            }
-        }
 
         console.log(`[${getTimestamp()}] 开始克隆仓库元数据...`);
         // clone仓库
