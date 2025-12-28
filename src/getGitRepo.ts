@@ -8,15 +8,19 @@ const getTimestamp = () => {
 };
 
 /**
- * 将特定repo的data目录克隆到目标路径。
- * @param repo repo名，例如fvtt-cn/5etools
- * @param branch 分支名，例如develop
- * @param targetPath 目标路径，例如./input/5ecn
+ * 将特定repo的data/data-bak目录克隆到目标路径。
+ * @param repoUrl 仓库地址，例如 https://github.com/tjliqy/5etools-mirror-2.github.io.git
+ * @param targetPaths 目标路径，例如 { zh: './input/5e-cn', en: './input/5e-en' }
+ * @param branch 分支名（可选），默认使用仓库默认分支
  * @returns
  */
-const getRepoData = async (repo: string, branch: string, targetPath: string) => {
-    console.log(`[${getTimestamp()}] 正在克隆仓库: ${repo} (分支: ${branch}) -> ${targetPath}`);
-    const repoUrl = `https://github.com/${repo}.git`;
+const getRepoData = async (
+    repoUrl: string,
+    targetPaths: { zh: string; en: string },
+    branch?: string
+) => {
+    const branchText = branch ? ` (分支: ${branch})` : '';
+    console.log(`[${getTimestamp()}] 正在克隆仓库: ${repoUrl}${branchText}`);
     const tempDir = './temp-git-clone';
 
     try {
@@ -32,25 +36,37 @@ const getRepoData = async (repo: string, branch: string, targetPath: string) => 
         // --branch 分支名
         // repo地址
         // 目标地址（临时文件夹）
-        execSync(
-            `git clone --filter=blob:none --no-checkout --depth 1 --branch ${branch} ${repoUrl} ${tempDir}`,
-            { stdio: 'inherit' }
-        );
+        const cloneArgs = [
+            'clone',
+            '--filter=blob:none',
+            '--no-checkout',
+            '--depth',
+            '1',
+            ...(branch ? ['--branch', branch] : []),
+            repoUrl,
+            tempDir,
+        ];
+        execSync(`git ${cloneArgs.join(' ')}`, { stdio: 'inherit' });
 
-        console.log(`[${getTimestamp()}] 配置选择性检出(sparse-checkout)，仅下载data目录...`);
+        console.log(`[${getTimestamp()}] 配置选择性检出(sparse-checkout)，仅下载data/data-bak目录...`);
         // 在tempDir执行git命令（而不是项目根目录）
         // sparse-checkout 仅checkout特定目录，包含init,set,checkout三步
         execSync(`git -C ${tempDir} sparse-checkout init --cone`, { stdio: 'inherit' });
-        execSync(`git -C ${tempDir} sparse-checkout set data`, { stdio: 'inherit' });
+        execSync(`git -C ${tempDir} sparse-checkout set data data-bak`, { stdio: 'inherit' });
         execSync(`git -C ${tempDir} checkout`, { stdio: 'inherit' });
 
         console.log(`[${getTimestamp()}] 移动数据文件到目标目录...`);
-        // 将tempDir的data目录移动到目标路径的data子目录（使用rename方法更快），然后删除tempDir
-        const sourcePath = path.join(tempDir, 'data');
-        const finalTargetPath = path.join(targetPath, 'data');
-        await fs.rename(sourcePath, finalTargetPath);
+        // 将tempDir的data/data-bak目录移动到目标路径的data子目录（使用rename方法更快），然后删除tempDir
+        const zhSourcePath = path.join(tempDir, 'data');
+        const enSourcePath = path.join(tempDir, 'data-bak');
+        const zhTargetPath = path.join(targetPaths.zh, 'data');
+        const enTargetPath = path.join(targetPaths.en, 'data');
+        await fs.rename(zhSourcePath, zhTargetPath);
+        await fs.rename(enSourcePath, enTargetPath);
         await fs.rm(tempDir, { recursive: true, force: true });
-        console.log(`[${getTimestamp()}] 数据克隆成功: ${repo} -> ${finalTargetPath}`);
+        console.log(
+            `[${getTimestamp()}] 数据克隆成功: zh=${zhTargetPath}, en=${enTargetPath}`
+        );
     } catch (error) {
         await fs.rm(tempDir, { recursive: true, force: true });
         throw error;
@@ -65,9 +81,10 @@ const getRepoData = async (repo: string, branch: string, targetPath: string) => 
         await fs.mkdir(path, { recursive: true });
     }
 
-    console.log(`[${getTimestamp()}] 开始克隆中文数据...`);
-    await getRepoData('fvtt-cn/5etools', 'develop', './input/5e-cn');
-    console.log(`[${getTimestamp()}] 开始克隆英文数据...`);
-    await getRepoData('5etools-mirror-3/5etools-src', 'main', './input/5e-en');
+    console.log(`[${getTimestamp()}] 开始克隆中英数据...`);
+    await getRepoData('https://github.com/tjliqy/5etools-mirror-2.github.io.git', {
+        zh: './input/5e-cn',
+        en: './input/5e-en',
+    });
     console.log(`[${getTimestamp()}] success`);
 })();
