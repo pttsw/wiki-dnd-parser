@@ -110,4 +110,5 @@ export type WikiSpellData = WikiData<WikiSpellEntry, 'spell'> & {
     conditionImmune?: string[];
     savingThrow?: string[];
     affectsCreatureType?: string[];
+    ritual?: boolean;
 };

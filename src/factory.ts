@@ -1034,6 +1034,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 conditionImmune: enSpell.conditionImmune || [],
                 savingThrow: enSpell.savingThrow || [],
                 affectsCreatureType: enSpell.affectsCreatureType || [],
+                ritual: enSpell.meta?.ritual || false,
             };
             this.db.set(id, spellData);
         }
