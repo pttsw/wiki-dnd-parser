@@ -6,3 +6,6 @@ input/**/*
 temp-repo.zip
 temp-repo/
 temp-repo.zip
+.ace-tool/
+/.codanna
+/.claude

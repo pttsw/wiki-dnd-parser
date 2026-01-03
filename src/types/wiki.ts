@@ -17,6 +17,7 @@ export type WikiData<T, U extends string> = {
         page: number;
     };
     allSources: { source: string; page: number }[];
+    relatedVersions?: string[]; // 相关版本 ID 列表（通过 reprintedAs 追踪）
     zh: T | null;
     en: T;
 };

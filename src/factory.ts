@@ -54,6 +54,32 @@ export const escapeId = (id: string): string => {
     return output;
 };
 
+/**
+ * 从 reprintedAs 提取来源信息，用于 allSources
+ */
+export const parseReprintedAsSources = (
+    reprintedAs?: (string | { uid: string; tag?: string })[]
+): { source: string; page: number }[] => {
+    if (!reprintedAs) return [];
+    return reprintedAs.map(entry => {
+        const str = typeof entry === 'string' ? entry : entry.uid;
+        const source = str.split('|').pop() || '';
+        return { source, page: 0 };
+    });
+};
+
+/**
+ * 标准化 reprintedAs 为字符串数组
+ */
+export const normalizeReprintedAs = (
+    reprintedAs?: (string | { uid: string; tag?: string })[]
+): string[] => {
+    if (!reprintedAs) return [];
+    return reprintedAs.map(entry =>
+        typeof entry === 'string' ? entry : entry.uid
+    );
+};
+
 class Logger {
     logs: {
         source: string;
@@ -75,18 +101,18 @@ export const logger = new Logger();
 
 type I18nEntry =
     | {
-          lang: 'en';
-          id: string;
-          name_en: string;
-          source: string;
-      }
+        lang: 'en';
+        id: string;
+        name_en: string;
+        source: string;
+    }
     | {
-          lang: 'zh';
-          id: string;
-          name_en: string;
-          name_zh: string;
-          source: string;
-      };
+        lang: 'zh';
+        id: string;
+        name_en: string;
+        name_zh: string;
+        source: string;
+    };
 
 type I18nJoinedEntry = {
     id: string;
@@ -101,7 +127,7 @@ class IdMgr {
 
     workBook: XSLX.WorkBook = XSLX.utils.book_new();
 
-    constructor() {}
+    constructor() { }
 
     static matchArrays(a: string[], b: string[]): boolean {
         return a.some(itemA => b.includes(itemA));
@@ -210,11 +236,11 @@ class BookMgr implements DataMgr<BookFileEntry> {
         zh: BookFile | null;
         en: BookFile | null;
     } = {
-        zh: null,
-        en: null,
-    };
+            zh: null,
+            en: null,
+        };
     db: Map<string, WikiBookData> = new Map();
-    constructor() {}
+    constructor() { }
     getId(book: BookFileEntry): string {
         return book.id;
     }
@@ -313,12 +339,13 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
         zh: FeatFile | null;
         en: FeatFile | null;
     } = {
-        zh: null,
-        en: null,
-    };
+            zh: null,
+            en: null,
+        };
     db: Map<string, WikiFeatData> = new Map();
+    reprintMap: Map<string, string[]> = new Map(); // target -> sources
 
-    constructor() {}
+    constructor() { }
     getId(feat: FeatFileEntry): string {
         return `${feat.name}|${feat.source}`;
     }
@@ -337,12 +364,30 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
             }
         );
 
+        // 第一遍：建立 reprintMap
+        for (const enFeat of en.feat) {
+            const id = this.getId(enFeat);
+            const reprintedAs = normalizeReprintedAs(enFeat.reprintedAs);
+            for (const target of reprintedAs) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        // 第二遍：生成数据
         for (const enFeat of en.feat) {
             const id = this.getId(enFeat);
             const zhFeat = zh.feat.find(f => this.getId(f) === id);
             if (!zhFeat) {
                 logger.log('FeatMgr', `未找到中文版本的特性：${enFeat.name} (${id})`);
             }
+
+            // 收集所有相关版本
+            const relatedVersions = new Set<string>();
+            normalizeReprintedAs(enFeat.reprintedAs).forEach(t => relatedVersions.add(t));
+            this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
             const featData: WikiFeatData = {
                 dataType: 'feat',
@@ -364,14 +409,16 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
                     if (enFeat.additionalSources) {
                         sources.push(...enFeat.additionalSources);
                     }
+                    sources.push(...parseReprintedAsSources(enFeat.reprintedAs));
                     return sources;
                 })(),
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 zh: zhFeat
                     ? {
-                          name: zhFeat.name,
-                          entries: zhFeat.entries,
-                          html: parseContent(zhFeat.entries),
-                      }
+                        name: zhFeat.name,
+                        entries: zhFeat.entries,
+                        html: parseContent(zhFeat.entries),
+                    }
                     : null,
                 en: {
                     name: enFeat.name,
@@ -384,6 +431,7 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
         }
         // add orphan zh feats to idMgr
     }
+
 
     async generateFiles() {
         const outputPath = './output/collection/featCollection.json';
@@ -402,11 +450,11 @@ class ItemPropertyMgr implements DataMgr<ItemProperty> {
         zh: ItemProperty[] | null;
         en: ItemProperty[] | null;
     } = {
-        zh: null,
-        en: null,
-    };
+            zh: null,
+            en: null,
+        };
     db: Map<string, WikiItemPropertyData> = new Map();
-    constructor() {}
+    constructor() { }
     getId(item: ItemProperty) {
         return `${item.abbreviation.trim()}|${item.source}`;
     }
@@ -473,10 +521,10 @@ class ItemPropertyMgr implements DataMgr<ItemProperty> {
                 },
                 zh: zhProperty
                     ? {
-                          entries: zhProperty.entries || [],
-                          name: getPropertyName(zhProperty),
-                          html: parseContent(zhProperty.entries || []),
-                      }
+                        entries: zhProperty.entries || [],
+                        name: getPropertyName(zhProperty),
+                        html: parseContent(zhProperty.entries || []),
+                    }
                     : null,
                 en: {
                     entries: enProperty.entries || [],
@@ -506,7 +554,7 @@ class ItemTypeMgr implements DataMgr<ItemType> {
         en: null,
     };
     db: Map<string, WikiItemTypeData> = new Map();
-    constructor() {}
+    constructor() { }
     getId(item: ItemType) {
         if (typeof item.source !== 'string') {
             console.warn(`unexpected itemType source type: ${typeof item.source}`, item.source);
@@ -550,10 +598,10 @@ class ItemTypeMgr implements DataMgr<ItemType> {
                 },
                 zh: zhType
                     ? {
-                          name: zhType.name,
-                          entries: zhType.entries || [],
-                          html: parseContent(zhType.entries || []),
-                      }
+                        name: zhType.name,
+                        entries: zhType.entries || [],
+                        html: parseContent(zhType.entries || []),
+                    }
                     : null,
                 en: {
                     name: enType.name,
@@ -587,11 +635,11 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
         zh: ItemBaseFile | null;
         en: ItemBaseFile | null;
     } = {
-        zh: null,
-        en: null,
-    };
+            zh: null,
+            en: null,
+        };
     db: Map<string, WikiItemData> = new Map();
-    constructor() {}
+    constructor() { }
     getId(item: ItemFileEntry): string {
         if (item.ENG_name) {
             return `${item.ENG_name.trim()}|${item.source}`;
@@ -689,8 +737,10 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
         if (item.additionalSources) {
             sources.push(...item.additionalSources);
         }
+        sources.push(...parseReprintedAsSources(item.reprintedAs));
         return sources;
     }
+    reprintMap: Map<string, string[]> = new Map(); // target -> sources
     loadData(zh: ItemBaseFile, en: ItemBaseFile) {
         this.raw.zh = zh;
         this.raw.en = en;
@@ -706,12 +756,31 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             }
         );
 
+        // 第一遍：建立 reprintMap
+        for (const enItem of en.baseitem) {
+            const id = this.getId(enItem);
+            const reprintedAs = normalizeReprintedAs(enItem.reprintedAs);
+            for (const target of reprintedAs) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        // 第二遍：生成数据
         for (const enItem of en.baseitem) {
             const id = this.getId(enItem);
             const zhItem = zh.baseitem.find(i => this.getId(i) === id);
             if (!zhItem) {
                 logger.log('BaseItemMgr', `未找到中文版本的物品：${enItem.name} (${id})`);
             }
+
+            // 收集所有相关版本
+            const relatedVersions = new Set<string>();
+            normalizeReprintedAs(enItem.reprintedAs).forEach(t => relatedVersions.add(t));
+            this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
+
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
@@ -733,12 +802,14 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                     page: enItem.page || 0,
                 },
                 allSources: BaseItemMgr.getItemSources(enItem),
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 zh: zhItem
                     ? {
-                          name: zhItem.name,
-                          entries: zhItem.entries || [],
-                          html: parseContent(zhItem.entries || []),
-                      }
+
+                        name: zhItem.name,
+                        entries: zhItem.entries || [],
+                        html: parseContent(zhItem.entries || []),
+                    }
                     : null,
                 en: {
                     name: enItem.name,
@@ -747,30 +818,30 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 },
                 weapon: enItem.weapon
                     ? {
-                          category: enItem.weaponCategory!,
-                          dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
-                          dmgType: enItem.dmgType!,
-                          range: (() => {
-                              if (!enItem.range) return undefined;
-                              const [min, max] = enItem.range?.split('/');
-                              return { min: Number(min), max: Number(max) };
-                          })(),
-                          reload: enItem.reload,
-                          ammoType: enItem.ammoType,
-                      }
+                        category: enItem.weaponCategory!,
+                        dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
+                        dmgType: enItem.dmgType!,
+                        range: (() => {
+                            if (!enItem.range) return undefined;
+                            const [min, max] = enItem.range?.split('/');
+                            return { min: Number(min), max: Number(max) };
+                        })(),
+                        reload: enItem.reload,
+                        ammoType: enItem.ammoType,
+                    }
                     : undefined,
                 armor: enItem.armor
                     ? {
-                          ac: enItem.ac,
-                          maxDexterty: enItem.dexterityMax === null ? true : false,
-                      }
+                        ac: enItem.ac,
+                        maxDexterty: enItem.dexterityMax === null ? true : false,
+                    }
                     : undefined,
                 charge: enItem.charges
                     ? {
-                          max: enItem.charges,
-                          rechargeAt: enItem.recharge,
-                          rechargeAmount: enItem.rechargeAmount,
-                      }
+                        max: enItem.charges,
+                        rechargeAt: enItem.recharge,
+                        rechargeAmount: enItem.rechargeAmount,
+                    }
                     : undefined,
                 bonus: {
                     weapon: Number(enItem.bonusWeapon) || undefined,
@@ -805,11 +876,13 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         zh: ItemFile | null;
         en: ItemFile | null;
     } = {
-        zh: null,
-        en: null,
-    };
+            zh: null,
+            en: null,
+        };
     db: Map<string, WikiItemData> = new Map();
     baseItems: BaseItemMgr;
+    reprintMap: Map<string, string[]> = new Map(); // target -> sources
+
     constructor(baseItems: BaseItemMgr) {
         this.baseItems = baseItems;
     }
@@ -835,6 +908,19 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             }
         );
 
+        // 第一遍：建立 reprintMap
+        for (const enItem of en.item) {
+            const id = this.getId(enItem);
+            const reprintedAs = normalizeReprintedAs(enItem.reprintedAs);
+            for (const target of reprintedAs) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        // 第二遍：生成数据
         for (const enItem of en.item) {
             const id = this.getId(enItem);
 
@@ -855,6 +941,11 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                     i => i.name.toLowerCase() === enItem.baseItem?.toLowerCase()
                 );
             }
+
+            // 收集所有相关版本
+            const relatedVersions = new Set<string>();
+            normalizeReprintedAs(enItem.reprintedAs).forEach(t => relatedVersions.add(t));
+            this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -878,13 +969,14 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                     page: enItem.page || 0,
                 },
                 allSources: BaseItemMgr.getItemSources(enItem),
-
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 zh: zhItem
+
                     ? {
-                          name: zhItem.name,
-                          entries: zhItem.entries || [],
-                          html: parseContent(zhItem.entries || []),
-                      }
+                        name: zhItem.name,
+                        entries: zhItem.entries || [],
+                        html: parseContent(zhItem.entries || []),
+                    }
                     : null,
                 en: {
                     name: enItem.name,
@@ -894,30 +986,30 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
                 weapon: enItem.weapon
                     ? {
-                          category: enItem.weaponCategory!,
-                          dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
-                          dmgType: enItem.dmgType!,
-                          range: (() => {
-                              if (!enItem.range) return undefined;
-                              const [min, max] = enItem.range?.split('/');
-                              return { min: Number(min), max: Number(max) };
-                          })(),
-                          reload: enItem.reload,
-                          ammoType: enItem.ammoType,
-                      }
+                        category: enItem.weaponCategory!,
+                        dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
+                        dmgType: enItem.dmgType!,
+                        range: (() => {
+                            if (!enItem.range) return undefined;
+                            const [min, max] = enItem.range?.split('/');
+                            return { min: Number(min), max: Number(max) };
+                        })(),
+                        reload: enItem.reload,
+                        ammoType: enItem.ammoType,
+                    }
                     : undefined,
                 armor: enItem.armor
                     ? {
-                          ac: enItem.ac,
-                          maxDexterty: enItem.dexterityMax === null ? true : false,
-                      }
+                        ac: enItem.ac,
+                        maxDexterty: enItem.dexterityMax === null ? true : false,
+                    }
                     : undefined,
                 charge: enItem.charges
                     ? {
-                          max: enItem.charges,
-                          rechargeAt: enItem.recharge,
-                          rechargeAmount: enItem.rechargeAmount,
-                      }
+                        max: enItem.charges,
+                        rechargeAt: enItem.recharge,
+                        rechargeAmount: enItem.rechargeAmount,
+                    }
                     : undefined,
                 bonus: {
                     weapon: Number(enItem.bonusWeapon) || undefined,
@@ -951,12 +1043,14 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         zh: SpellFileEntry[];
         en: SpellFileEntry[];
     } = {
-        zh: [],
-        en: [],
-    };
+            zh: [],
+            en: [],
+        };
     db: Map<string, WikiSpellData> = new Map();
     spellSources: Record<string, Record<string, { class?: SpellClassEntry[] }>> = {};
-    constructor() {}
+    reprintMap: Map<string, string[]> = new Map(); // target -> sources that reprint to it
+
+    constructor() { }
     async loadSources(filePath: string) {
         try {
             const data = await fs.readFile(filePath, 'utf-8');
@@ -988,9 +1082,29 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             }
         );
 
+        // 第一遍：建立 reprintMap
+        for (const enSpell of this.raw.en) {
+            const id = this.getId(enSpell);
+            const reprintedAs = normalizeReprintedAs(enSpell.reprintedAs);
+            for (const target of reprintedAs) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        // 第二遍：生成数据
         for (const enSpell of this.raw.en) {
             const id = this.getId(enSpell);
             const zhSpell = this.raw.zh.find(s => this.getId(s) === id);
+
+            // 收集所有相关版本
+            const relatedVersions = new Set<string>();
+            // 添加 reprintedAs 目标（当前条目指向的新版本）
+            normalizeReprintedAs(enSpell.reprintedAs).forEach(t => relatedVersions.add(t));
+            // 添加指向当前条目的其他条目（其他条目的旧版本）
+            this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
@@ -1004,12 +1118,14 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                     source: enSpell.source,
                     page: enSpell.page || 0,
                 },
-                allSources: [
-                    {
-                        source: enSpell.source,
-                        page: enSpell.page || 0,
-                    },
-                ],
+                allSources: (() => {
+                    const sources: { source: string; page: number }[] = [];
+                    sources.push({ source: enSpell.source, page: enSpell.page || 0 });
+                    if (enSpell.otherSources) sources.push(...enSpell.otherSources);
+                    sources.push(...parseReprintedAsSources(enSpell.reprintedAs));
+                    return sources;
+                })(),
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 en: {
                     name: enSpell.name,
                     alias: enSpell.alias || [],
@@ -1023,16 +1139,16 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 },
                 zh: zhSpell
                     ? {
-                          name: zhSpell.name,
-                          alias: zhSpell.alias || [],
-                          components: zhSpell.components,
-                          duration: zhSpell.duration,
-                          range: zhSpell.range,
-                          time: zhSpell.time,
-                          entries: zhSpell.entries,
-                          entriesHigherLevel: zhSpell.entriesHigherLevel,
-                          scalingLevelDice: zhSpell.scalingLevelDice,
-                      }
+                        name: zhSpell.name,
+                        alias: zhSpell.alias || [],
+                        components: zhSpell.components,
+                        duration: zhSpell.duration,
+                        range: zhSpell.range,
+                        time: zhSpell.time,
+                        entries: zhSpell.entries,
+                        entriesHigherLevel: zhSpell.entriesHigherLevel,
+                        scalingLevelDice: zhSpell.scalingLevelDice,
+                    }
                     : null,
                 level: enSpell.level,
                 school: enSpell.school,
@@ -1052,6 +1168,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             this.db.set(id, spellData);
         }
     }
+
     async generateFiles() {
         const outputDir = './output/spell';
         await fs.mkdir(outputDir, { recursive: true });
