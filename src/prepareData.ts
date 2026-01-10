@@ -10,8 +10,10 @@ import {
     itemTypeMgr,
     createOutputFolders,
     idMgr,
+    itemFluffMgr,
     spellMgr,
 } from './factory.js';
+import { ItemFluffFile } from './types/items.js';
 import { SpellFile, SpellFileEntry, SpellFluffFile } from './types/spells.js';
 import { tagParser } from './contentGen.js';
 (async () => {
@@ -30,6 +32,8 @@ import { tagParser } from './contentGen.js';
 
     // 基本数据：基础物品
     const { en: itemEn, zh: itemZh } = await loadFile('items-base.json');
+    const { en: itemFluffEn, zh: itemFluffZh } = await loadFile('fluff-items.json');
+    itemFluffMgr.loadData(itemFluffZh as ItemFluffFile, itemFluffEn as ItemFluffFile);
     itemPropertyMgr.loadData(itemZh, itemEn);
     await itemPropertyMgr.generateFiles();
     itemTypeMgr.loadData(itemZh, itemEn);

@@ -14,6 +14,9 @@ import {
     ItemBaseFile,
     ItemFile,
     ItemFileEntry,
+    ItemFluffContent,
+    ItemFluffEntry,
+    ItemFluffFile,
     ItemProperty,
     ItemType,
     WikiItemData,
@@ -106,6 +109,72 @@ class Logger {
     }
 }
 export const logger = new Logger();
+
+class ItemFluffMgr {
+    map: { zh: Map<string, ItemFluffEntry>; en: Map<string, ItemFluffEntry> } = {
+        zh: new Map(),
+        en: new Map(),
+    };
+
+    private getEntryId(
+        entry: { ENG_name?: string; name: string; source?: string },
+        fallbackSource?: string
+    ): string | undefined {
+        const source = entry.source || fallbackSource;
+        if (!source) return undefined;
+        const name = entry.ENG_name ? entry.ENG_name.trim() : entry.name.trim();
+        return `${name}|${source}`;
+    }
+
+    loadData(zh: ItemFluffFile | null, en: ItemFluffFile | null) {
+        for (const item of en?.itemFluff || []) {
+            const id = this.getEntryId(item);
+            if (id) this.map.en.set(id, item);
+        }
+        for (const item of zh?.itemFluff || []) {
+            const id = this.getEntryId(item);
+            if (id) this.map.zh.set(id, item);
+        }
+    }
+
+    private resolveEntry(
+        lang: 'zh' | 'en',
+        id: string,
+        visited: Set<string> = new Set()
+    ): ItemFluffEntry | undefined {
+        if (visited.has(id)) return undefined;
+        visited.add(id);
+        const entry = this.map[lang].get(id);
+        if (!entry) return undefined;
+        if (entry.entries || entry.images) return entry;
+        if (entry._copy) {
+            const copyId = this.getEntryId(entry._copy, entry.source);
+            if (!copyId) return entry;
+            return this.resolveEntry(lang, copyId, visited) || entry;
+        }
+        return entry;
+    }
+
+    private toContent(lang: 'zh' | 'en', id: string): ItemFluffContent | undefined {
+        const entry = this.resolveEntry(lang, id);
+        if (!entry) return undefined;
+        const { entries, images } = entry;
+        if (!entries && !images) return undefined;
+        return { entries, images };
+    }
+
+    getFull(id: string): { en?: ItemFluffContent; zh?: ItemFluffContent } | undefined {
+        const fullEn = this.toContent('en', id);
+        const fullZh = this.toContent('zh', id);
+        if (!fullEn && !fullZh) return undefined;
+        return {
+            en: fullEn,
+            zh: fullZh,
+        };
+    }
+}
+
+export const itemFluffMgr = new ItemFluffMgr();
 
 type I18nEntry =
     | {
@@ -797,6 +866,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 value: enItem.value || undefined,
                 rarity: enItem.rarity,
                 isBaseItem: true,
+                full: itemFluffMgr.getFull(id),
                 displayName: {
                     zh: (() => {
                         if (!zhItem) return null;
@@ -872,7 +942,11 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
         // for each item in the db, write a file.
         for (const [id, itemData] of this.db) {
-            const filePath = path.join(outputDir, `${escapeId(id)}.json`);
+            const baseName = mwUtil.getMwTitle(
+                itemData.displayName.en || itemData.displayName.zh || id
+            );
+            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const filePath = path.join(outputDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
@@ -963,6 +1037,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 value: enItem.value || undefined,
                 rarity: enItem.rarity,
                 isBaseItem: false,
+                full: itemFluffMgr.getFull(id),
                 baseItem: enItem.baseItem || '',
                 displayName: {
                     zh: (() => {
@@ -1039,7 +1114,11 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         const outputDir = './output/item';
 
         for (const [id, itemData] of this.db) {
-            const filePath = path.join(outputDir, `${escapeId(id)}.json`);
+            const baseName = mwUtil.getMwTitle(
+                itemData.displayName.en || itemData.displayName.zh || id
+            );
+            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const filePath = path.join(outputDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
         }
     }
@@ -1220,7 +1299,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             const baseName = mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
             );
-            const fileName = `Data_Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
+            const fileName = `Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }

@@ -271,6 +271,41 @@ export type ItemFile = {
     itemGroup: ItemGroup[];
 };
 
+export type ItemFluffImage = {
+    type: string;
+    href: {
+        type: string;
+        path: string;
+    };
+    credit?: string;
+    title?: string;
+    caption?: string;
+};
+
+export type ItemFluffCopy = {
+    ENG_name?: string;
+    name: string;
+    source?: string;
+};
+
+export type ItemFluffEntry = {
+    ENG_name?: string;
+    name: string;
+    source: string;
+    entries?: ParagraphGroup;
+    images?: ItemFluffImage[];
+    _copy?: ItemFluffCopy;
+};
+
+export type ItemFluffContent = {
+    entries?: ParagraphGroup;
+    images?: ItemFluffImage[];
+};
+
+export type ItemFluffFile = {
+    itemFluff: ItemFluffEntry[];
+};
+
 // 维基用数据
 export type WikiItemEntry = {
     name: string;
@@ -292,6 +327,10 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
     // 护甲类：armor
     // 其他： poison,net
     isBaseItem: boolean;
+    full?: {
+        en?: ItemFluffContent;
+        zh?: ItemFluffContent;
+    };
     weapon?: {
         category: string; // 简易武器（simple）和军用武器（martial）
         dmgs: string[]; // 由原始数据中的dmg1,dmg2等生成。掷骰公式。
