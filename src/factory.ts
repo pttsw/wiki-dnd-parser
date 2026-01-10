@@ -23,7 +23,15 @@ import {
 import { parseContent } from './contentGen.js';
 import { mwUtil } from './config.js';
 import * as XSLX from 'xlsx';
-import { SpellClassEntry, SpellFile, SpellFileEntry, WikiSpellData } from './types/spells';
+import {
+    SpellClassEntry,
+    SpellFile,
+    SpellFileEntry,
+    SpellFluffContent,
+    SpellFluffEntry,
+    SpellFluffFile,
+    WikiSpellData,
+} from './types/spells';
 
 export const createOutputFolders = async () => {
     // delete ./output folder and all files
@@ -1049,6 +1057,10 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
     db: Map<string, WikiSpellData> = new Map();
     spellSources: Record<string, Record<string, { class?: SpellClassEntry[] }>> = {};
     reprintMap: Map<string, string[]> = new Map(); // target -> sources that reprint to it
+    fluff: { zh: Map<string, SpellFluffEntry>; en: Map<string, SpellFluffEntry> } = {
+        zh: new Map(),
+        en: new Map(),
+    };
 
     constructor() { }
     async loadSources(filePath: string) {
@@ -1061,6 +1073,18 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
     }
     getClasses(source: string, name: string): SpellClassEntry[] | undefined {
         return this.spellSources[source]?.[name]?.class;
+    }
+    loadFluff(zh: SpellFluffFile | null, en: SpellFluffFile | null) {
+        for (const item of en?.spellFluff || []) {
+            const name = item.ENG_name ? item.ENG_name.trim() : item.name.trim();
+            const id = `${name}|${item.source}`;
+            this.fluff.en.set(id, item);
+        }
+        for (const item of zh?.spellFluff || []) {
+            const name = item.ENG_name ? item.ENG_name.trim() : item.name.trim();
+            const id = `${name}|${item.source}`;
+            this.fluff.zh.set(id, item);
+        }
     }
     getId(spell: SpellFileEntry): string {
         if (spell.ENG_name) {
@@ -1098,6 +1122,16 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         for (const enSpell of this.raw.en) {
             const id = this.getId(enSpell);
             const zhSpell = this.raw.zh.find(s => this.getId(s) === id);
+            const fluffEn = this.fluff.en.get(id);
+            const fluffZh = this.fluff.zh.get(id);
+            const toFluffContent = (
+                item?: SpellFluffEntry
+            ): SpellFluffContent | undefined => {
+                if (!item) return undefined;
+                const { entries, images } = item;
+                if (!entries && !images) return undefined;
+                return { entries, images };
+            };
 
             // 收集所有相关版本
             const relatedVersions = new Set<string>();
@@ -1164,6 +1198,15 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 affectsCreatureType: enSpell.affectsCreatureType || [],
                 ritual: enSpell.meta?.ritual || false,
                 classes: this.getClasses(enSpell.source, enSpell.name),
+                full: (() => {
+                    const fullEn = toFluffContent(fluffEn);
+                    const fullZh = toFluffContent(fluffZh);
+                    if (!fullEn && !fullZh) return undefined;
+                    return {
+                        en: fullEn,
+                        zh: fullZh,
+                    };
+                })(),
             };
             this.db.set(id, spellData);
         }
@@ -1174,7 +1217,11 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         await fs.mkdir(outputDir, { recursive: true });
 
         for (const [id, spellData] of this.db) {
-            const filePath = path.join(outputDir, `${escapeId(id)}.json`);
+            const baseName = mwUtil.getMwTitle(
+                spellData.displayName.en || spellData.displayName.zh || id
+            );
+            const fileName = `Data_Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
+            const filePath = path.join(outputDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }
     }

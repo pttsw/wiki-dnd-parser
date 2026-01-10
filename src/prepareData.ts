@@ -12,7 +12,7 @@ import {
     idMgr,
     spellMgr,
 } from './factory.js';
-import { SpellFile, SpellFileEntry } from './types/spells.js';
+import { SpellFile, SpellFileEntry, SpellFluffFile } from './types/spells.js';
 import { tagParser } from './contentGen.js';
 (async () => {
     await createOutputFolders();
@@ -43,6 +43,31 @@ import { tagParser } from './contentGen.js';
 
     // 法术
     await spellMgr.loadSources('./input/5e-en/data/spells/sources.json');
+    const { en: fluffIndexEn = {}, zh: fluffIndexZh = {} } = (await loadFile(
+        './spells/fluff-index.json'
+    )) as { en?: Record<string, string>; zh?: Record<string, string> };
+    const fluffSources = new Set([
+        ...Object.keys(fluffIndexEn || {}),
+        ...Object.keys(fluffIndexZh || {}),
+    ]);
+    for (const source of fluffSources) {
+        const enFilePath = fluffIndexEn?.[source];
+        const zhFilePath = fluffIndexZh?.[source];
+        if (enFilePath && enFilePath === zhFilePath) {
+            const fluffFilePath = './spells/' + enFilePath;
+            const { en: fluffEn, zh: fluffZh } = await loadFile(fluffFilePath);
+            spellMgr.loadFluff(fluffZh as SpellFluffFile, fluffEn as SpellFluffFile);
+        } else {
+            if (enFilePath) {
+                const { en: fluffEn } = await loadFile('./spells/' + enFilePath);
+                spellMgr.loadFluff(null, fluffEn as SpellFluffFile);
+            }
+            if (zhFilePath) {
+                const { zh: fluffZh } = await loadFile('./spells/' + zhFilePath);
+                spellMgr.loadFluff(fluffZh as SpellFluffFile, null);
+            }
+        }
+    }
     const { en: spellIndex } = (await loadFile('./spells/index.json')) as Record<string, string>;
     for (const [source, filePath] of Object.entries(spellIndex)) {
         const spellFilePath = './spells/' + filePath;

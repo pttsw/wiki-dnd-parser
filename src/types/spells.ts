@@ -73,6 +73,34 @@ export type SpellFile = {
     spell: SpellFileEntry[];
 };
 
+export type SpellFluffImage = {
+    type: string;
+    href: {
+        type: string;
+        path: string;
+    };
+    credit?: string;
+    title?: string;
+    caption?: string;
+};
+
+export type SpellFluffEntry = {
+    ENG_name?: string;
+    name: string;
+    source: string;
+    entries?: ParagraphGroup;
+    images?: SpellFluffImage[];
+};
+
+export type SpellFluffContent = {
+    entries?: ParagraphGroup;
+    images?: SpellFluffImage[];
+};
+
+export type SpellFluffFile = {
+    spellFluff: SpellFluffEntry[];
+};
+
 export type WikiSpellEntry = {
     name: string;
     alias: string[];
@@ -117,4 +145,8 @@ export type WikiSpellData = WikiData<WikiSpellEntry, 'spell'> & {
     affectsCreatureType?: string[];
     ritual?: boolean;
     classes?: SpellClassEntry[];
+    full?: {
+        en?: SpellFluffContent;
+        zh?: SpellFluffContent;
+    };
 };
