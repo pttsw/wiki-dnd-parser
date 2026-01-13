@@ -271,6 +271,30 @@ export type ItemFile = {
     itemGroup: ItemGroup[];
 };
 
+export type MagicVariantInherits = {
+    source?: string;
+    page?: number;
+    entries?: ParagraphGroup;
+    reprintedAs?: (string | { uid: string; tag?: string })[];
+    [key: string]: any;
+};
+
+export type MagicVariantEntry = {
+    name: string;
+    ENG_name?: string;
+    type?: string;
+    source?: string;
+    page?: number;
+    entries?: ParagraphGroup;
+    reprintedAs?: (string | { uid: string; tag?: string })[];
+    inherits?: MagicVariantInherits;
+    [key: string]: any;
+};
+
+export type MagicVariantFile = {
+    magicvariant: MagicVariantEntry[];
+};
+
 export type ItemFluffImage = {
     type: string;
     href: {
@@ -320,6 +344,7 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
     value?: number;
     rarity?: string;
     baseItem?: string;
+    items?: string[];
     type?: string;
     subTypes?: string[];
     // 武器类：sword,crossbow,axe,staff,club,spear,dagger,hammer,bow,mace,firearm,polearm,lance,rapier,tattoo

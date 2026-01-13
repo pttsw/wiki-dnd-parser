@@ -17,6 +17,9 @@ import {
     ItemFluffContent,
     ItemFluffEntry,
     ItemFluffFile,
+    ItemGroup,
+    MagicVariantEntry,
+    MagicVariantFile,
     ItemProperty,
     ItemType,
     WikiItemData,
@@ -845,6 +848,57 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             }
         }
 
+        const itemMap = new Map<string, ItemFileEntry>();
+        for (const enItem of en.baseitem) {
+            itemMap.set(this.getId(enItem), enItem);
+        }
+
+        const collectRelatedIds = (startId: string): string[] => {
+            const visited = new Set<string>();
+            const stack = [startId];
+            while (stack.length > 0) {
+                const currentId = stack.pop()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                const current = itemMap.get(currentId);
+                if (current) {
+                    for (const nextId of normalizeReprintedAs(current.reprintedAs)) {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    }
+                }
+                for (const nextId of this.reprintMap.get(currentId) || []) {
+                    if (!visited.has(nextId)) stack.push(nextId);
+                }
+            }
+            return [...visited];
+        };
+
+        const buildAllSources = (ids: string[]) => {
+            const sources: { source: string; page: number }[] = [];
+            const seen = new Set<string>();
+            const addSource = (source: string, page: number) => {
+                if (!source) return;
+                const key = `${source}|${page}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                sources.push({ source, page });
+            };
+
+            for (const relatedId of ids) {
+                const relatedItem = itemMap.get(relatedId);
+                if (!relatedItem) {
+                    const fallbackSource = relatedId.split('|').pop();
+                    if (fallbackSource) addSource(fallbackSource, 0);
+                    continue;
+                }
+                for (const extra of BaseItemMgr.getItemSources(relatedItem)) {
+                    addSource(extra.source, extra.page);
+                }
+            }
+            return sources;
+        };
+
         // 第二遍：生成数据
         for (const enItem of en.baseitem) {
             const id = this.getId(enItem);
@@ -857,6 +911,8 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             const relatedVersions = new Set<string>();
             normalizeReprintedAs(enItem.reprintedAs).forEach(t => relatedVersions.add(t));
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
+
+            const allSources = buildAllSources(collectRelatedIds(id));
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -879,7 +935,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                     source: enItem.source,
                     page: enItem.page || 0,
                 },
-                allSources: BaseItemMgr.getItemSources(enItem),
+                allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 zh: zhItem
                     ? {
@@ -980,9 +1036,15 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         this.raw.en = en;
         this.db.clear();
 
+        const enItems = [...(en.item || []), ...(en.itemGroup || [])];
+        const zhItems = [...(zh.item || []), ...(zh.itemGroup || [])];
+        const isItemGroup = (
+            item: ItemFileEntry | ItemGroup
+        ): item is ItemGroup => Array.isArray((item as ItemGroup).items);
+
         idMgr.compare(
             'item',
-            { en: en.item, zh: zh.item },
+            { en: enItems, zh: zhItems },
             {
                 getId: item => this.getId(item!),
                 getEnTitle: item => item.name,
@@ -991,7 +1053,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         );
 
         // 第一遍：建立 reprintMap
-        for (const enItem of en.item) {
+        for (const enItem of enItems) {
             const id = this.getId(enItem);
             const reprintedAs = normalizeReprintedAs(enItem.reprintedAs);
             for (const target of reprintedAs) {
@@ -1002,11 +1064,62 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             }
         }
 
+        const itemMap = new Map<string, ItemFileEntry | ItemGroup>();
+        for (const enItem of enItems) {
+            itemMap.set(this.getId(enItem), enItem);
+        }
+
+        const collectRelatedIds = (startId: string): string[] => {
+            const visited = new Set<string>();
+            const stack = [startId];
+            while (stack.length > 0) {
+                const currentId = stack.pop()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                const current = itemMap.get(currentId);
+                if (current) {
+                    for (const nextId of normalizeReprintedAs(current.reprintedAs)) {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    }
+                }
+                for (const nextId of this.reprintMap.get(currentId) || []) {
+                    if (!visited.has(nextId)) stack.push(nextId);
+                }
+            }
+            return [...visited];
+        };
+
+        const buildAllSources = (ids: string[]) => {
+            const sources: { source: string; page: number }[] = [];
+            const seen = new Set<string>();
+            const addSource = (source: string, page: number) => {
+                if (!source) return;
+                const key = `${source}|${page}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                sources.push({ source, page });
+            };
+
+            for (const relatedId of ids) {
+                const relatedItem = itemMap.get(relatedId);
+                if (!relatedItem) {
+                    const fallbackSource = relatedId.split('|').pop();
+                    if (fallbackSource) addSource(fallbackSource, 0);
+                    continue;
+                }
+                for (const extra of BaseItemMgr.getItemSources(relatedItem)) {
+                    addSource(extra.source, extra.page);
+                }
+            }
+            return sources;
+        };
+
         // 第二遍：生成数据
-        for (const enItem of en.item) {
+        for (const enItem of enItems) {
             const id = this.getId(enItem);
 
-            const zhItem = zh.item.find(i => this.getId(i) === id);
+            const zhItem = zhItems.find(i => this.getId(i) === id);
             if (!zhItem) {
                 logger.log('ItemMgr', `${id}: 未找到中文版本的物品：${enItem.name} `);
             }
@@ -1029,6 +1142,14 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             normalizeReprintedAs(enItem.reprintedAs).forEach(t => relatedVersions.add(t));
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
+            const groupItems = isItemGroup(enItem)
+                ? zhItem && isItemGroup(zhItem)
+                    ? zhItem.items
+                    : enItem.items
+                : undefined;
+
+            const allSources = buildAllSources(collectRelatedIds(id));
+
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id} `,
@@ -1039,6 +1160,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 isBaseItem: false,
                 full: itemFluffMgr.getFull(id),
                 baseItem: enItem.baseItem || '',
+                items: groupItems,
                 displayName: {
                     zh: (() => {
                         if (!zhItem) return null;
@@ -1051,7 +1173,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                     source: enItem.source,
                     page: enItem.page || 0,
                 },
-                allSources: BaseItemMgr.getItemSources(enItem),
+                allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 zh: zhItem
 
@@ -1125,6 +1247,190 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 }
 export const itemMgr = new ItemMgr(baseItemMgr);
 
+class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
+    raw: {
+        zh: MagicVariantEntry[];
+        en: MagicVariantEntry[];
+    } = {
+            zh: [],
+            en: [],
+        };
+    db: Map<string, WikiItemData> = new Map();
+    reprintMap: Map<string, string[]> = new Map(); // target -> sources
+
+    constructor() { }
+
+    private getSource(item: MagicVariantEntry): string {
+        return (
+            item.inherits?.source ||
+            item.source ||
+            (item.type ? item.type.split('|').pop() || '' : '')
+        );
+    }
+
+    private getEntries(item: MagicVariantEntry) {
+        if (item.entries && item.entries.length > 0) return item.entries;
+        return item.inherits?.entries || [];
+    }
+
+    private getReprintedAs(item: MagicVariantEntry): string[] {
+        return normalizeReprintedAs(item.reprintedAs || item.inherits?.reprintedAs);
+    }
+
+    getId(item: MagicVariantEntry): string {
+        const name = item.ENG_name ? item.ENG_name.trim() : item.name.trim();
+        const source = this.getSource(item);
+        return `${name}|${source}`;
+    }
+
+    loadData(zh: MagicVariantFile | null, en: MagicVariantFile | null) {
+        this.raw.zh = zh?.magicvariant || [];
+        this.raw.en = en?.magicvariant || [];
+        this.db.clear();
+
+        idMgr.compare(
+            'magicvariant',
+            { en: this.raw.en, zh: this.raw.zh },
+            {
+                getId: item => this.getId(item!),
+                getEnTitle: item => item.name,
+                getZhTitle: item => item.name,
+            }
+        );
+
+        // 第一遍：建立 reprintMap
+        for (const enItem of this.raw.en) {
+            const id = this.getId(enItem);
+            const reprintedAs = this.getReprintedAs(enItem);
+            for (const target of reprintedAs) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        const variantMap = new Map<string, MagicVariantEntry>();
+        for (const enItem of this.raw.en) {
+            variantMap.set(this.getId(enItem), enItem);
+        }
+
+        const collectRelatedIds = (startId: string): string[] => {
+            const visited = new Set<string>();
+            const stack = [startId];
+            while (stack.length > 0) {
+                const currentId = stack.pop()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                const current = variantMap.get(currentId);
+                if (current) {
+                    for (const nextId of this.getReprintedAs(current)) {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    }
+                }
+                for (const nextId of this.reprintMap.get(currentId) || []) {
+                    if (!visited.has(nextId)) stack.push(nextId);
+                }
+            }
+            return [...visited];
+        };
+
+        const buildAllSources = (ids: string[]) => {
+            const sources: { source: string; page: number }[] = [];
+            const seen = new Set<string>();
+            const addSource = (source: string, page: number) => {
+                if (!source) return;
+                const key = `${source}|${page}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                sources.push({ source, page });
+            };
+
+            for (const relatedId of ids) {
+                const relatedItem = variantMap.get(relatedId);
+                if (!relatedItem) {
+                    const fallbackSource = relatedId.split('|').pop();
+                    if (fallbackSource) addSource(fallbackSource, 0);
+                    continue;
+                }
+                const source = this.getSource(relatedItem);
+                addSource(source, relatedItem.inherits?.page || relatedItem.page || 0);
+                for (const extra of parseReprintedAsSources(this.getReprintedAs(relatedItem))) {
+                    addSource(extra.source, extra.page);
+                }
+            }
+            return sources;
+        };
+
+        // 第二遍：生成数据
+        for (const enItem of this.raw.en) {
+            const id = this.getId(enItem);
+            const zhItem = this.raw.zh.find(i => this.getId(i) === id);
+            if (!zhItem) {
+                logger.log('MagicVariantMgr', `${id}: 未找到中文版本的变体物品：${enItem.name} `);
+            }
+
+            const relatedVersions = new Set<string>();
+            this.getReprintedAs(enItem).forEach(t => relatedVersions.add(t));
+            this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
+
+            const source = this.getSource(enItem);
+            const allSources = buildAllSources(collectRelatedIds(id));
+
+            const itemData: WikiItemData = {
+                dataType: 'item',
+                uid: `item_${id}`,
+                id: id,
+                rarity: enItem.inherits?.rarity || enItem.rarity,
+                isBaseItem: false,
+                displayName: {
+                    zh: (() => {
+                        if (!zhItem) return null;
+                        if (zhItem.name.trim() === enItem.name.trim()) return null;
+                        return zhItem.name;
+                    })(),
+                    en: enItem.name,
+                },
+                mainSource: {
+                    source,
+                    page: enItem.inherits?.page || enItem.page || 0,
+                },
+                allSources,
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
+                zh: zhItem
+                    ? {
+                        name: zhItem.name,
+                        entries: this.getEntries(zhItem),
+                        html: parseContent(this.getEntries(zhItem)),
+                    }
+                    : null,
+                en: {
+                    name: enItem.name,
+                    entries: this.getEntries(enItem),
+                    html: parseContent(this.getEntries(enItem)),
+                },
+            };
+
+            this.db.set(id, itemData);
+        }
+    }
+
+    async generateFiles() {
+        const outputDir = './output/item';
+
+        for (const [id, itemData] of this.db) {
+            const baseName = mwUtil.getMwTitle(
+                itemData.displayName.en || itemData.displayName.zh || id
+            );
+            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const filePath = path.join(outputDir, fileName);
+            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+        }
+    }
+}
+export const magicVariantMgr = new MagicVariantMgr();
+
 class SpellMgr implements DataMgr<SpellFileEntry> {
     raw: {
         zh: SpellFileEntry[];
@@ -1197,6 +1503,61 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             }
         }
 
+        const spellMap = new Map<string, SpellFileEntry>();
+        for (const enSpell of this.raw.en) {
+            spellMap.set(this.getId(enSpell), enSpell);
+        }
+
+        const collectRelatedIds = (startId: string): string[] => {
+            const visited = new Set<string>();
+            const stack = [startId];
+            while (stack.length > 0) {
+                const currentId = stack.pop()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                const current = spellMap.get(currentId);
+                if (current) {
+                    for (const nextId of normalizeReprintedAs(current.reprintedAs)) {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    }
+                }
+                for (const nextId of this.reprintMap.get(currentId) || []) {
+                    if (!visited.has(nextId)) stack.push(nextId);
+                }
+            }
+            return [...visited];
+        };
+
+        const buildAllSources = (ids: string[]) => {
+            const sources: { source: string; page: number }[] = [];
+            const seen = new Set<string>();
+            const addSource = (source: string, page: number) => {
+                if (!source) return;
+                const key = `${source}|${page}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                sources.push({ source, page });
+            };
+
+            for (const relatedId of ids) {
+                const relatedSpell = spellMap.get(relatedId);
+                if (!relatedSpell) {
+                    const fallbackSource = relatedId.split('|').pop();
+                    if (fallbackSource) addSource(fallbackSource, 0);
+                    continue;
+                }
+                addSource(relatedSpell.source, relatedSpell.page || 0);
+                for (const extra of relatedSpell.otherSources || []) {
+                    addSource(extra.source, extra.page || 0);
+                }
+                for (const extra of parseReprintedAsSources(relatedSpell.reprintedAs)) {
+                    addSource(extra.source, extra.page);
+                }
+            }
+            return sources;
+        };
+
         // 第二遍：生成数据
         for (const enSpell of this.raw.en) {
             const id = this.getId(enSpell);
@@ -1219,6 +1580,8 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             // 添加指向当前条目的其他条目（其他条目的旧版本）
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
+            const relatedIds = collectRelatedIds(id);
+
             const spellData: WikiSpellData = {
                 dataType: 'spell',
                 uid: `spell_${id}`,
@@ -1231,13 +1594,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                     source: enSpell.source,
                     page: enSpell.page || 0,
                 },
-                allSources: (() => {
-                    const sources: { source: string; page: number }[] = [];
-                    sources.push({ source: enSpell.source, page: enSpell.page || 0 });
-                    if (enSpell.otherSources) sources.push(...enSpell.otherSources);
-                    sources.push(...parseReprintedAsSources(enSpell.reprintedAs));
-                    return sources;
-                })(),
+                allSources: buildAllSources(relatedIds),
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 en: {
                     name: enSpell.name,

@@ -6,6 +6,7 @@ import {
     featMgr,
     baseItemMgr,
     itemMgr,
+    magicVariantMgr,
     itemPropertyMgr,
     itemTypeMgr,
     createOutputFolders,
@@ -13,7 +14,7 @@ import {
     itemFluffMgr,
     spellMgr,
 } from './factory.js';
-import { ItemFluffFile } from './types/items.js';
+import { ItemFluffFile, MagicVariantFile } from './types/items.js';
 import { SpellFile, SpellFileEntry, SpellFluffFile } from './types/spells.js';
 import { tagParser } from './contentGen.js';
 (async () => {
@@ -44,6 +45,14 @@ import { tagParser } from './contentGen.js';
     const { en: itemFileEn, zh: itemFileZh } = await loadFile('items.json');
     itemMgr.loadData(itemFileZh, itemFileEn);
     await itemMgr.generateFiles();
+
+    // 基本数据：变体物品
+    const { en: magicVariantEn, zh: magicVariantZh } = await loadFile('magicvariants.json');
+    magicVariantMgr.loadData(
+        magicVariantZh as MagicVariantFile,
+        magicVariantEn as MagicVariantFile
+    );
+    await magicVariantMgr.generateFiles();
 
     // 法术
     await spellMgr.loadSources('./input/5e-en/data/spells/sources.json');
