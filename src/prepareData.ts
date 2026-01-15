@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import { inspect } from 'node:util';
 import { loadFile } from './config.js';
 import {
     logger,
@@ -17,21 +18,37 @@ import {
 import { ItemFluffFile, MagicVariantFile } from './types/items.js';
 import { SpellFile, SpellFileEntry, SpellFluffFile } from './types/spells.js';
 import { tagParser } from './contentGen.js';
+(process as NodeJS.Process).on('unhandledRejection', reason => {
+    console.error('[prepareData] unhandledRejection');
+    console.error(inspect(reason, { depth: 8, showHidden: true }));
+});
+(process as NodeJS.Process).on('uncaughtException', error => {
+    console.error('[prepareData] uncaughtException');
+    console.error(inspect(error, { depth: 8, showHidden: true }));
+});
 (async () => {
+    let step = 'init';
+    const logStep = (label: string) => {
+        step = label;
+        console.log(`[prepareData] ${label}`);
+    };
     await createOutputFolders();
 
     // 基本数据：书
+    logStep('books');
     const { en: bookEn, zh: bookZh } = await loadFile('books.json');
     bookMgr.loadData(bookZh, bookEn);
     await bookMgr.generateFiles();
 
     // 基本数据：特性
+    logStep('feats');
     const { en: featEn, zh: featZh } = await loadFile('feats.json');
 
     featMgr.loadData(featZh, featEn);
     await featMgr.generateFiles();
 
     // 基本数据：基础物品
+    logStep('items-base');
     const { en: itemEn, zh: itemZh } = await loadFile('items-base.json');
     const { en: itemFluffEn, zh: itemFluffZh } = await loadFile('fluff-items.json');
     itemFluffMgr.loadData(itemFluffZh as ItemFluffFile, itemFluffEn as ItemFluffFile);
@@ -42,11 +59,13 @@ import { tagParser } from './contentGen.js';
     baseItemMgr.loadData(itemZh, itemEn);
     await baseItemMgr.generateFiles();
     // 基本数据：物品
+    logStep('items');
     const { en: itemFileEn, zh: itemFileZh } = await loadFile('items.json');
     itemMgr.loadData(itemFileZh, itemFileEn);
     await itemMgr.generateFiles();
 
     // 基本数据：变体物品
+    logStep('magicvariants');
     const { en: magicVariantEn, zh: magicVariantZh } = await loadFile('magicvariants.json');
     magicVariantMgr.loadData(
         magicVariantZh as MagicVariantFile,
@@ -55,6 +74,7 @@ import { tagParser } from './contentGen.js';
     await magicVariantMgr.generateFiles();
 
     // 法术
+    logStep('spells');
     await spellMgr.loadSources('./input/5e-en/data/spells/sources.json');
     const { en: fluffIndexEn = {}, zh: fluffIndexZh = {} } = (await loadFile(
         './spells/fluff-index.json'
@@ -94,7 +114,11 @@ import { tagParser } from './contentGen.js';
     await spellMgr.generateFiles();
 
     // 生成日志文件
+    logStep('finalize');
     await logger.generateFile();
     await idMgr.generateFiles();
     await tagParser.generateFiles();
-})();
+})().catch(error => {
+    console.error('[prepareData] failed');
+    console.error(inspect(error, { depth: 8, showHidden: true }));
+});

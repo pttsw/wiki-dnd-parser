@@ -94,6 +94,101 @@ export const normalizeReprintedAs = (
     );
 };
 
+const mergeLocalized = <T>(en: T, zh?: Partial<T> | null): T => {
+    if (!zh) return en;
+    if (Array.isArray(en) || Array.isArray(zh)) {
+        return (zh ?? en) as T;
+    }
+    if (
+        en &&
+        typeof en === 'object' &&
+        zh &&
+        typeof zh === 'object' &&
+        !Array.isArray(en) &&
+        !Array.isArray(zh)
+    ) {
+        const result: any = { ...(en as any) };
+        for (const [key, zhValue] of Object.entries(zh)) {
+            if (zhValue === undefined) continue;
+            const enValue = (en as any)[key];
+            if (
+                enValue &&
+                typeof enValue === 'object' &&
+                !Array.isArray(enValue) &&
+                zhValue &&
+                typeof zhValue === 'object' &&
+                !Array.isArray(zhValue)
+            ) {
+                result[key] = mergeLocalized(enValue, zhValue as any);
+            } else {
+                result[key] = zhValue;
+            }
+        }
+        return result as T;
+    }
+    return (zh ?? en) as T;
+};
+
+const buildWeaponBlock = (item: ItemFileEntry | ItemGroup) => {
+    const raw = item as ItemFileEntry;
+    const hasKey = (key: keyof ItemFileEntry) => raw[key] !== undefined;
+    const boolKeys: (keyof ItemFileEntry)[] = [
+        'firearm',
+        'sword',
+        'rapier',
+        'crossbow',
+        'axe',
+        'staff',
+        'club',
+        'spear',
+        'dagger',
+        'hammer',
+        'bow',
+        'mace',
+        'polearm',
+        'lance',
+    ];
+    const keysToCheck: (keyof ItemFileEntry)[] = [
+        'weaponCategory',
+        'dmg1',
+        'dmg2',
+        'dmgType',
+        'range',
+        'reload',
+        'ammoType',
+        'property',
+        'mastery',
+        'packContents',
+        ...boolKeys,
+    ];
+    const shouldBuild = keysToCheck.some(key => hasKey(key));
+    if (!shouldBuild) return undefined;
+
+    const weaponBlock: any = {};
+    if (raw.weaponCategory) {
+        weaponBlock.category = raw.weaponCategory;
+        weaponBlock.weaponCategory = raw.weaponCategory;
+    }
+    if (hasKey('dmg1')) weaponBlock.dmg1 = raw.dmg1;
+    if (hasKey('dmg2')) weaponBlock.dmg2 = raw.dmg2;
+    if (hasKey('dmgType')) weaponBlock.dmgType = raw.dmgType;
+    const dmgs = [raw.dmg1, raw.dmg2].filter(d => d !== undefined) as string[];
+    if (dmgs.length > 0) weaponBlock.dmgs = dmgs;
+    if (raw.range) {
+        const [min, max] = raw.range.split('/');
+        weaponBlock.range = { min: Number(min), max: Number(max) };
+    }
+    if (hasKey('reload')) weaponBlock.reload = raw.reload;
+    if (hasKey('ammoType')) weaponBlock.ammoType = raw.ammoType;
+    if (hasKey('property')) weaponBlock.property = raw.property;
+    if (hasKey('mastery')) weaponBlock.mastery = raw.mastery;
+    if (hasKey('packContents')) weaponBlock.packContents = raw.packContents;
+    for (const key of boolKeys) {
+        if (hasKey(key)) weaponBlock[key] = raw[key];
+    }
+    return weaponBlock;
+};
+
 class Logger {
     logs: {
         source: string;
@@ -914,6 +1009,10 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
             const allSources = buildAllSources(collectRelatedIds(id));
 
+            const enEntries = enItem.entries ?? [];
+            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
+            const zhEntries = zhMerged?.entries ?? enEntries;
+
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
@@ -937,33 +1036,19 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhItem
+                zh: zhMerged
                     ? {
-
-                        name: zhItem.name,
-                        entries: zhItem.entries || [],
-                        html: parseContent(zhItem.entries || []),
+                        ...zhMerged,
+                        entries: zhEntries,
+                        html: parseContent(zhEntries),
                     }
                     : null,
                 en: {
-                    name: enItem.name,
-                    entries: enItem.entries || [],
-                    html: parseContent(enItem.entries || []),
+                    ...enItem,
+                    entries: enEntries,
+                    html: parseContent(enEntries),
                 },
-                weapon: enItem.weapon
-                    ? {
-                        category: enItem.weaponCategory!,
-                        dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
-                        dmgType: enItem.dmgType!,
-                        range: (() => {
-                            if (!enItem.range) return undefined;
-                            const [min, max] = enItem.range?.split('/');
-                            return { min: Number(min), max: Number(max) };
-                        })(),
-                        reload: enItem.reload,
-                        ammoType: enItem.ammoType,
-                    }
-                    : undefined,
+                weapon: buildWeaponBlock(enItem),
                 armor: enItem.armor
                     ? {
                         ac: enItem.ac,
@@ -1150,6 +1235,10 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
             const allSources = buildAllSources(collectRelatedIds(id));
 
+            const enEntries = enItem.entries ?? [];
+            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
+            const zhEntries = zhMerged?.entries ?? enEntries;
+
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id} `,
@@ -1175,34 +1264,20 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhItem
-
+                zh: zhMerged
                     ? {
-                        name: zhItem.name,
-                        entries: zhItem.entries || [],
-                        html: parseContent(zhItem.entries || []),
+                        ...zhMerged,
+                        entries: zhEntries,
+                        html: parseContent(zhEntries),
                     }
                     : null,
                 en: {
-                    name: enItem.name,
-                    entries: enItem.entries || [],
-                    html: parseContent(enItem.entries || []),
+                    ...enItem,
+                    entries: enEntries,
+                    html: parseContent(enEntries),
                 },
 
-                weapon: enItem.weapon
-                    ? {
-                        category: enItem.weaponCategory!,
-                        dmgs: [enItem.dmg1, enItem.dmg2].filter(d => d !== undefined) || [],
-                        dmgType: enItem.dmgType!,
-                        range: (() => {
-                            if (!enItem.range) return undefined;
-                            const [min, max] = enItem.range?.split('/');
-                            return { min: Number(min), max: Number(max) };
-                        })(),
-                        reload: enItem.reload,
-                        ammoType: enItem.ammoType,
-                    }
-                    : undefined,
+                weapon: buildWeaponBlock(enItem),
                 armor: enItem.armor
                     ? {
                         ac: enItem.ac,
@@ -1378,6 +1453,12 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const source = this.getSource(enItem);
             const allSources = buildAllSources(collectRelatedIds(id));
 
+            const enEntries = this.getEntries(enItem) ?? [];
+            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
+            const zhEntries = zhMerged
+                ? this.getEntries(zhMerged) ?? enEntries
+                : enEntries;
+
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
@@ -1398,17 +1479,17 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhItem
+                zh: zhMerged
                     ? {
-                        name: zhItem.name,
-                        entries: this.getEntries(zhItem),
-                        html: parseContent(this.getEntries(zhItem)),
+                        ...zhMerged,
+                        entries: zhEntries,
+                        html: parseContent(zhEntries),
                     }
                     : null,
                 en: {
-                    name: enItem.name,
-                    entries: this.getEntries(enItem),
-                    html: parseContent(this.getEntries(enItem)),
+                    ...enItem,
+                    entries: enEntries,
+                    html: parseContent(enEntries),
                 },
             };
 
@@ -1581,6 +1662,9 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
             const relatedIds = collectRelatedIds(id);
+            const enEntries = enSpell.entries ?? [];
+            const zhMerged = zhSpell ? mergeLocalized(enSpell, zhSpell) : null;
+            const zhEntries = zhMerged?.entries ?? enEntries;
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
@@ -1597,27 +1681,15 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 allSources: buildAllSources(relatedIds),
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
                 en: {
-                    name: enSpell.name,
-                    alias: enSpell.alias || [],
-                    components: enSpell.components,
-                    duration: enSpell.duration,
-                    range: enSpell.range,
-                    time: enSpell.time,
-                    entries: enSpell.entries,
-                    entriesHigherLevel: enSpell.entriesHigherLevel,
-                    scalingLevelDice: enSpell.scalingLevelDice,
+                    ...enSpell,
+                    entries: enEntries,
+                    html: parseContent(enEntries),
                 },
-                zh: zhSpell
+                zh: zhMerged
                     ? {
-                        name: zhSpell.name,
-                        alias: zhSpell.alias || [],
-                        components: zhSpell.components,
-                        duration: zhSpell.duration,
-                        range: zhSpell.range,
-                        time: zhSpell.time,
-                        entries: zhSpell.entries,
-                        entriesHigherLevel: zhSpell.entriesHigherLevel,
-                        scalingLevelDice: zhSpell.scalingLevelDice,
+                        ...zhMerged,
+                        entries: zhEntries,
+                        html: parseContent(zhEntries),
                     }
                     : null,
                 level: enSpell.level,

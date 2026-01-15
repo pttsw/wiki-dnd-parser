@@ -331,12 +331,8 @@ export type ItemFluffFile = {
 };
 
 // 维基用数据
-export type WikiItemEntry = {
-    name: string;
-    weightNote?: string;
-    entries: ParagraphGroup;
-    additionalEntries?: ParagraphGroup;
-    html: string;
+export type WikiItemEntry = (ItemFileEntry | ItemGroup | MagicVariantEntry) & {
+    html?: string;
 };
 
 export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
@@ -357,12 +353,32 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
         zh?: ItemFluffContent;
     };
     weapon?: {
-        category: string; // 简易武器（simple）和军用武器（martial）
-        dmgs: string[]; // 由原始数据中的dmg1,dmg2等生成。掷骰公式。
-        dmgType: string; // 伤害类型，S,B,O,P
+        category?: string; // 简易武器（simple）和军用武器（martial）
+        weaponCategory?: string;
+        dmgs?: string[]; // 由原始数据中的dmg1,dmg2等生成。掷骰公式。
+        dmg1?: string;
+        dmg2?: string;
+        dmgType?: string; // 伤害类型，S,B,O,P
         range?: { min: number; max: number }; // 最小射程和最大射程。由原始数据的字符串拆分而来。
         reload?: number; // 弹仓大小。出现于枪械武器。
         ammoType?: string; // 使用的弹药类型
+        property?: (string | { uid: string; note?: string })[];
+        mastery?: string[];
+        packContents?: ItemListEntry[];
+        firearm?: boolean;
+        sword?: boolean;
+        rapier?: boolean;
+        crossbow?: boolean;
+        axe?: boolean;
+        staff?: boolean;
+        club?: boolean;
+        spear?: boolean;
+        dagger?: boolean;
+        hammer?: boolean;
+        bow?: boolean;
+        mace?: boolean;
+        polearm?: boolean;
+        lance?: boolean;
     };
     armor?: {
         ac?: number; // 护甲等级。如原始无数据则为0。

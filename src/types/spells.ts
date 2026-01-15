@@ -101,28 +101,8 @@ export type SpellFluffFile = {
     spellFluff: SpellFluffEntry[];
 };
 
-export type WikiSpellEntry = {
-    name: string;
-    alias: string[];
-    time: { number: number; unit: string; condition?: string }[];
-    range: { type: string; distance?: { type: string; amount?: number } };
-    components: {
-        v?: boolean;
-        s?: boolean;
-        m?: string | { text: string; cost?: number; consume?: boolean | string };
-    };
-    duration: {
-        type: string;
-        duration?: { type: string; amount: number; upTo?: boolean };
-        concentration?: boolean;
-        ends?: string[];
-    }[];
-    entries: ParagraphGroup;
-    entriesHigherLevel?: ParagraphGroup;
-    scalingLevelDice?: {
-        label: string;
-        scaling: Record<string, string>;
-    };
+export type WikiSpellEntry = SpellFileEntry & {
+    html?: string;
 };
 
 export type SpellClassEntry = {
