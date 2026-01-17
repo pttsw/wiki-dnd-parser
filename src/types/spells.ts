@@ -101,7 +101,7 @@ export type SpellFluffFile = {
     spellFluff: SpellFluffEntry[];
 };
 
-export type WikiSpellEntry = SpellFileEntry & {
+export type WikiSpellEntry = Partial<SpellFileEntry> & {
     html?: string;
 };
 

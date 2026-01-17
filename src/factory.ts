@@ -28,6 +28,12 @@ import {
 } from './types/items';
 import { parseContent } from './contentGen.js';
 import { mwUtil } from './config.js';
+import {
+    buildGroupedBlock,
+    classifyI18nKeys,
+    i18nKeyRules,
+    splitRecordByI18n,
+} from './i18n.js';
 import * as XSLX from 'xlsx';
 import {
     SpellClassEntry,
@@ -94,99 +100,22 @@ export const normalizeReprintedAs = (
     );
 };
 
-const mergeLocalized = <T>(en: T, zh?: Partial<T> | null): T => {
-    if (!zh) return en;
-    if (Array.isArray(en) || Array.isArray(zh)) {
-        return (zh ?? en) as T;
+const applyWeaponDerived = (
+    block: Record<string, any> | undefined,
+    item: ItemFileEntry
+) => {
+    if (!block) return;
+    if (item.weaponCategory && block.category === undefined) {
+        block.category = item.weaponCategory;
     }
-    if (
-        en &&
-        typeof en === 'object' &&
-        zh &&
-        typeof zh === 'object' &&
-        !Array.isArray(en) &&
-        !Array.isArray(zh)
-    ) {
-        const result: any = { ...(en as any) };
-        for (const [key, zhValue] of Object.entries(zh)) {
-            if (zhValue === undefined) continue;
-            const enValue = (en as any)[key];
-            if (
-                enValue &&
-                typeof enValue === 'object' &&
-                !Array.isArray(enValue) &&
-                zhValue &&
-                typeof zhValue === 'object' &&
-                !Array.isArray(zhValue)
-            ) {
-                result[key] = mergeLocalized(enValue, zhValue as any);
-            } else {
-                result[key] = zhValue;
-            }
-        }
-        return result as T;
+    const dmgs = [item.dmg1, item.dmg2].filter(d => d !== undefined) as string[];
+    if (dmgs.length > 0 && block.dmgs === undefined) {
+        block.dmgs = dmgs;
     }
-    return (zh ?? en) as T;
-};
-
-const buildWeaponBlock = (item: ItemFileEntry | ItemGroup) => {
-    const raw = item as ItemFileEntry;
-    const hasKey = (key: keyof ItemFileEntry) => raw[key] !== undefined;
-    const boolKeys: (keyof ItemFileEntry)[] = [
-        'firearm',
-        'sword',
-        'rapier',
-        'crossbow',
-        'axe',
-        'staff',
-        'club',
-        'spear',
-        'dagger',
-        'hammer',
-        'bow',
-        'mace',
-        'polearm',
-        'lance',
-    ];
-    const keysToCheck: (keyof ItemFileEntry)[] = [
-        'weaponCategory',
-        'dmg1',
-        'dmg2',
-        'dmgType',
-        'range',
-        'reload',
-        'ammoType',
-        'property',
-        'mastery',
-        'packContents',
-        ...boolKeys,
-    ];
-    const shouldBuild = keysToCheck.some(key => hasKey(key));
-    if (!shouldBuild) return undefined;
-
-    const weaponBlock: any = {};
-    if (raw.weaponCategory) {
-        weaponBlock.category = raw.weaponCategory;
-        weaponBlock.weaponCategory = raw.weaponCategory;
+    if (item.range && block.range === undefined) {
+        const [min, max] = item.range.split('/');
+        block.range = { min: Number(min), max: Number(max) };
     }
-    if (hasKey('dmg1')) weaponBlock.dmg1 = raw.dmg1;
-    if (hasKey('dmg2')) weaponBlock.dmg2 = raw.dmg2;
-    if (hasKey('dmgType')) weaponBlock.dmgType = raw.dmgType;
-    const dmgs = [raw.dmg1, raw.dmg2].filter(d => d !== undefined) as string[];
-    if (dmgs.length > 0) weaponBlock.dmgs = dmgs;
-    if (raw.range) {
-        const [min, max] = raw.range.split('/');
-        weaponBlock.range = { min: Number(min), max: Number(max) };
-    }
-    if (hasKey('reload')) weaponBlock.reload = raw.reload;
-    if (hasKey('ammoType')) weaponBlock.ammoType = raw.ammoType;
-    if (hasKey('property')) weaponBlock.property = raw.property;
-    if (hasKey('mastery')) weaponBlock.mastery = raw.mastery;
-    if (hasKey('packContents')) weaponBlock.packContents = raw.packContents;
-    for (const key of boolKeys) {
-        if (hasKey(key)) weaponBlock[key] = raw[key];
-    }
-    return weaponBlock;
 };
 
 class Logger {
@@ -947,6 +876,19 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
         for (const enItem of en.baseitem) {
             itemMap.set(this.getId(enItem), enItem);
         }
+        const zhMap = new Map<string, ItemFileEntry>();
+        for (const zhItem of zh.baseitem) {
+            zhMap.set(this.getId(zhItem), zhItem);
+        }
+        const allIds = new Set<string>([
+            ...itemMap.keys(),
+            ...zhMap.keys(),
+        ]);
+        const pairs = [...allIds].map(id => ({
+            en: itemMap.get(id) || null,
+            zh: zhMap.get(id) || null,
+        }));
+        const keySets = classifyI18nKeys(pairs, i18nKeyRules);
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -1009,17 +951,69 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
             const allSources = buildAllSources(collectRelatedIds(id));
 
-            const enEntries = enItem.entries ?? [];
-            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
-            const zhEntries = zhMerged?.entries ?? enEntries;
+            const split = splitRecordByI18n(enItem, zhItem, keySets, {
+                emptyZhValue: '',
+                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+            });
+            const weaponGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.weaponKeys,
+                keySets.localizedKeys,
+                ''
+            );
+            const armorGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.armorKeys,
+                keySets.localizedKeys,
+                ''
+            );
+
+            const common = { ...split.common };
+            if (weaponGroup.common) {
+                applyWeaponDerived(weaponGroup.common, enItem);
+                common.weapon = weaponGroup.common;
+            }
+            if (armorGroup.common) {
+                common.armor = armorGroup.common;
+            }
+
+            const enOut = { ...split.en };
+            if (weaponGroup.en) {
+                applyWeaponDerived(weaponGroup.en, enItem);
+                enOut.weapon = weaponGroup.en;
+            }
+            if (armorGroup.en) {
+                enOut.armor = armorGroup.en;
+            }
+            const zhOut = { ...split.zh };
+            if (weaponGroup.zh) {
+                applyWeaponDerived(weaponGroup.zh, enItem);
+                zhOut.weapon = weaponGroup.zh;
+            }
+            if (armorGroup.zh) {
+                zhOut.armor = armorGroup.zh;
+            }
+
+            const enEntries = enOut.entries ?? [];
+            if (Array.isArray(enEntries)) {
+                enOut.html = parseContent(enEntries);
+            } else if (enEntries === '') {
+                enOut.html = '';
+            }
+            const zhEntries = zhOut.entries;
+            if (Array.isArray(zhEntries)) {
+                zhOut.html = parseContent(zhEntries);
+            } else if (zhEntries === '') {
+                zhOut.html = '';
+            }
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
-                weight: enItem.weight,
-                value: enItem.value || undefined,
-                rarity: enItem.rarity,
+                ...common,
                 isBaseItem: true,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
@@ -1036,25 +1030,8 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhMerged
-                    ? {
-                        ...zhMerged,
-                        entries: zhEntries,
-                        html: parseContent(zhEntries),
-                    }
-                    : null,
-                en: {
-                    ...enItem,
-                    entries: enEntries,
-                    html: parseContent(enEntries),
-                },
-                weapon: buildWeaponBlock(enItem),
-                armor: enItem.armor
-                    ? {
-                        ac: enItem.ac,
-                        maxDexterty: enItem.dexterityMax === null ? true : false,
-                    }
-                    : undefined,
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+                en: enOut,
                 charge: enItem.charges
                     ? {
                         max: enItem.charges,
@@ -1123,9 +1100,6 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
         const enItems = [...(en.item || []), ...(en.itemGroup || [])];
         const zhItems = [...(zh.item || []), ...(zh.itemGroup || [])];
-        const isItemGroup = (
-            item: ItemFileEntry | ItemGroup
-        ): item is ItemGroup => Array.isArray((item as ItemGroup).items);
 
         idMgr.compare(
             'item',
@@ -1153,6 +1127,19 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         for (const enItem of enItems) {
             itemMap.set(this.getId(enItem), enItem);
         }
+        const zhMap = new Map<string, ItemFileEntry | ItemGroup>();
+        for (const zhItem of zhItems) {
+            zhMap.set(this.getId(zhItem), zhItem);
+        }
+        const allIds = new Set<string>([
+            ...itemMap.keys(),
+            ...zhMap.keys(),
+        ]);
+        const pairs = [...allIds].map(id => ({
+            en: itemMap.get(id) || null,
+            zh: zhMap.get(id) || null,
+        }));
+        const keySets = classifyI18nKeys(pairs, i18nKeyRules);
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -1208,48 +1195,78 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             if (!zhItem) {
                 logger.log('ItemMgr', `${id}: 未找到中文版本的物品：${enItem.name} `);
             }
-            let baseItem: ItemFileEntry | undefined;
-            if (enItem.baseItem?.includes('|')) {
-                const [baseId, source] = enItem.baseItem.split('|').map(s => s.trim());
-                baseItem = this.baseItems.raw.en?.baseitem.find(
-                    i =>
-                        i.name.toLowerCase() === baseId.toLowerCase() &&
-                        i.source.toLowerCase() === source.toLowerCase()
-                );
-            } else {
-                baseItem = this.baseItems.raw.en?.baseitem.find(
-                    i => i.name.toLowerCase() === enItem.baseItem?.toLowerCase()
-                );
-            }
-
             // 收集所有相关版本
             const relatedVersions = new Set<string>();
             normalizeReprintedAs(enItem.reprintedAs).forEach(t => relatedVersions.add(t));
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
-            const groupItems = isItemGroup(enItem)
-                ? zhItem && isItemGroup(zhItem)
-                    ? zhItem.items
-                    : enItem.items
-                : undefined;
-
             const allSources = buildAllSources(collectRelatedIds(id));
 
-            const enEntries = enItem.entries ?? [];
-            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
-            const zhEntries = zhMerged?.entries ?? enEntries;
+            const split = splitRecordByI18n(enItem, zhItem, keySets, {
+                emptyZhValue: '',
+                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+            });
+            const weaponGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.weaponKeys,
+                keySets.localizedKeys,
+                ''
+            );
+            const armorGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.armorKeys,
+                keySets.localizedKeys,
+                ''
+            );
+
+            const common = { ...split.common };
+            if (weaponGroup.common) {
+                applyWeaponDerived(weaponGroup.common, enItem);
+                common.weapon = weaponGroup.common;
+            }
+            if (armorGroup.common) {
+                common.armor = armorGroup.common;
+            }
+
+            const enOut = { ...split.en };
+            if (weaponGroup.en) {
+                applyWeaponDerived(weaponGroup.en, enItem);
+                enOut.weapon = weaponGroup.en;
+            }
+            if (armorGroup.en) {
+                enOut.armor = armorGroup.en;
+            }
+            const zhOut = { ...split.zh };
+            if (weaponGroup.zh) {
+                applyWeaponDerived(weaponGroup.zh, enItem);
+                zhOut.weapon = weaponGroup.zh;
+            }
+            if (armorGroup.zh) {
+                zhOut.armor = armorGroup.zh;
+            }
+
+            const enEntries = enOut.entries ?? [];
+            if (Array.isArray(enEntries)) {
+                enOut.html = parseContent(enEntries);
+            } else if (enEntries === '') {
+                enOut.html = '';
+            }
+            const zhEntries = zhOut.entries;
+            if (Array.isArray(zhEntries)) {
+                zhOut.html = parseContent(zhEntries);
+            } else if (zhEntries === '') {
+                zhOut.html = '';
+            }
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id} `,
                 id: id,
-                weight: enItem.weight,
-                value: enItem.value || undefined,
-                rarity: enItem.rarity,
+                ...common,
                 isBaseItem: false,
                 full: itemFluffMgr.getFull(id),
-                baseItem: enItem.baseItem || '',
-                items: groupItems,
                 displayName: {
                     zh: (() => {
                         if (!zhItem) return null;
@@ -1264,26 +1281,9 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhMerged
-                    ? {
-                        ...zhMerged,
-                        entries: zhEntries,
-                        html: parseContent(zhEntries),
-                    }
-                    : null,
-                en: {
-                    ...enItem,
-                    entries: enEntries,
-                    html: parseContent(enEntries),
-                },
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+                en: enOut,
 
-                weapon: buildWeaponBlock(enItem),
-                armor: enItem.armor
-                    ? {
-                        ac: enItem.ac,
-                        maxDexterty: enItem.dexterityMax === null ? true : false,
-                    }
-                    : undefined,
                 charge: enItem.charges
                     ? {
                         max: enItem.charges,
@@ -1389,6 +1389,19 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         for (const enItem of this.raw.en) {
             variantMap.set(this.getId(enItem), enItem);
         }
+        const zhMap = new Map<string, MagicVariantEntry>();
+        for (const zhItem of this.raw.zh) {
+            zhMap.set(this.getId(zhItem), zhItem);
+        }
+        const allIds = new Set<string>([
+            ...variantMap.keys(),
+            ...zhMap.keys(),
+        ]);
+        const pairs = [...allIds].map(id => ({
+            en: variantMap.get(id) || null,
+            zh: zhMap.get(id) || null,
+        }));
+        const keySets = classifyI18nKeys(pairs, i18nKeyRules);
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -1452,17 +1465,75 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
             const source = this.getSource(enItem);
             const allSources = buildAllSources(collectRelatedIds(id));
+            const split = splitRecordByI18n(enItem, zhItem, keySets, {
+                emptyZhValue: '',
+                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+            });
+            const weaponGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.weaponKeys,
+                keySets.localizedKeys,
+                ''
+            );
+            const armorGroup = buildGroupedBlock(
+                enItem,
+                zhItem,
+                i18nKeyRules.armorKeys,
+                keySets.localizedKeys,
+                ''
+            );
 
-            const enEntries = this.getEntries(enItem) ?? [];
-            const zhMerged = zhItem ? mergeLocalized(enItem, zhItem) : null;
-            const zhEntries = zhMerged
-                ? this.getEntries(zhMerged) ?? enEntries
-                : enEntries;
+            const common = { ...split.common };
+            if (weaponGroup.common) {
+                common.weapon = weaponGroup.common;
+            }
+            if (armorGroup.common) {
+                common.armor = armorGroup.common;
+            }
+
+            const enOut = { ...split.en };
+            if (weaponGroup.en) {
+                enOut.weapon = weaponGroup.en;
+            }
+            if (armorGroup.en) {
+                enOut.armor = armorGroup.en;
+            }
+            const zhOut = { ...split.zh };
+            if (weaponGroup.zh) {
+                zhOut.weapon = weaponGroup.zh;
+            }
+            if (armorGroup.zh) {
+                zhOut.armor = armorGroup.zh;
+            }
+
+            const enEntries = enOut.entries ?? this.getEntries(enItem) ?? [];
+            if (Array.isArray(enEntries)) {
+                enOut.entries = enEntries;
+                enOut.html = parseContent(enEntries);
+            } else if (enEntries === '') {
+                enOut.entries = enEntries;
+                enOut.html = '';
+            }
+            const zhEntries =
+                zhOut.entries !== undefined
+                    ? zhOut.entries
+                    : zhItem
+                        ? this.getEntries(zhItem)
+                        : '';
+            if (Array.isArray(zhEntries)) {
+                zhOut.entries = zhEntries;
+                zhOut.html = parseContent(zhEntries);
+            } else if (zhEntries === '') {
+                zhOut.entries = zhEntries;
+                zhOut.html = '';
+            }
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
+                ...common,
                 rarity: enItem.inherits?.rarity || enItem.rarity,
                 isBaseItem: false,
                 displayName: {
@@ -1479,18 +1550,8 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 },
                 allSources,
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: zhMerged
-                    ? {
-                        ...zhMerged,
-                        entries: zhEntries,
-                        html: parseContent(zhEntries),
-                    }
-                    : null,
-                en: {
-                    ...enItem,
-                    entries: enEntries,
-                    html: parseContent(enEntries),
-                },
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+                en: enOut,
             };
 
             this.db.set(id, itemData);
@@ -1588,6 +1649,19 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         for (const enSpell of this.raw.en) {
             spellMap.set(this.getId(enSpell), enSpell);
         }
+        const zhMap = new Map<string, SpellFileEntry>();
+        for (const zhSpell of this.raw.zh) {
+            zhMap.set(this.getId(zhSpell), zhSpell);
+        }
+        const allIds = new Set<string>([
+            ...spellMap.keys(),
+            ...zhMap.keys(),
+        ]);
+        const pairs = [...allIds].map(id => ({
+            en: spellMap.get(id) || null,
+            zh: zhMap.get(id) || null,
+        }));
+        const keySets = classifyI18nKeys(pairs, i18nKeyRules);
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -1662,14 +1736,40 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             this.reprintMap.get(id)?.forEach(s => relatedVersions.add(s));
 
             const relatedIds = collectRelatedIds(id);
-            const enEntries = enSpell.entries ?? [];
-            const zhMerged = zhSpell ? mergeLocalized(enSpell, zhSpell) : null;
-            const zhEntries = zhMerged?.entries ?? enEntries;
+            const split = splitRecordByI18n(enSpell, zhSpell, keySets, {
+                emptyZhValue: '',
+            });
+            const common = { ...split.common };
+            const enOut = { ...split.en };
+            const zhOut = { ...split.zh };
+
+            const enEntries = enOut.entries ?? enSpell.entries ?? [];
+            if (Array.isArray(enEntries)) {
+                enOut.entries = enEntries;
+                enOut.html = parseContent(enEntries);
+            } else if (enEntries === '') {
+                enOut.entries = enEntries;
+                enOut.html = '';
+            }
+            const zhEntries =
+                zhOut.entries !== undefined
+                    ? zhOut.entries
+                    : zhSpell
+                        ? zhSpell.entries
+                        : '';
+            if (Array.isArray(zhEntries)) {
+                zhOut.entries = zhEntries;
+                zhOut.html = parseContent(zhEntries);
+            } else if (zhEntries === '') {
+                zhOut.entries = zhEntries;
+                zhOut.html = '';
+            }
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
                 uid: `spell_${id}`,
                 id: id,
+                ...common,
                 displayName: {
                     zh: zhSpell ? zhSpell.name : null,
                     en: enSpell.name,
@@ -1680,18 +1780,8 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 },
                 allSources: buildAllSources(relatedIds),
                 relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                en: {
-                    ...enSpell,
-                    entries: enEntries,
-                    html: parseContent(enEntries),
-                },
-                zh: zhMerged
-                    ? {
-                        ...zhMerged,
-                        entries: zhEntries,
-                        html: parseContent(zhEntries),
-                    }
-                    : null,
+                en: enOut,
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
                 level: enSpell.level,
                 school: enSpell.school,
                 spellAttack: enSpell.spellAttack || [],
