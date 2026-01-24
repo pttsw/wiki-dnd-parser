@@ -8,7 +8,7 @@ const getTimestamp = () => {
 };
 
 /**
- * 将特定repo的data/data-bak目录克隆到目标路径。
+ * 将特定repo的data/data-bak/js目录克隆到目标路径。
  * @param repoUrl 仓库地址，例如 https://github.com/tjliqy/5etools-mirror-2.github.io.git
  * @param targetPaths 目标路径，例如 { zh: './input/5e-cn', en: './input/5e-en' }
  * @param branch 分支名（可选），默认使用仓库默认分支
@@ -48,24 +48,29 @@ const getRepoData = async (
         ];
         execSync(`git ${cloneArgs.join(' ')}`, { stdio: 'inherit' });
 
-        console.log(`[${getTimestamp()}] 配置选择性检出(sparse-checkout)，仅下载data/data-bak目录...`);
+        console.log(`[${getTimestamp()}] 配置选择性检出(sparse-checkout)，仅下载data/data-bak/js目录...`);
         // 在tempDir执行git命令（而不是项目根目录）
         // sparse-checkout 仅checkout特定目录，包含init,set,checkout三步
         execSync(`git -C ${tempDir} sparse-checkout init --cone`, { stdio: 'inherit' });
-        execSync(`git -C ${tempDir} sparse-checkout set data data-bak`, { stdio: 'inherit' });
+        execSync(`git -C ${tempDir} sparse-checkout set data data-bak js`, { stdio: 'inherit' });
         execSync(`git -C ${tempDir} checkout`, { stdio: 'inherit' });
 
         console.log(`[${getTimestamp()}] 移动数据文件到目标目录...`);
         // 将tempDir的data/data-bak目录移动到目标路径的data子目录（使用rename方法更快），然后删除tempDir
         const zhSourcePath = path.join(tempDir, 'data');
         const enSourcePath = path.join(tempDir, 'data-bak');
+        const jsSourcePath = path.join(tempDir, 'js');
         const zhTargetPath = path.join(targetPaths.zh, 'data');
         const enTargetPath = path.join(targetPaths.en, 'data');
+        const zhJsTargetPath = path.join(targetPaths.zh, 'js');
+        const enJsTargetPath = path.join(targetPaths.en, 'js');
         await fs.rename(zhSourcePath, zhTargetPath);
         await fs.rename(enSourcePath, enTargetPath);
+        await fs.cp(jsSourcePath, zhJsTargetPath, { recursive: true });
+        await fs.cp(jsSourcePath, enJsTargetPath, { recursive: true });
         await fs.rm(tempDir, { recursive: true, force: true });
         console.log(
-            `[${getTimestamp()}] 数据克隆成功: zh=${zhTargetPath}, en=${enTargetPath}`
+            `[${getTimestamp()}] 数据克隆成功: zh=${zhTargetPath}, en=${enTargetPath}, js=(${zhJsTargetPath}, ${enJsTargetPath})`
         );
     } catch (error) {
         await fs.rm(tempDir, { recursive: true, force: true });
