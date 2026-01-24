@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
+import path from 'node:path';
 import { inspect } from 'node:util';
-import { loadFile } from './config.js';
+import config, { loadFile } from './config.js';
 import {
     logger,
     bookMgr,
@@ -26,6 +27,57 @@ import { tagParser } from './contentGen.js';
     console.error('[prepareData] uncaughtException');
     console.error(inspect(error, { depth: 8, showHidden: true }));
 });
+const resolveParserPath = async (): Promise<string | null> => {
+    const candidates = [
+        path.join(config.DATA_EN_DIR, 'js', 'parser.js'),
+        path.join(path.dirname(config.DATA_EN_DIR), 'js', 'parser.js'),
+    ];
+    for (const candidate of candidates) {
+        try {
+            await fs.access(candidate);
+            return candidate;
+        } catch {
+            // ignore missing candidate
+        }
+    }
+    return null;
+};
+
+const loadLegacySources = async (): Promise<Set<string>> => {
+    const parserPath = await resolveParserPath();
+    if (!parserPath) {
+        console.warn('[prepareData] 未找到 parser.js，跳过 newest 计算。');
+        return new Set();
+    }
+    const parserText = await fs.readFile(parserPath, 'utf-8');
+    const srcValueMap = new Map<string, string>();
+    const srcRegex = /Parser\.SRC_([A-Z0-9_]+)\s*=\s*['"]([^'"]+)['"]/g;
+    let match: RegExpExecArray | null;
+    while ((match = srcRegex.exec(parserText)) !== null) {
+        srcValueMap.set(`Parser.SRC_${match[1]}`, match[2]);
+    }
+
+    const legacyMatch = parserText.match(
+        /Parser\.SOURCES_LEGACY_WOTC\s*=\s*(?:new Set\()?\[([\s\S]*?)\](?:\))?/
+    );
+    if (!legacyMatch) {
+        console.warn('[prepareData] 未找到 Parser.SOURCES_LEGACY_WOTC，跳过 newest 计算。');
+        return new Set();
+    }
+
+    const legacyBlock = legacyMatch[1];
+    const legacyIds = new Set<string>();
+    const srcRefs = legacyBlock.match(/Parser\.SRC_[A-Z0-9_]+/g) || [];
+    for (const ref of srcRefs) {
+        legacyIds.add(srcValueMap.get(ref) ?? ref.replace('Parser.SRC_', ''));
+    }
+    const directRefs = legacyBlock.match(/['"][^'"]+['"]/g) || [];
+    for (const raw of directRefs) {
+        legacyIds.add(raw.slice(1, -1));
+    }
+    return legacyIds;
+};
+
 (async () => {
     let step = 'init';
     const logStep = (label: string) => {
@@ -208,6 +260,11 @@ import { tagParser } from './contentGen.js';
         }
     }
     
+    const legacySources = await loadLegacySources();
+    for (const [sourceId, sourceInfo] of Object.entries(sourceMap)) {
+        sourceInfo.newest = !legacySources.has(sourceId);
+    }
+
     // 输出到 sources.json
     const sourcesOutputPath = './output/collection/sources.json';
     const sourcesOutput = {
