@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import { execSync } from 'child_process';
 import path from 'path';
+import config from './config.js';
 
 const getTimestamp = () => {
     const now = new Date();
@@ -130,7 +131,7 @@ const buildProxyEnv = () => {
 /**
  * 将特定repo的data/data-bak/js目录克隆到目标路径。
  * @param repoUrl 仓库地址，例如 https://github.com/tjliqy/5etools-mirror-2.github.io.git
- * @param targetPaths 目标路径，例如 { zh: './input/5e-cn', en: './input/5e-en' }
+ * @param targetPaths 目标路径，例如 { zh: '<DATA_ZH_DIR父目录>', en: '<DATA_EN_DIR父目录>' }
  * @param branch 分支名（可选），默认使用仓库默认分支
  * @returns
  */
@@ -208,17 +209,21 @@ const getRepoData = async (
 };
 
 (async () => {
+    const zhRoot = path.dirname(config.DATA_ZH_DIR);
+    const enRoot = path.dirname(config.DATA_EN_DIR);
+    const patchedRoot = './input/patched/';
+
     // 预创建目录
-    const paths = ['./input/5e-cn/', './input/5e-en/', './input/patched/'];
-    await fs.rm('./input/', { recursive: true, force: true });
-    for (const path of paths) {
-        await fs.mkdir(path, { recursive: true });
+    const paths = [zhRoot, enRoot, patchedRoot];
+    for (const dirPath of paths) {
+        await fs.rm(dirPath, { recursive: true, force: true });
+        await fs.mkdir(dirPath, { recursive: true });
     }
 
     console.log(`[${getTimestamp()}] 开始克隆中英数据...`);
     await getRepoData('https://github.com/tjliqy/5etools-mirror-2.github.io.git', {
-        zh: './input/5e-cn',
-        en: './input/5e-en',
+        zh: zhRoot,
+        en: enRoot,
     });
     console.log(`[${getTimestamp()}] success`);
 })();

@@ -127,7 +127,7 @@ const loadLegacySources = async (): Promise<Set<string>> => {
 
     // 法术
     logStep('spells');
-    await spellMgr.loadSources('./input/5e-en/data/spells/sources.json');
+    await spellMgr.loadSources(path.join(config.DATA_EN_DIR, 'spells', 'sources.json'));
     const { en: fluffIndexEn = {}, zh: fluffIndexZh = {} } = (await loadFile(
         './spells/fluff-index.json'
     )) as { en?: Record<string, string>; zh?: Record<string, string> };
