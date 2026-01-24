@@ -113,6 +113,109 @@ import { tagParser } from './contentGen.js';
     }
     await spellMgr.generateFiles();
 
+    // 生成来源映射表
+    logStep('sources-mapping');
+    // 加载books.json
+    const { en: sourceBookEn, zh: sourceBookZh } = await loadFile('books.json');
+    // 加载adventures.json
+    const { en: sourceAdventureEn, zh: sourceAdventureZh } = await loadFile('adventures.json');
+    
+    const sourceMap: Record<string, any> = {};
+    
+    // 处理书籍数据
+    logStep('processing books');
+    // 确保 en.book 和 zh.book 是可迭代对象
+    const enBooks = sourceBookEn.book || [];
+    const zhBooks = sourceBookZh.book || [];
+    
+    // 先处理英文书籍，建立基础映射
+    for (const enBook of enBooks) {
+        if (enBook.id && enBook.name && enBook.published) {
+            sourceMap[enBook.id] = {
+                id: enBook.id,
+                source_name: enBook.name,
+                source_published: enBook.published
+            };
+        }
+    }
+    
+    // 再处理中文书籍，补充中文名称
+    for (const zhBook of zhBooks) {
+        if (zhBook.id && zhBook.name) {
+            // 检查name是否是正常字符串，跳过模板字符串
+            const isTemplate = typeof zhBook.name === 'string' && zhBook.name.startsWith('{!@ ');
+            let chineseName = '';
+            if (!isTemplate && typeof zhBook.name === 'string') {
+                chineseName = zhBook.name;
+            }
+            
+            if (sourceMap[zhBook.id]) {
+                if (chineseName) {
+                    sourceMap[zhBook.id].source_zhname = chineseName;
+                }
+            } else {
+                // 如果没有英文对应，仍然添加中文书籍
+                sourceMap[zhBook.id] = {
+                    id: zhBook.id,
+                    source_name: isTemplate ? zhBook.id : zhBook.name,
+                    source_published: zhBook.published || '',
+                    source_zhname: chineseName
+                };
+            }
+        }
+    }
+    
+    // 处理模组数据
+    logStep('processing adventures');
+    // 确保 en.adventure 和 zh.adventure 是可迭代对象
+    const enAdventures = sourceAdventureEn.adventure || [];
+    const zhAdventures = sourceAdventureZh.adventure || [];
+    
+    // 先处理英文模组，建立基础映射
+    for (const enAdventure of enAdventures) {
+        if (enAdventure.id && enAdventure.name && enAdventure.published) {
+            sourceMap[enAdventure.id] = {
+                id: enAdventure.id,
+                source_name: enAdventure.name,
+                source_published: enAdventure.published
+            };
+        }
+    }
+    
+    // 再处理中文模组，补充中文名称
+    for (const zhAdventure of zhAdventures) {
+        if (zhAdventure.id && zhAdventure.name) {
+            // 检查name是否是正常字符串，跳过模板字符串
+            const isTemplate = typeof zhAdventure.name === 'string' && zhAdventure.name.startsWith('{!@ ');
+            let chineseName = '';
+            if (!isTemplate && typeof zhAdventure.name === 'string') {
+                chineseName = zhAdventure.name;
+            }
+            
+            if (sourceMap[zhAdventure.id]) {
+                if (chineseName) {
+                    sourceMap[zhAdventure.id].source_zhname = chineseName;
+                }
+            } else {
+                // 如果没有英文对应，仍然添加中文模组
+                sourceMap[zhAdventure.id] = {
+                    id: zhAdventure.id,
+                    source_name: isTemplate ? zhAdventure.id : zhAdventure.name,
+                    source_published: zhAdventure.published || '',
+                    source_zhname: chineseName
+                };
+            }
+        }
+    }
+    
+    // 输出到 sources.json
+    const sourcesOutputPath = './output/collection/sources.json';
+    const sourcesOutput = {
+        type: 'sources',
+        data: sourceMap
+    };
+    await fs.writeFile(sourcesOutputPath, JSON.stringify(sourcesOutput, null, 2), 'utf-8');
+    
     // 生成日志文件
     logStep('finalize');
     await logger.generateFile();
