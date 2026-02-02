@@ -186,7 +186,8 @@ const loadLegacySources = async (): Promise<Set<string>> => {
             sourceMap[enBook.id] = {
                 id: enBook.id,
                 source_name: enBook.name,
-                source_published: enBook.published
+                source_published: enBook.published,
+                type: 'book'
             };
         }
     }
@@ -211,7 +212,8 @@ const loadLegacySources = async (): Promise<Set<string>> => {
                     id: zhBook.id,
                     source_name: isTemplate ? zhBook.id : zhBook.name,
                     source_published: zhBook.published || '',
-                    source_zhname: chineseName
+                    source_zhname: chineseName,
+                    type: 'book'
                 };
             }
         }
@@ -229,7 +231,8 @@ const loadLegacySources = async (): Promise<Set<string>> => {
             sourceMap[enAdventure.id] = {
                 id: enAdventure.id,
                 source_name: enAdventure.name,
-                source_published: enAdventure.published
+                source_published: enAdventure.published,
+                type: 'adventures'
             };
         }
     }
@@ -254,7 +257,8 @@ const loadLegacySources = async (): Promise<Set<string>> => {
                     id: zhAdventure.id,
                     source_name: isTemplate ? zhAdventure.id : zhAdventure.name,
                     source_published: zhAdventure.published || '',
-                    source_zhname: chineseName
+                    source_zhname: chineseName,
+                    type: 'adventures'
                 };
             }
         }
@@ -265,6 +269,47 @@ const loadLegacySources = async (): Promise<Set<string>> => {
         sourceInfo.newest = !legacySources.has(sourceId);
     }
 
+    // 统计包含法术和物品资源的书籍
+    logStep('统计资源书籍');
+    
+    // 读取法术文件夹，收集包含法术资源的书籍
+    const spellFiles = await fs.readdir('./output/spell');
+    const spellSources = new Set<string>();
+    for (const spellFile of spellFiles) {
+        if (spellFile.endsWith('.json')) {
+            const spellFilePath = path.join('./output/spell', spellFile);
+            const spellData = JSON.parse(await fs.readFile(spellFilePath, 'utf-8'));
+            if (spellData.mainSource && spellData.mainSource.source) {
+                spellSources.add(spellData.mainSource.source);
+            }
+        }
+    }
+    
+    // 读取物品文件夹，收集包含物品资源的书籍
+    const itemFiles = await fs.readdir('./output/item');
+    const itemSources = new Set<string>();
+    for (const itemFile of itemFiles) {
+        if (itemFile.endsWith('.json')) {
+            const itemFilePath = path.join('./output/item', itemFile);
+            const itemData = JSON.parse(await fs.readFile(itemFilePath, 'utf-8'));
+            if (itemData.mainSource && itemData.mainSource.source) {
+                itemSources.add(itemData.mainSource.source);
+            }
+        }
+    }
+    
+    // 更新sourceMap，添加have数组字段
+    for (const [sourceId, sourceInfo] of Object.entries(sourceMap)) {
+        const have = [];
+        if (spellSources.has(sourceId)) {
+            have.push('spell');
+        }
+        if (itemSources.has(sourceId)) {
+            have.push('item');
+        }
+        sourceInfo.have = have;
+    }
+    
     // 输出到 sources.json
     const sourcesOutputPath = './output/collection/sources.json';
     const sourcesOutput = {
