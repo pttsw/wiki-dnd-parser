@@ -4,6 +4,7 @@ import { WikiData } from './wiki';
 export type SpellFileEntry = {
     name: string;
     ENG_name?: string;
+    translator?: string;
     alias?: string[];
     source: string;
     page: number;

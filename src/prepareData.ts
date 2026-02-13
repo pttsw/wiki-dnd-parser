@@ -10,6 +10,7 @@ import {
     itemMgr,
     magicVariantMgr,
     itemPropertyMgr,
+    itemMasteryMgr,
     itemTypeMgr,
     createOutputFolders,
     idMgr,
@@ -108,6 +109,8 @@ const loadLegacySources = async (): Promise<Set<string>> => {
     await itemPropertyMgr.generateFiles();
     itemTypeMgr.loadData(itemZh, itemEn);
     await itemTypeMgr.generateFiles();
+    itemMasteryMgr.loadData(itemZh, itemEn);
+    await itemMasteryMgr.generateFiles();
     baseItemMgr.loadData(itemZh, itemEn);
     await baseItemMgr.generateFiles();
     // 基本数据：物品

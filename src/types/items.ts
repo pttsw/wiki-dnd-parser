@@ -24,6 +24,7 @@ export type ItemFileEntry = ItemSharedProps;
 type ItemSharedProps = {
     name: string; // 名称（会被翻译）
     ENG_name?: string; // 英文名称（如果有）
+    translator?: string; // 翻译来源
     source: string; // 信息来源，这里是一本书的ID
     page?: number; // 页码
     baseItem?: string; // 基础物品，例如“急速弯刀(Scimitar of Speed)”的基础物品是弯刀(scimitar)。基础物品位于data/items-base.json，数据需要合并
@@ -248,9 +249,13 @@ export type ItemBaseEntires = {
 };
 export type ItemMastery = {
     name: string;
+    ENG_name?: string;
     source: string;
     page: number;
-    freeRules2024: boolean;
+    srd52?: boolean | string;
+    basicRules2024?: boolean;
+    freeRules2024?: boolean;
+    translator?: string;
     entries: ParagraphGroup;
 };
 
@@ -437,4 +442,16 @@ export type WikiItemTypeEntry = {
 
 export type WikiItemTypeData = WikiData<WikiItemTypeEntry, 'itemType'> & {
     abbreviation: string;
+};
+
+export type WikiItemMasteryEntry = {
+    name: string;
+    entries: ParagraphGroup;
+    html: string;
+};
+
+export type WikiItemMasteryData = WikiData<WikiItemMasteryEntry, 'itemMastery'> & {
+    srd52?: boolean | string;
+    basicRules2024?: boolean;
+    freeRules2024?: boolean;
 };
