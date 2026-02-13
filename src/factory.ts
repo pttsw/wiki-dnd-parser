@@ -18,11 +18,13 @@ import {
     ItemFluffEntry,
     ItemFluffFile,
     ItemGroup,
+    ItemMastery,
     MagicVariantEntry,
     MagicVariantFile,
     ItemProperty,
     ItemType,
     WikiItemData,
+    WikiItemMasteryData,
     WikiItemPropertyData,
     WikiItemTypeData,
 } from './types/items';
@@ -116,6 +118,32 @@ const applyWeaponDerived = (
         const [min, max] = item.range.split('/');
         block.range = { min: Number(min), max: Number(max) };
     }
+};
+
+const extractTranslator = (
+    common: Record<string, any>,
+    enOut: Record<string, any>,
+    zhOut: Record<string, any>,
+    zhRaw?: { translator?: string } | null,
+    enRaw?: { translator?: string } | null
+): string | undefined => {
+    const candidates = [
+        common.translator,
+        zhOut.translator,
+        enOut.translator,
+        zhRaw?.translator,
+        enRaw?.translator,
+    ];
+    delete common.translator;
+    delete zhOut.translator;
+    delete enOut.translator;
+
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim() !== '') {
+            return candidate.trim();
+        }
+    }
+    return undefined;
 };
 
 class Logger {
@@ -734,6 +762,91 @@ class ItemTypeMgr implements DataMgr<ItemType> {
 }
 export const itemTypeMgr = new ItemTypeMgr();
 
+class ItemMasteryMgr implements DataMgr<ItemMastery> {
+    raw: {
+        zh: ItemMastery[];
+        en: ItemMastery[];
+    } = {
+            zh: [],
+            en: [],
+        };
+    db: Map<string, WikiItemMasteryData> = new Map();
+    constructor() { }
+    getId(item: ItemMastery) {
+        const name = item.ENG_name ? item.ENG_name.trim() : item.name.trim();
+        return `${name}|${item.source}`;
+    }
+    loadData(zh: ItemBaseFile, en: ItemBaseFile) {
+        this.raw.zh = zh.itemMastery || [];
+        this.raw.en = en.itemMastery || [];
+        this.db.clear();
+
+        idMgr.compare(
+            'itemMastery',
+            { en: this.raw.en, zh: this.raw.zh },
+            {
+                getId: item => this.getId(item!),
+                getEnTitle: item => item.name,
+                getZhTitle: item => item.name,
+            }
+        );
+
+        const zhMap = new Map<string, ItemMastery>();
+        for (const item of this.raw.zh) {
+            zhMap.set(this.getId(item), item);
+        }
+
+        for (const enMastery of this.raw.en) {
+            const id = this.getId(enMastery);
+            const zhMastery = zhMap.get(id);
+            if (!zhMastery) {
+                logger.log('ItemMasteryMgr', `未找到中文武器精通词条：${enMastery.name} (${id})`);
+            }
+
+            const masteryData: WikiItemMasteryData = {
+                dataType: 'itemMastery',
+                uid: `itemMastery_${id}`,
+                id: id,
+                mainSource: {
+                    source: enMastery.source,
+                    page: enMastery.page || 0,
+                },
+                allSources: [],
+                displayName: {
+                    zh: zhMastery ? zhMastery.name : null,
+                    en: enMastery.name,
+                },
+                zh: zhMastery
+                    ? {
+                        name: zhMastery.name,
+                        entries: zhMastery.entries || [],
+                        html: parseContent(zhMastery.entries || []),
+                    }
+                    : null,
+                en: {
+                    name: enMastery.name,
+                    entries: enMastery.entries || [],
+                    html: parseContent(enMastery.entries || []),
+                },
+                srd52: enMastery.srd52,
+                basicRules2024: enMastery.basicRules2024,
+                freeRules2024: enMastery.freeRules2024,
+            };
+
+            this.db.set(id, masteryData);
+        }
+    }
+    async generateFiles() {
+        const outputPath = './output/collection/itemMasteryCollection.json';
+        const output = {
+            type: 'itemMasteryCollection',
+            data: Array.from(this.db.values()),
+        };
+        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    }
+}
+export const itemMasteryMgr = new ItemMasteryMgr();
+
 class BaseItemMgr implements DataMgr<ItemFileEntry> {
     raw: {
         zh: ItemBaseFile | null;
@@ -1008,12 +1121,20 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             } else if (zhEntries === '') {
                 zhOut.html = '';
             }
+            const translator = extractTranslator(
+                common,
+                enOut,
+                zhOut,
+                zhItem as { translator?: string } | undefined,
+                enItem as { translator?: string } | undefined
+            );
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
                 ...common,
+                translator,
                 isBaseItem: true,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
@@ -1259,12 +1380,20 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             } else if (zhEntries === '') {
                 zhOut.html = '';
             }
+            const translator = extractTranslator(
+                common,
+                enOut,
+                zhOut,
+                zhItem as { translator?: string } | undefined,
+                enItem as { translator?: string } | undefined
+            );
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id} `,
                 id: id,
                 ...common,
+                translator,
                 isBaseItem: false,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
@@ -1528,12 +1657,20 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 zhOut.entries = zhEntries;
                 zhOut.html = '';
             }
+            const translator = extractTranslator(
+                common,
+                enOut,
+                zhOut,
+                zhItem as { translator?: string } | undefined,
+                enItem as { translator?: string } | undefined
+            );
 
             const itemData: WikiItemData = {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
                 ...common,
+                translator,
                 rarity: enItem.inherits?.rarity || enItem.rarity,
                 isBaseItem: false,
                 displayName: {
@@ -1764,12 +1901,14 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 zhOut.entries = zhEntries;
                 zhOut.html = '';
             }
+            const translator = extractTranslator(common, enOut, zhOut, zhSpell, enSpell);
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
                 uid: `spell_${id}`,
                 id: id,
                 ...common,
+                translator,
                 displayName: {
                     zh: zhSpell ? zhSpell.name : null,
                     en: enSpell.name,
