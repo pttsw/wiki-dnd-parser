@@ -386,6 +386,8 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
         mace?: boolean;
         polearm?: boolean;
         lance?: boolean;
+        bonusWeapon?: string; // 武器加值
+        critThreshold?: number; // 暴击阈值
     };
     armor?: {
         ac?: number; // 护甲等级。如原始无数据则为0。
