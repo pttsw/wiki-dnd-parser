@@ -125,6 +125,7 @@ type ItemSharedProps = {
     bonusWeapon?: string; // 武器加值
     bonusWeaponAttack?: string; // 攻击骰加值
     bonusWeaponDamage?: string; // 伤害骰加值
+    critThreshold?: string; // 暴击阈值
     // 加值
     bonusSpellAttack?: string;
     bonusSpellSaveDc?: string;
@@ -386,6 +387,8 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
         mace?: boolean;
         polearm?: boolean;
         lance?: boolean;
+        bonusWeapon?: string; // 武器加值
+        critThreshold?: string; // 暴击阈值
     };
     armor?: {
         ac?: number; // 护甲等级。如原始无数据则为0。
