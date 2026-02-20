@@ -21,6 +21,7 @@ import {
     ItemMastery,
     MagicVariantEntry,
     MagicVariantFile,
+    MagicVariantRequire,
     ItemProperty,
     ItemType,
     WikiItemData,
@@ -28,8 +29,8 @@ import {
     WikiItemPropertyData,
     WikiItemTypeData,
 } from './types/items';
-import { parseContent } from './contentGen.js';
-import { mwUtil } from './config.js';
+import { parseContent, tagParser } from './contentGen.js';
+import config, { mwUtil } from './config.js';
 import {
     buildGroupedBlock,
     classifyI18nKeys,
@@ -1344,9 +1345,33 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             return sources;
         };
 
+        const parentByChild = new Map<string, string>();
+        for (const group of en.itemGroup || []) {
+            const parentId = this.getId(group);
+            for (const childId of group.items || []) {
+                if (!parentByChild.has(childId)) {
+                    parentByChild.set(childId, parentId);
+                }
+            }
+        }
+
+        const getTopSuperior = (id: string): string | undefined => {
+            const firstParent = parentByChild.get(id);
+            if (!firstParent) return undefined;
+            const visited = new Set<string>([id]);
+            let current = firstParent;
+            while (parentByChild.has(current) && !visited.has(current)) {
+                visited.add(current);
+                current = parentByChild.get(current)!;
+            }
+            return current;
+        };
+
         // 第二遍：生成数据
         for (const enItem of enItems) {
             const id = this.getId(enItem);
+            const origin = parentByChild.get(id);
+            const superior = getTopSuperior(id);
 
             const zhItem = zhItems.find(i => this.getId(i) === id);
             if (!zhItem) {
@@ -1459,6 +1484,8 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 ...common,
                 translator,
                 isBaseItem: false,
+                origin,
+                superior,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
                     zh: (() => {
@@ -1525,8 +1552,13 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         };
     db: Map<string, WikiItemData> = new Map();
     reprintMap: Map<string, string[]> = new Map(); // target -> sources
+    baseItems: BaseItemMgr;
+    items: ItemMgr;
 
-    constructor() { }
+    constructor(baseItems: BaseItemMgr, items: ItemMgr) {
+        this.baseItems = baseItems;
+        this.items = items;
+    }
 
     private getSource(item: MagicVariantEntry): string {
         return (
@@ -1543,6 +1575,317 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
     private getReprintedAs(item: MagicVariantEntry): string[] {
         return normalizeReprintedAs(item.reprintedAs || item.inherits?.reprintedAs);
+    }
+
+    private getVariantDisplayName(item: MagicVariantEntry, baseName: string): string {
+        const prefix = item.inherits?.namePrefix || '';
+        const suffix = item.inherits?.nameSuffix || '';
+        return `${prefix}${baseName}${suffix}`.trim();
+    }
+
+    private getVariantMergeData(item: MagicVariantEntry) {
+        return {
+            ...(item.inherits || {}),
+            entries: this.getEntries(item),
+        } as Record<string, any>;
+    }
+
+    private getBaseSourcePriority(source?: string): number {
+        const normalized = String(source || '').toUpperCase();
+        if (normalized === 'XPHB') return 0;
+        if (normalized === 'PHB') return 1;
+        return 2;
+    }
+
+    private isExactWeaponGenericRequires(requires?: MagicVariantRequire[]): boolean {
+        if (!requires || requires.length !== 1) return false;
+        const only = requires[0];
+        const keys = Object.keys(only);
+        return keys.length === 1 && only.weapon === true;
+    }
+
+    private isValueMatch(
+        baseValue: any,
+        expected: any,
+        key: string
+    ): boolean {
+        if (expected === undefined) return true;
+        if (Array.isArray(expected)) {
+            if (Array.isArray(baseValue)) {
+                return expected.some(v => baseValue.includes(v));
+            }
+            return expected.includes(baseValue);
+        }
+        if (typeof expected === 'boolean') {
+            return Boolean(baseValue) === expected;
+        }
+        if (key === 'name' || key === 'source' || key === 'weaponCategory') {
+            return String(baseValue || '').toLowerCase() === String(expected).toLowerCase();
+        }
+        if (key === 'property') {
+            const baseProps = Array.isArray(baseValue) ? baseValue : [];
+            return baseProps.includes(expected);
+        }
+        return baseValue === expected;
+    }
+
+    private matchesConstraint(baseItem: ItemFileEntry, constraint: MagicVariantRequire): boolean {
+        const entries = Object.entries(constraint);
+        if (entries.length === 0) return false;
+        for (const [key, expected] of entries) {
+            const actual = (baseItem as Record<string, any>)[key];
+            if (!this.isValueMatch(actual, expected, key)) return false;
+        }
+        return true;
+    }
+
+    private matchesRequires(baseItem: ItemFileEntry, requires?: MagicVariantRequire[]): boolean {
+        if (!requires || requires.length === 0) return false;
+        return requires.some(req => this.matchesConstraint(baseItem, req));
+    }
+
+    private matchesExcludes(baseItem: ItemFileEntry, excludes?: MagicVariantRequire): boolean {
+        if (!excludes) return false;
+        return this.matchesConstraint(baseItem, excludes);
+    }
+
+    private getBaseCandidates(
+        enItem: MagicVariantEntry,
+        baseEnItems: ItemFileEntry[]
+    ): ItemFileEntry[] {
+        const requires = enItem.requires;
+        if (!requires || requires.length === 0) return [];
+
+        let candidates: ItemFileEntry[];
+        if (this.isExactWeaponGenericRequires(requires)) {
+            const weaponTypes = new Set(['M', 'M|PHB', 'M|XPHB', 'R', 'R|PHB', 'R|XPHB']);
+            candidates = baseEnItems.filter(
+                it => Boolean(it.weapon) && weaponTypes.has(String(it.type || ''))
+            );
+        } else {
+            candidates = baseEnItems.filter(it => this.matchesRequires(it, requires));
+        }
+
+        if (enItem.excludes) {
+            candidates = candidates.filter(it => !this.matchesExcludes(it, enItem.excludes));
+        }
+        return candidates;
+    }
+
+    private mergeVariantWithBase(
+        baseItem: ItemFileEntry,
+        variantData: Record<string, any>,
+        mergedName: string,
+        source: string,
+        page: number,
+        baseItemRef: string
+    ): Record<string, any> {
+        const blockedKeys = new Set([
+            'name',
+            'ENG_name',
+            'type',
+            'source',
+            'page',
+            'requires',
+            'excludes',
+            'inherits',
+            'reprintedAs',
+            'entries',
+        ]);
+
+        const out: Record<string, any> = { ...baseItem };
+        for (const [key, value] of Object.entries(variantData)) {
+            if (value === undefined || blockedKeys.has(key)) continue;
+            out[key] = value;
+        }
+
+        out.name = mergedName;
+        out.source = source;
+        out.page = page;
+        out.type = baseItem.type;
+        out.entries = variantData.entries ?? [];
+        out.baseItem = baseItemRef;
+
+        if (variantData.bonusWeapon !== undefined && out.bonusWeapon === undefined) {
+            out.bonusWeapon = variantData.bonusWeapon;
+        }
+        if (variantData.critThreshold !== undefined && out.critThreshold === undefined) {
+            out.critThreshold = variantData.critThreshold;
+        }
+
+        return out;
+    }
+
+    private buildVariantItemData(
+        enItem: Record<string, any>,
+        zhItem: Record<string, any> | null | undefined,
+        opts: {
+            id: string;
+            source: string;
+            page: number;
+            allSources: { source: string; page: number }[];
+            relatedVersions?: Set<string>;
+            rarity?: string;
+            origin?: string;
+            superior?: string;
+            full?: {
+                en?: ItemFluffContent;
+                zh?: ItemFluffContent;
+            };
+        }
+    ): WikiItemData {
+        const localKeySets = classifyI18nKeys([{ en: enItem, zh: zhItem || null }], i18nKeyRules);
+        const split = splitRecordByI18n(enItem, zhItem, localKeySets, {
+            emptyZhValue: '',
+            skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+        });
+        const weaponGroup = buildGroupedBlock(
+            enItem,
+            zhItem,
+            i18nKeyRules.weaponKeys,
+            localKeySets.localizedKeys,
+            ''
+        );
+        const armorGroup = buildGroupedBlock(
+            enItem,
+            zhItem,
+            i18nKeyRules.armorKeys,
+            localKeySets.localizedKeys,
+            ''
+        );
+
+        const common = { ...split.common };
+        delete common.bonusWeapon;
+        delete common.critThreshold;
+
+        const weaponBlock: Record<string, any> = {};
+        if (weaponGroup.common) {
+            Object.assign(weaponBlock, weaponGroup.common);
+        }
+        if (weaponGroup.en) {
+            Object.assign(weaponBlock, weaponGroup.en);
+        }
+        applyWeaponDerived(weaponBlock, enItem as ItemFileEntry);
+        if (Object.keys(weaponBlock).length > 0) {
+            common.weapon = weaponBlock;
+        }
+
+        const armorBlock: Record<string, any> = {};
+        if (armorGroup.common) {
+            Object.assign(armorBlock, armorGroup.common);
+        }
+        if (armorGroup.en) {
+            Object.assign(armorBlock, armorGroup.en);
+        }
+        if (Object.keys(armorBlock).length > 0) {
+            common.armor = armorBlock;
+        }
+
+        const enOut = { ...split.en };
+        const zhOut = { ...split.zh };
+        delete enOut.weapon;
+        delete enOut.armor;
+        delete zhOut.weapon;
+        delete zhOut.armor;
+
+        const enEntries = enOut.entries ?? [];
+        if (Array.isArray(enEntries)) {
+            enOut.html = parseContent(enEntries);
+        } else if (enEntries === '') {
+            enOut.html = '';
+        }
+        const zhEntries = zhOut.entries;
+        if (Array.isArray(zhEntries)) {
+            zhOut.html = parseContent(zhEntries);
+        } else if (zhEntries === '') {
+            zhOut.html = '';
+        }
+
+        const translator = extractTranslator(
+            common,
+            enOut,
+            zhOut,
+            zhItem as { translator?: string } | undefined,
+            enItem as { translator?: string } | undefined
+        );
+
+        return {
+            dataType: 'item',
+            uid: `item_${opts.id}`,
+            id: opts.id,
+            ...common,
+            translator,
+            rarity: opts.rarity ?? enItem.rarity,
+            isBaseItem: false,
+            origin: opts.origin,
+            superior: opts.superior,
+            full: opts.full,
+            displayName: {
+                zh: (() => {
+                    if (!zhItem) return null;
+                    if (String(zhItem.name || '').trim() === String(enItem.name || '').trim()) return null;
+                    return String(zhItem.name || '');
+                })(),
+                en: String(enItem.name || ''),
+            },
+            mainSource: {
+                source: opts.source,
+                page: opts.page,
+            },
+            allSources: opts.allSources,
+            relatedVersions:
+                opts.relatedVersions && opts.relatedVersions.size > 0
+                    ? [...opts.relatedVersions]
+                    : undefined,
+            zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+            en: enOut,
+            charge: enItem.charges
+                ? {
+                    max: enItem.charges,
+                    rechargeAt: enItem.recharge,
+                    rechargeAmount: enItem.rechargeAmount,
+                }
+                : undefined,
+            bonus: {
+                weapon: Number(enItem.bonusWeapon) || undefined,
+                weaponAttack: Number(enItem.bonusWeaponAttack) || undefined,
+                weaponDamage: Number(enItem.bonusWeaponDamage) || undefined,
+                spellAttack: Number(enItem.bonusSpellAttack) || undefined,
+                spellSaveDc: Number(enItem.bonusSpellSaveDc) || undefined,
+                ac: Number(enItem.bonusAc) || undefined,
+                savingThrow: Number(enItem.bonusSavingThrow) || undefined,
+                abilityCheck: Number(enItem.bonusAbilityCheck) || undefined,
+                proficiencyBonus: Number(enItem.bonusProficiencyBonus) || undefined,
+            },
+        };
+    }
+
+    private getParentByChildMap(): Map<string, string> {
+        const parentByChild = new Map<string, string>();
+        if (!this.items.raw.en) return parentByChild;
+        const enItems = [...(this.items.raw.en.item || []), ...(this.items.raw.en.itemGroup || [])];
+        for (const parent of enItems) {
+            const parentId = this.items.getId(parent);
+            const children = (parent as ItemGroup).items || [];
+            for (const childId of children) {
+                if (!parentByChild.has(childId)) {
+                    parentByChild.set(childId, parentId);
+                }
+            }
+        }
+        return parentByChild;
+    }
+
+    private getTopSuperior(id: string, parentByChild: Map<string, string>): string | undefined {
+        const firstParent = parentByChild.get(id);
+        if (!firstParent) return undefined;
+        const visited = new Set<string>([id]);
+        let current = firstParent;
+        while (parentByChild.has(current) && !visited.has(current)) {
+            visited.add(current);
+            current = parentByChild.get(current)!;
+        }
+        return current;
     }
 
     getId(item: MagicVariantEntry): string {
@@ -1586,15 +1929,17 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         for (const zhItem of this.raw.zh) {
             zhMap.set(this.getId(zhItem), zhItem);
         }
-        const allIds = new Set<string>([
-            ...variantMap.keys(),
-            ...zhMap.keys(),
+        const baseEnItems = this.baseItems.raw.en?.baseitem || [];
+        const baseZhById = new Map<string, ItemFileEntry>();
+        for (const baseZh of this.baseItems.raw.zh?.baseitem || []) {
+            baseZhById.set(this.baseItems.getId(baseZh), baseZh);
+        }
+        const parentByChild = this.getParentByChildMap();
+        const occupiedIds = new Set<string>([
+            ...this.baseItems.db.keys(),
+            ...this.items.db.keys(),
         ]);
-        const pairs = [...allIds].map(id => ({
-            en: variantMap.get(id) || null,
-            zh: zhMap.get(id) || null,
-        }));
-        const keySets = classifyI18nKeys(pairs, i18nKeyRules);
+        const templateSuperiorMap = new Map<string, string | undefined>();
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -1658,104 +2003,99 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
             const source = this.getSource(enItem);
             const allSources = buildAllSources(collectRelatedIds(id));
-            const split = splitRecordByI18n(enItem, zhItem, keySets, {
-                emptyZhValue: '',
-                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
-            });
-            const weaponGroup = buildGroupedBlock(
-                enItem,
-                zhItem,
-                i18nKeyRules.weaponKeys,
-                keySets.localizedKeys,
-                ''
-            );
-            const armorGroup = buildGroupedBlock(
-                enItem,
-                zhItem,
-                i18nKeyRules.armorKeys,
-                keySets.localizedKeys,
-                ''
-            );
+            const directParent = parentByChild.get(id);
+            const topSuperior = this.getTopSuperior(id, parentByChild);
 
-            const common = { ...split.common };
-            if (weaponGroup.common) {
-                common.weapon = weaponGroup.common;
-            }
-            if (armorGroup.common) {
-                common.armor = armorGroup.common;
-            }
-
-            const enOut = { ...split.en };
-            if (weaponGroup.en) {
-                enOut.weapon = weaponGroup.en;
-            }
-            if (armorGroup.en) {
-                enOut.armor = armorGroup.en;
-            }
-            const zhOut = { ...split.zh };
-            if (weaponGroup.zh) {
-                zhOut.weapon = weaponGroup.zh;
-            }
-            if (armorGroup.zh) {
-                zhOut.armor = armorGroup.zh;
-            }
-
-            const enEntries = enOut.entries ?? this.getEntries(enItem) ?? [];
-            if (Array.isArray(enEntries)) {
-                enOut.entries = enEntries;
-                enOut.html = parseContent(enEntries);
-            } else if (enEntries === '') {
-                enOut.entries = enEntries;
-                enOut.html = '';
-            }
-            const zhEntries =
-                zhOut.entries !== undefined
-                    ? zhOut.entries
-                    : zhItem
-                        ? this.getEntries(zhItem)
-                        : '';
-            if (Array.isArray(zhEntries)) {
-                zhOut.entries = zhEntries;
-                zhOut.html = parseContent(zhEntries);
-            } else if (zhEntries === '') {
-                zhOut.entries = zhEntries;
-                zhOut.html = '';
-            }
-            const translator = extractTranslator(
-                common,
-                enOut,
-                zhOut,
-                zhItem as { translator?: string } | undefined,
-                enItem as { translator?: string } | undefined
-            );
-
-            const itemData: WikiItemData = {
-                dataType: 'item',
-                uid: `item_${id}`,
-                id: id,
-                ...common,
-                translator,
-                rarity: enItem.inherits?.rarity || enItem.rarity,
-                isBaseItem: false,
-                displayName: {
-                    zh: (() => {
-                        if (!zhItem) return null;
-                        if (zhItem.name.trim() === enItem.name.trim()) return null;
-                        return zhItem.name;
-                    })(),
-                    en: enItem.name,
-                },
-                mainSource: {
-                    source,
-                    page: enItem.inherits?.page || enItem.page || 0,
-                },
+            const templateData = this.buildVariantItemData(enItem, zhItem, {
+                id,
+                source,
+                page: enItem.inherits?.page || enItem.page || 0,
                 allSources,
-                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
-                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
-                en: enOut,
-            };
+                relatedVersions,
+                rarity: enItem.inherits?.rarity || enItem.rarity,
+                origin: directParent,
+                superior: topSuperior,
+            });
+            this.db.set(id, templateData);
+            occupiedIds.add(id);
+            templateSuperiorMap.set(id, topSuperior);
 
-            this.db.set(id, itemData);
+            const candidates = this.getBaseCandidates(enItem, baseEnItems)
+                .sort((a, b) => this.getBaseSourcePriority(a.source) - this.getBaseSourcePriority(b.source));
+            if (candidates.length === 0) continue;
+
+            const templateEnMerge = this.getVariantMergeData(enItem);
+            const templateZhMerge = zhItem ? this.getVariantMergeData(zhItem) : null;
+            const chosenByName = new Map<string, ItemFileEntry>();
+
+            for (const baseEn of candidates) {
+                const derivedName = this.getVariantDisplayName(enItem, baseEn.name);
+                const key = derivedName.toLowerCase();
+                if (!chosenByName.has(key)) {
+                    chosenByName.set(key, baseEn);
+                }
+            }
+
+            for (const [, baseEn] of chosenByName) {
+                const baseId = this.baseItems.getId(baseEn);
+                const baseZh = baseZhById.get(baseId);
+                const derivedNameEn = this.getVariantDisplayName(enItem, baseEn.name);
+                const derivedNameZh = this.getVariantDisplayName(
+                    zhItem || enItem,
+                    baseZh?.name || baseEn.name
+                );
+
+                const page = enItem.inherits?.page || enItem.page || 0;
+                const mergedEn = this.mergeVariantWithBase(
+                    baseEn,
+                    templateEnMerge,
+                    derivedNameEn,
+                    source,
+                    page,
+                    `${baseEn.name.toLowerCase()}|${String(baseEn.source || '').toLowerCase()}`
+                );
+                const mergedZh = baseZh
+                    ? this.mergeVariantWithBase(
+                        baseZh,
+                        templateZhMerge || templateEnMerge,
+                        derivedNameZh,
+                        source,
+                        page,
+                        `${(baseZh.name || baseEn.name)}|${String(baseEn.source || '').toLowerCase()}`
+                    )
+                    : undefined;
+
+                const derivedId = `${derivedNameEn}|${source}`;
+                if (occupiedIds.has(derivedId) || this.db.has(derivedId)) {
+                    logger.log('MagicVariantMgr', `${id}: 跳过重复衍生物品 ${derivedId}`);
+                    continue;
+                }
+
+                const derivedAllSources = [...allSources];
+                const seenSource = new Set(allSources.map(s => `${s.source}|${s.page}`));
+                for (const extra of BaseItemMgr.getItemSources(baseEn)) {
+                    const key = `${extra.source}|${extra.page}`;
+                    if (seenSource.has(key)) continue;
+                    seenSource.add(key);
+                    derivedAllSources.push(extra);
+                }
+
+                const templateSuperior = templateSuperiorMap.get(id);
+                const derivedData = this.buildVariantItemData(mergedEn, mergedZh, {
+                    id: derivedId,
+                    source,
+                    page,
+                    allSources: derivedAllSources,
+                    relatedVersions: new Set<string>([id]),
+                    rarity: mergedEn.rarity,
+                    origin: id,
+                    superior: templateSuperior || id,
+                    full: this.baseItems.db.get(baseId)?.full,
+                });
+
+                this.db.set(derivedId, derivedData);
+                occupiedIds.add(derivedId);
+            }
         }
     }
 
@@ -1772,7 +2112,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         }
     }
 }
-export const magicVariantMgr = new MagicVariantMgr();
+export const magicVariantMgr = new MagicVariantMgr(baseItemMgr, itemMgr);
 
 class SpellMgr implements DataMgr<SpellFileEntry> {
     raw: {
@@ -2029,3 +2369,151 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 }
 
 export const spellMgr = new SpellMgr();
+
+const readJson = async <T>(filePath: string): Promise<T> => {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content) as T;
+};
+
+const loadBilingualFile = async <T>(relativePath: string): Promise<{ en: T; zh: T }> => {
+    const enPath = path.join(config.DATA_EN_DIR, relativePath);
+    const zhPath = path.join(config.DATA_ZH_DIR, relativePath);
+    const [en, zh] = await Promise.all([readJson<T>(enPath), readJson<T>(zhPath)]);
+    return { en, zh };
+};
+
+const loadIndexedSpellData = async (): Promise<{ en: SpellFile; zh: SpellFile }> => {
+    const [enIndex, zhIndex] = await Promise.all([
+        readJson<Record<string, string>>(path.join(config.DATA_EN_DIR, 'spells/index.json')),
+        readJson<Record<string, string>>(path.join(config.DATA_ZH_DIR, 'spells/index.json')),
+    ]);
+
+    const loadSpellSet = async (
+        baseDir: string,
+        indexMap: Record<string, string>
+    ): Promise<SpellFile> => {
+        const spell: SpellFileEntry[] = [];
+        const files = Object.values(indexMap);
+        for (const fileName of files) {
+            const data = await readJson<SpellFile>(path.join(baseDir, 'spells', fileName));
+            spell.push(...(data.spell || []));
+        }
+        return { spell };
+    };
+
+    const [en, zh] = await Promise.all([
+        loadSpellSet(config.DATA_EN_DIR, enIndex),
+        loadSpellSet(config.DATA_ZH_DIR, zhIndex),
+    ]);
+    return { en, zh };
+};
+
+const loadIndexedSpellFluffData = async (): Promise<{ en: SpellFluffFile; zh: SpellFluffFile }> => {
+    const [enIndex, zhIndex] = await Promise.all([
+        readJson<Record<string, string>>(path.join(config.DATA_EN_DIR, 'spells/fluff-index.json')),
+        readJson<Record<string, string>>(path.join(config.DATA_ZH_DIR, 'spells/fluff-index.json')),
+    ]);
+
+    const loadFluffSet = async (
+        baseDir: string,
+        indexMap: Record<string, string>
+    ): Promise<SpellFluffFile> => {
+        const spellFluff: SpellFluffEntry[] = [];
+        const files = Object.values(indexMap);
+        for (const fileName of files) {
+            const data = await readJson<SpellFluffFile>(path.join(baseDir, 'spells', fileName));
+            spellFluff.push(...(data.spellFluff || []));
+        }
+        return { spellFluff };
+    };
+
+    const [en, zh] = await Promise.all([
+        loadFluffSet(config.DATA_EN_DIR, enIndex),
+        loadFluffSet(config.DATA_ZH_DIR, zhIndex),
+    ]);
+    return { en, zh };
+};
+
+const printProgress = (message: string) => {
+    console.log(chalk.cyan(`[prepareData] ${message}`));
+};
+
+(async () => {
+    try {
+        const startedAt = Date.now();
+        printProgress('开始准备数据');
+        await createOutputFolders();
+        printProgress('输出目录已重建');
+
+        const [bookFiles, featFiles, itemBaseFiles, itemFiles, magicVariantFiles, itemFluffFiles] =
+            await Promise.all([
+                loadBilingualFile<BookFile>('books.json'),
+                loadBilingualFile<FeatFile>('feats.json'),
+                loadBilingualFile<ItemBaseFile>('items-base.json'),
+                loadBilingualFile<ItemFile>('items.json'),
+                loadBilingualFile<MagicVariantFile>('magicvariants.json'),
+                loadBilingualFile<ItemFluffFile>('fluff-items.json'),
+            ]);
+        printProgress('基础 JSON 已加载');
+
+        const [spellFiles, spellFluffFiles] = await Promise.all([
+            loadIndexedSpellData(),
+            loadIndexedSpellFluffData(),
+        ]);
+        await spellMgr.loadSources(path.join(config.DATA_EN_DIR, 'spells/sources.json'));
+        printProgress('法术索引与来源映射已加载');
+
+        itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
+
+        bookMgr.loadData(bookFiles.zh, bookFiles.en);
+        await bookMgr.generateFiles();
+        printProgress(`book 完成 (${bookMgr.db.size})`);
+
+        featMgr.loadData(featFiles.zh, featFiles.en);
+        await featMgr.generateFiles();
+        printProgress(`feat 完成 (${featMgr.db.size})`);
+
+        itemPropertyMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
+        await itemPropertyMgr.generateFiles();
+        printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
+
+        itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
+        await itemTypeMgr.generateFiles();
+        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
+
+        itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
+        await itemMasteryMgr.generateFiles();
+        printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
+
+        baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
+        await baseItemMgr.generateFiles();
+        printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+
+        itemMgr.loadData(itemFiles.zh, itemFiles.en);
+        await itemMgr.generateFiles();
+        printProgress(`item 完成 (${itemMgr.db.size})`);
+
+        magicVariantMgr.loadData(magicVariantFiles.zh, magicVariantFiles.en);
+        await magicVariantMgr.generateFiles();
+        printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
+
+        spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
+        spellMgr.loadData(spellFiles.zh, spellFiles.en);
+        await spellMgr.generateFiles();
+        printProgress(`spell 完成 (${spellMgr.db.size})`);
+
+        await idMgr.generateFiles();
+        await tagParser.generateFiles();
+        await logger.generateFile();
+
+        const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
+        console.log(
+            chalk.green(
+                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}`
+            )
+        );
+    } catch (error) {
+        console.error(chalk.red('[prepareData] 执行失败'), error);
+        process.exitCode = 1;
+    }
+})();

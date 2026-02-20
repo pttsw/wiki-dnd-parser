@@ -285,6 +285,35 @@ export type MagicVariantInherits = {
     [key: string]: any;
 };
 
+export type MagicVariantRequire = {
+    type?: string;
+    weapon?: boolean;
+    weaponCategory?: string;
+    armor?: boolean;
+    sword?: boolean;
+    axe?: boolean;
+    bow?: boolean;
+    crossbow?: boolean;
+    spear?: boolean;
+    polearm?: boolean;
+    dagger?: boolean;
+    rapier?: boolean;
+    club?: boolean;
+    hammer?: boolean;
+    mace?: boolean;
+    staff?: boolean;
+    arrow?: boolean;
+    bolt?: boolean;
+    dmgType?: string;
+    property?: string | string[];
+    name?: string | string[];
+    source?: string;
+    net?: boolean;
+    cellEnergy?: boolean;
+    bulletFirearm?: boolean;
+    [key: string]: any;
+};
+
 export type MagicVariantEntry = {
     name: string;
     ENG_name?: string;
@@ -294,6 +323,8 @@ export type MagicVariantEntry = {
     entries?: ParagraphGroup;
     reprintedAs?: (string | { uid: string; tag?: string })[];
     inherits?: MagicVariantInherits;
+    requires?: MagicVariantRequire[];
+    excludes?: MagicVariantRequire;
     [key: string]: any;
 };
 
@@ -350,6 +381,8 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
     baseItem?: string;
     items?: string[];
     type?: string;
+    origin?: string;
+    superior?: string;
     subTypes?: string[];
     // 武器类：sword,crossbow,axe,staff,club,spear,dagger,hammer,bow,mace,firearm,polearm,lance,rapier,tattoo
     // 弹药类：arrow,bolt,cellEnergy,bulletFirearm,bulletSling
