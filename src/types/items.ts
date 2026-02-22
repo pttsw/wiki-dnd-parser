@@ -383,6 +383,7 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
     type?: string;
     origin?: string;
     superior?: string;
+    fork?: number;
     subTypes?: string[];
     // 武器类：sword,crossbow,axe,staff,club,spear,dagger,hammer,bow,mace,firearm,polearm,lance,rapier,tattoo
     // 弹药类：arrow,bolt,cellEnergy,bulletFirearm,bulletSling

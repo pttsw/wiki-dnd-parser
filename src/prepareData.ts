@@ -155,6 +155,31 @@ const extractTranslator = (
     return undefined;
 };
 
+const hasTextContent = (value: unknown): boolean => {
+    if (typeof value === 'string') return true;
+    if (Array.isArray(value)) return value.some(hasTextContent);
+    if (value && typeof value === 'object') {
+        return Object.values(value as Record<string, unknown>).some(hasTextContent);
+    }
+    return false;
+};
+
+const appendEnglishShadowFields = (
+    zhOut: Record<string, any>,
+    enOut: Record<string, any>
+) => {
+    for (const [key, zhValue] of Object.entries(zhOut)) {
+        if (key.endsWith('_en')) continue;
+        const enValue = enOut[key];
+        if (enValue === undefined) continue;
+        if (!hasTextContent(zhValue) && !hasTextContent(enValue)) continue;
+        const enKey = `${key}_en`;
+        if (zhOut[enKey] === undefined) {
+            zhOut[enKey] = enValue;
+        }
+    }
+};
+
 class Logger {
     logs: {
         source: string;
@@ -1165,6 +1190,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 zhItem as { translator?: string } | undefined,
                 enItem as { translator?: string } | undefined
             );
+            appendEnglishShadowFields(zhOut, enOut);
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -1173,6 +1199,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 ...common,
                 translator,
                 isBaseItem: true,
+                fork: 0,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
                     zh: (() => {
@@ -1367,11 +1394,26 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             return current;
         };
 
+        const getForkDepth = (id: string): number => {
+            const visited = new Set<string>([id]);
+            let depth = 0;
+            let current = id;
+            while (parentByChild.has(current)) {
+                const parent = parentByChild.get(current)!;
+                if (visited.has(parent)) break;
+                visited.add(parent);
+                depth += 1;
+                current = parent;
+            }
+            return depth;
+        };
+
         // 第二遍：生成数据
         for (const enItem of enItems) {
             const id = this.getId(enItem);
             const origin = parentByChild.get(id);
             const superior = getTopSuperior(id);
+            const fork = getForkDepth(id);
 
             const zhItem = zhItems.find(i => this.getId(i) === id);
             if (!zhItem) {
@@ -1476,6 +1518,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 zhItem as { translator?: string } | undefined,
                 enItem as { translator?: string } | undefined
             );
+            appendEnglishShadowFields(zhOut, enOut);
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -1486,6 +1529,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 isBaseItem: false,
                 origin,
                 superior,
+                fork,
                 full: itemFluffMgr.getFull(id),
                 displayName: {
                     zh: (() => {
@@ -1728,6 +1772,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             rarity?: string;
             origin?: string;
             superior?: string;
+            fork?: number;
             full?: {
                 en?: ItemFluffContent;
                 zh?: ItemFluffContent;
@@ -1808,6 +1853,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             zhItem as { translator?: string } | undefined,
             enItem as { translator?: string } | undefined
         );
+        appendEnglishShadowFields(zhOut, enOut);
 
         return {
             dataType: 'item',
@@ -1819,6 +1865,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             isBaseItem: false,
             origin: opts.origin,
             superior: opts.superior,
+            fork: opts.fork ?? 0,
             full: opts.full,
             displayName: {
                 zh: (() => {
@@ -1888,6 +1935,20 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         return current;
     }
 
+    private getForkDepth(id: string, parentByChild: Map<string, string>): number {
+        const visited = new Set<string>([id]);
+        let depth = 0;
+        let current = id;
+        while (parentByChild.has(current)) {
+            const parent = parentByChild.get(current)!;
+            if (visited.has(parent)) break;
+            visited.add(parent);
+            depth += 1;
+            current = parent;
+        }
+        return depth;
+    }
+
     getId(item: MagicVariantEntry): string {
         const name = item.ENG_name ? item.ENG_name.trim() : item.name.trim();
         const source = this.getSource(item);
@@ -1940,6 +2001,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             ...this.items.db.keys(),
         ]);
         const templateSuperiorMap = new Map<string, string | undefined>();
+        const templateForkMap = new Map<string, number>();
 
         const collectRelatedIds = (startId: string): string[] => {
             const visited = new Set<string>();
@@ -2005,6 +2067,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const allSources = buildAllSources(collectRelatedIds(id));
             const directParent = parentByChild.get(id);
             const topSuperior = this.getTopSuperior(id, parentByChild);
+            const templateFork = Math.max(1, this.getForkDepth(id, parentByChild));
 
             const templateData = this.buildVariantItemData(enItem, zhItem, {
                 id,
@@ -2015,10 +2078,12 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 rarity: enItem.inherits?.rarity || enItem.rarity,
                 origin: directParent,
                 superior: topSuperior,
+                fork: templateFork,
             });
             this.db.set(id, templateData);
             occupiedIds.add(id);
             templateSuperiorMap.set(id, topSuperior);
+            templateForkMap.set(id, templateFork);
 
             const candidates = this.getBaseCandidates(enItem, baseEnItems)
                 .sort((a, b) => this.getBaseSourcePriority(a.source) - this.getBaseSourcePriority(b.source));
@@ -2081,6 +2146,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 }
 
                 const templateSuperior = templateSuperiorMap.get(id);
+                const templateFork = templateForkMap.get(id) ?? 1;
                 const derivedData = this.buildVariantItemData(mergedEn, mergedZh, {
                     id: derivedId,
                     source,
@@ -2090,6 +2156,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                     rarity: mergedEn.rarity,
                     origin: id,
                     superior: templateSuperior || id,
+                    fork: templateFork + 1,
                     full: this.baseItems.db.get(baseId)?.full,
                 });
 
@@ -2306,6 +2373,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 zhOut.html = '';
             }
             const translator = extractTranslator(common, enOut, zhOut, zhSpell, enSpell);
+            appendEnglishShadowFields(zhOut, enOut);
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
