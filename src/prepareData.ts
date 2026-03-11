@@ -56,7 +56,7 @@ export const createOutputFolders = async () => {
     } catch (error) {
         // do nothing, folder does not exist
     }
-    const dirs = ['collection', 'item', 'spell'];
+    const dirs = ['collection', 'item', 'spell', 'generated'];
     for (const dir of dirs) {
         const dirPath = path.join('./output', dir);
         try {
@@ -2573,8 +2573,9 @@ const printProgress = (message: string) => {
         await idMgr.generateFiles();
         await tagParser.generateFiles();
         await logger.generateFile();
+        await processGeneratedFiles();
 
-        const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
+        const elapsedSec = ((Date.当前() - startedAt) / 1000).toFixed(2);
         console.log(
             chalk.green(
                 `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}`
@@ -2585,3 +2586,62 @@ const printProgress = (message: string) => {
         process.exitCode = 1;
     }
 })();
+
+async function processGeneratedFiles() {
+    printProgress('开始处理 generated 文件夹');
+    const enGeneratedDir = path.join(config.DATA_EN_DIR, 'generated');
+    const zhGeneratedDir = path.join(config.DATA_ZH_DIR, 'generated');
+    const outputDir = path.join('./output', 'generated');
+
+    // 读取英文generated文件夹中的文件
+    let enFiles;
+    try {
+        enFiles = await fs.readdir(enGeneratedDir);
+    } catch (error) {
+        console.error('读取英文generated文件夹失败:', error);
+        return;
+    }
+    const jsonEnFiles = enFiles.filter(file => file.endsWith('.json'));
+
+    // 读取中文generated文件夹中的文件
+    let zhFiles;
+    try {
+        zhFiles = await fs.readdir(zhGeneratedDir);
+    } catch (error) {
+        console.error('读取中文generated文件夹失败:', error);
+        return;
+    }
+    const jsonZhFiles = zhFiles.filter(file => file.endsWith('.json'));
+
+    // 处理英文JSON文件
+    for (const file of jsonEnFiles) {
+        const inputPath = path.join(enGeneratedDir, file);
+        const outputPath = path.join(outputDir, `${path.parse(file).name}-en.json`);
+        
+        try {
+            const data = await fs.readFile(inputPath, 'utf-8');
+            const parsedData = JSON.parse(data);
+            const formattedData = JSON.stringify(parsedData, null, 2);
+            await fs.writeFile(outputPath, formattedData, 'utf-8');
+        } catch (error) {
+            console.error(`处理英文文件失败: ${file}`, error);
+        }
+    }
+
+    // 处理中文JSON文件
+    for (const file of jsonZhFiles) {
+        const inputPath = path.join(zhGeneratedDir, file);
+        const outputPath = path.join(outputDir, file);
+        
+        try {
+            const data = await fs.readFile(inputPath, 'utf-8');
+            const parsedData = JSON.parse(data);
+            const formattedData = JSON.stringify(parsedData, null, 2);
+            await fs.writeFile(outputPath, formattedData, 'utf-8');
+        } catch (error) {
+            console.error(`处理中文文件失败: ${file}`, error);
+        }
+    }
+
+    printProgress('generated 文件夹处理完成');
+}
