@@ -64,6 +64,19 @@ class TagParser {
             this.allTags.set(tag.tagName, new Set([tag.param || '']));
         }
 
+        // 处理{@item}标签，为没有来源后缀的物品添加|DMG后缀
+        if (tag.tagName === '@item' && tag.param) {
+            const parts = tag.param.split('|');
+            // 检查是否有来源后缀（parts[1]应该是来源，parts[2]应该是显示文本）
+            if (parts.length >= 2 && !parts[1].trim()) {
+                // 格式为 {@item name||display}，没有来源后缀，添加|DMG
+                return `{{${tag.tagName}|${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}}}`;
+            } else if (parts.length === 1) {
+                // 格式为 {@item name}，没有来源后缀，添加|DMG
+                return `{{${tag.tagName}|${parts[0]}|DMG}}`;
+            }
+        }
+
         return `{{${tag.tagName}${tag.param ? `|${tag.param}` : ''}}}`;
     }
     async generateFiles() {
