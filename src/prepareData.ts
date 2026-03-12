@@ -1119,6 +1119,16 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
             const common = { ...split.common };
             
+            // 确保ItemGroup的items字段被包含在common对象中，并为没有来源的物品添加|DMG后缀
+            if ('items' in enItem && Array.isArray(enItem.items)) {
+                common.items = enItem.items.map((item: string) => {
+                    if (typeof item === 'string' && !item.includes('|')) {
+                        return `${item}|DMG`;
+                    }
+                    return item;
+                });
+            }
+            
             // 删除外面的bonusWeapon和critThreshold，只在weapon块中保留
             delete common.bonusWeapon;
             delete common.critThreshold;
@@ -1446,6 +1456,16 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             );
 
             const common = { ...split.common };
+            
+            // 确保ItemGroup的items字段被包含在common对象中，并为没有来源的物品添加|DMG后缀
+            if ('items' in enItem && Array.isArray(enItem.items)) {
+                common.items = enItem.items.map((item: string) => {
+                    if (typeof item === 'string' && !item.includes('|')) {
+                        return `${item}|DMG`;
+                    }
+                    return item;
+                });
+            }
             
             // 删除外面的bonusWeapon和critThreshold，只在weapon块中保留
             delete common.bonusWeapon;
@@ -2575,7 +2595,7 @@ const printProgress = (message: string) => {
         await logger.generateFile();
         await processGeneratedFiles();
 
-        const elapsedSec = ((Date.当前() - startedAt) / 1000).toFixed(2);
+        const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(
             chalk.green(
                 `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}`
