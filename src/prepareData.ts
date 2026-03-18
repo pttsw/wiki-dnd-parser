@@ -2636,13 +2636,20 @@ async function processGeneratedFiles() {
     // 处理英文JSON文件
     for (const file of jsonEnFiles) {
         const inputPath = path.join(enGeneratedDir, file);
-        const outputPath = path.join(outputDir, `${path.parse(file).name}-en.json`);
         
         try {
             const data = await fs.readFile(inputPath, 'utf-8');
             const parsedData = JSON.parse(data);
-            const formattedData = JSON.stringify(parsedData, null, 2);
-            await fs.writeFile(outputPath, formattedData, 'utf-8');
+            
+            // 特殊处理 gendata-tables.json 文件
+            if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
+                await processTablesFile(parsedData.table, 'en');
+            } else {
+                // 普通文件处理
+                const outputPath = path.join(outputDir, `${path.parse(file).name}-en.json`);
+                const formattedData = JSON.stringify(parsedData, null, 2);
+                await fs.writeFile(outputPath, formattedData, 'utf-8');
+            }
         } catch (error) {
             console.error(`处理英文文件失败: ${file}`, error);
         }
@@ -2651,17 +2658,60 @@ async function processGeneratedFiles() {
     // 处理中文JSON文件
     for (const file of jsonZhFiles) {
         const inputPath = path.join(zhGeneratedDir, file);
-        const outputPath = path.join(outputDir, file);
         
         try {
             const data = await fs.readFile(inputPath, 'utf-8');
             const parsedData = JSON.parse(data);
-            const formattedData = JSON.stringify(parsedData, null, 2);
-            await fs.writeFile(outputPath, formattedData, 'utf-8');
+            
+            // 特殊处理 gendata-tables.json 文件
+            if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
+                await processTablesFile(parsedData.table, 'zh');
+            } else {
+                // 普通文件处理
+                const outputPath = path.join(outputDir, file);
+                const formattedData = JSON.stringify(parsedData, null, 2);
+                await fs.writeFile(outputPath, formattedData, 'utf-8');
+            }
         } catch (error) {
             console.error(`处理中文文件失败: ${file}`, error);
         }
     }
 
     printProgress('generated 文件夹处理完成');
+}
+
+// 处理表格文件，将表格按照 source 和 name 分割输出
+async function processTablesFile(tables: any[], language: 'en' | 'zh') {
+    const tablesOutputDir = path.join('./output', 'generated', 'tables', language);
+    await fs.mkdir(tablesOutputDir, { recursive: true });
+    
+    for (const table of tables) {
+        if (!table.source || !table.name) {
+            console.warn('表格缺少source或name字段，跳过:', table);
+            continue;
+        }
+        
+        // 清理文件名中的非法字符
+        const sanitizeFileName = (name: string): string => {
+            // Windows非法字符: < > : " / \ | ? *
+            return name.replace(/[<>:"/\\|?*]/g, '_');
+        };
+        
+        // 生成文件名：tables_1_来源_1_表格名.json
+        const safeName = sanitizeFileName(table.name);
+        const fileName = `tables_1_${table.source}_1_${safeName}.json`;
+        const outputPath = path.join(tablesOutputDir, fileName);
+        
+        try {
+            // 添加 dataType 字段
+            const tableWithDataType = {
+                dataType: 'table',
+                ...table
+            };
+            const formattedData = JSON.stringify(tableWithDataType, null, 2);
+            await fs.writeFile(outputPath, formattedData, 'utf-8');
+        } catch (error) {
+            console.error(`处理表格失败: ${fileName}`, error);
+        }
+    }
 }
