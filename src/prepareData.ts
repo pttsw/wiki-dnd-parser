@@ -1873,7 +1873,39 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             zhItem as { translator?: string } | undefined,
             enItem as { translator?: string } | undefined
         );
-        appendEnglishShadowFields(zhOut, enOut);
+
+        // 处理 inherits 相关逻辑
+        // 判断是否是衍生文件：有 origin 字段且 origin 与当前 id 不同，并且有 baseItem 字段（表示是在 inherits 基础上新生成的）
+        const isInheritsDerived = opts.origin && opts.origin !== opts.id && enItem.baseItem;
+        // 判断是否是基础 inherits 文件：有 inherits 字段但不是衍生文件
+        const isInheritsBase = enItem.inherits && !isInheritsDerived;
+
+        // 对于基础 inherits 文件，在 zh.inherits 中添加 ENG_namePrefix
+        if (isInheritsBase && zhOut.inherits) {
+            const enNamePrefix = enOut.inherits?.namePrefix;
+            if (enNamePrefix) {
+                zhOut.inherits.ENG_namePrefix = enNamePrefix;
+            }
+        }
+
+        // 对于衍生文件，添加 inheritsreq: true 并删除英文影子字段
+        if (isInheritsDerived) {
+            common.inheritsreq = true;
+            // 删除 zh 中的英文影子字段
+            delete zhOut.namePrefix_en;
+            delete zhOut.entries_en;
+            delete zhOut.html_en;
+            delete zhOut.baseItem_en;
+            delete zhOut.ENG_name;
+            delete zhOut.ENG_namePrefix;
+            // 删除最上层的 value 字段
+            delete common.value;
+        }
+
+        // 只有非 inherits 相关的文件才添加英文影子字段
+        if (!isInheritsBase && !isInheritsDerived) {
+            appendEnglishShadowFields(zhOut, enOut);
+        }
 
         return {
             dataType: 'item',
