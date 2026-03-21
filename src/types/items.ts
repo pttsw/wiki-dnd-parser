@@ -479,6 +479,7 @@ export type WikiItemTypeEntry = {
 
 export type WikiItemTypeData = WikiData<WikiItemTypeEntry, 'itemType'> & {
     abbreviation: string;
+    baseItemList?: string[];
 };
 
 export type WikiItemMasteryEntry = {
