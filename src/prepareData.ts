@@ -779,6 +779,39 @@ class ItemTypeMgr implements DataMgr<ItemType> {
             this.db.set(id, typeData);
         }
     }
+
+    // 从 baseItemMgr 收集各类型对应的基础物品列表
+    collectBaseItems(baseItemMgr: BaseItemMgr) {
+        // 创建类型缩写到物品ID列表的映射
+        const typeToItemsMap = new Map<string, string[]>();
+
+        for (const [itemId, itemData] of baseItemMgr.db) {
+            // 只处理基础物品
+            if (!itemData.isBaseItem) continue;
+
+            // 获取物品的类型
+            const itemType = itemData.type;
+            if (!itemType) continue;
+
+            // 将物品ID添加到对应类型的列表中
+            if (!typeToItemsMap.has(itemType)) {
+                typeToItemsMap.set(itemType, []);
+            }
+            typeToItemsMap.get(itemType)!.push(itemId);
+        }
+
+        // 将收集到的基础物品列表更新到每个类型数据中
+        for (const [typeId, typeData] of this.db) {
+            // 提取类型缩写（去掉来源部分）
+            const abbreviation = typeData.abbreviation;
+            const baseItemList = typeToItemsMap.get(abbreviation);
+            
+            if (baseItemList && baseItemList.length > 0) {
+                typeData.baseItemList = baseItemList;
+            }
+        }
+    }
+
     async generateFiles() {
         const outputPath = './output/collection/itemTypeCollection.json';
         try {
@@ -1890,7 +1923,6 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
         // 对于衍生文件，添加 inheritsreq: true 并删除英文影子字段
         if (isInheritsDerived) {
-            common.inheritsreq = true;
             // 删除 zh 中的英文影子字段
             delete zhOut.namePrefix_en;
             delete zhOut.entries_en;
@@ -1907,6 +1939,13 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             appendEnglishShadowFields(zhOut, enOut);
         }
 
+        // 构建 superiorfork 块
+        const superiorfork: Record<string, any> = {};
+        if (opts.superior) superiorfork.superior = opts.superior;
+        if (opts.origin) superiorfork.origin = opts.origin;
+        if (opts.fork) superiorfork.fork = opts.fork;
+        if (isInheritsDerived) superiorfork.inheritsreq = true;
+
         return {
             dataType: 'item',
             uid: `item_${opts.id}`,
@@ -1915,9 +1954,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             translator,
             rarity: opts.rarity ?? enItem.rarity,
             isBaseItem: false,
-            origin: opts.origin,
-            superior: opts.superior,
-            fork: opts.fork ?? 0,
+            ...(Object.keys(superiorfork).length > 0 ? { superiorfork } : {}),
             full: opts.full,
             displayName: {
                 zh: (() => {
@@ -2598,8 +2635,7 @@ const printProgress = (message: string) => {
         printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
         itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemTypeMgr.generateFiles();
-        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
+        // 注意：itemTypeCollection.json 将在 baseItemMgr 加载完成后生成
 
         itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         await itemMasteryMgr.generateFiles();
@@ -2608,6 +2644,11 @@ const printProgress = (message: string) => {
         baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         await baseItemMgr.generateFiles();
         printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+
+        // 在 baseItemMgr 加载完成后，收集基础物品列表并生成 itemTypeCollection.json
+        itemTypeMgr.collectBaseItems(baseItemMgr);
+        await itemTypeMgr.generateFiles();
+        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
         itemMgr.loadData(itemFiles.zh, itemFiles.en);
         await itemMgr.generateFiles();
