@@ -2236,6 +2236,16 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
                 const templateSuperior = templateSuperiorMap.get(id);
                 const templateFork = templateForkMap.get(id) ?? 1;
+                
+                // 判断是否是 inherits 衍生文件（有 inherits 字段的模板生成的衍生文件）
+                const isInheritsDerived = enItem.inherits;
+                
+                // 对于 inherits 衍生文件，full 从 inherits 母本文件（模板）继承
+                // 否则从基础物品继承
+                const full = isInheritsDerived 
+                    ? itemFluffMgr.getFull(id)  // 从 inherits 母本文件获取 fluff
+                    : this.baseItems.db.get(baseId)?.full;  // 从基础物品获取 fluff
+                
                 const derivedData = this.buildVariantItemData(mergedEn, mergedZh, {
                     id: derivedId,
                     source,
@@ -2246,7 +2256,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                     origin: id,
                     superior: templateSuperior || id,
                     fork: templateFork + 1,
-                    full: this.baseItems.db.get(baseId)?.full,
+                    full,
                 });
 
                 this.db.set(derivedId, derivedData);
