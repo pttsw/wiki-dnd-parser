@@ -820,11 +820,88 @@ class ItemTypeMgr implements DataMgr<ItemType> {
         } catch (error) {
             // do nothing, file does not exist
         }
+
+        // 收集所有数据
+        const data = Array.from(this.db.values());
+
+        // 为只有旧版来源（PHB/DMG）的类别创建新版副本（XPHB/XDMG）
+        const additionalTypes: WikiItemTypeData[] = [];
+        const typeMap = new Map<string, WikiItemTypeData[]>();
+
+        // 按 abbreviation 分组
+        for (const typeData of data) {
+            const abbr = typeData.abbreviation;
+            if (!typeMap.has(abbr)) {
+                typeMap.set(abbr, []);
+            }
+            typeMap.get(abbr)!.push(typeData);
+        }
+
+        // 检查每个类别，补全缺失的新版或旧版来源
+        for (const [abbr, types] of typeMap) {
+            const hasXPHB = types.some(t => t.mainSource.source === 'XPHB');
+            const hasXDMG = types.some(t => t.mainSource.source === 'XDMG');
+            const hasPHB = types.some(t => t.mainSource.source === 'PHB');
+            const hasDMG = types.some(t => t.mainSource.source === 'DMG');
+
+            // 双向补全：PHB <-> XPHB
+            if (hasPHB && !hasXPHB) {
+                // 有 PHB 但没有 XPHB，创建 XPHB 副本
+                const phbType = types.find(t => t.mainSource.source === 'PHB')!;
+                const xphbType = this.createNewVersionType(phbType, 'XPHB');
+                additionalTypes.push(xphbType);
+            } else if (!hasPHB && hasXPHB) {
+                // 有 XPHB 但没有 PHB，创建 PHB 副本
+                const xphbType = types.find(t => t.mainSource.source === 'XPHB')!;
+                const phbType = this.createNewVersionType(xphbType, 'PHB');
+                additionalTypes.push(phbType);
+            }
+
+            // 双向补全：DMG <-> XDMG
+            if (hasDMG && !hasXDMG) {
+                // 有 DMG 但没有 XDMG，创建 XDMG 副本
+                const dmgType = types.find(t => t.mainSource.source === 'DMG')!;
+                const xdmgType = this.createNewVersionType(dmgType, 'XDMG');
+                additionalTypes.push(xdmgType);
+            } else if (!hasDMG && hasXDMG) {
+                // 有 XDMG 但没有 DMG，创建 DMG 副本
+                const xdmgType = types.find(t => t.mainSource.source === 'XDMG')!;
+                const dmgType = this.createNewVersionType(xdmgType, 'DMG');
+                additionalTypes.push(dmgType);
+            }
+        }
+
+        // 合并原始数据和新增数据
+        const allData = [...data, ...additionalTypes];
+
         const output = {
             type: 'itemTypeCollection',
-            data: Array.from(this.db.values()),
+            data: allData,
         };
         await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    }
+
+    // 创建新版或旧版来源的类别副本
+    private createNewVersionType(originalType: WikiItemTypeData, newSource: 'PHB' | 'DMG' | 'XPHB' | 'XDMG'): WikiItemTypeData {
+        const newId = `${originalType.abbreviation}|${newSource}`;
+
+        // 深拷贝原始数据
+        const newType: WikiItemTypeData = JSON.parse(JSON.stringify(originalType));
+
+        // 更新 ID 和来源信息
+        newType.uid = `itemType_${newId}`;
+        newType.id = newId;
+        newType.mainSource = {
+            source: newSource,
+            page: originalType.mainSource.page,
+        };
+
+        // 如果有 baseItemList，保留它
+        if (originalType.baseItemList) {
+            newType.baseItemList = originalType.baseItemList;
+        }
+
+        return newType;
     }
 }
 export const itemTypeMgr = new ItemTypeMgr();
