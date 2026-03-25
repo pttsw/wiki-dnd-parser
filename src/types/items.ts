@@ -384,6 +384,12 @@ export type WikiItemData = WikiData<WikiItemEntry, 'item'> & {
     origin?: string;
     superior?: string;
     fork?: number;
+    superiorfork?: {
+        origin?: string;
+        superior?: string;
+        fork?: number;
+        inheritsreq?: boolean;
+    };
     subTypes?: string[];
     // 武器类：sword,crossbow,axe,staff,club,spear,dagger,hammer,bow,mace,firearm,polearm,lance,rapier,tattoo
     // 弹药类：arrow,bolt,cellEnergy,bulletFirearm,bulletSling

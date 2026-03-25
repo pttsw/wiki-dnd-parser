@@ -47,6 +47,7 @@ import {
     SpellFluffFile,
     WikiSpellData,
 } from './types/spells';
+import { WikiPageGenerator } from './wikiPageGenerator.js';
 
 /**
  * 直接在字符串上替换 {=bonusWeapon} 和 {=bonusWeaponDamage}
@@ -233,16 +234,26 @@ const processBonusReplacements = (itemData: any): any => {
 };
 
 export const createOutputFolders = async () => {
-    // delete ./output folder and all files
-    try {
-        await fs.access('./output');
-        await fs.rm('./output', { recursive: true, force: true });
-    } catch (error) {
-        // do nothing, folder does not exist
+    for (const targetDir of ['./output', './output_page']) {
+        try {
+            await fs.access(targetDir);
+            await fs.rm(targetDir, { recursive: true, force: true });
+        } catch (error) {
+            // do nothing, folder does not exist
+        }
     }
     const dirs = ['collection', 'item', 'spell', 'generated'];
     for (const dir of dirs) {
         const dirPath = path.join('./output', dir);
+        try {
+            await fs.access(dirPath);
+        } catch (error) {
+            await fs.mkdir(dirPath, { recursive: true });
+        }
+    }
+    const pageDirs = ['spells', 'items'];
+    for (const dir of pageDirs) {
+        const dirPath = path.join('./output_page', dir);
         try {
             await fs.access(dirPath);
         } catch (error) {
@@ -362,6 +373,30 @@ const appendEnglishShadowFields = (
             zhOut[enKey] = enValue;
         }
     }
+};
+
+const buildSuperiorfork = (
+    hierarchy: {
+        origin?: string;
+        superior?: string;
+        fork?: number;
+    },
+    inheritsreq = false
+): WikiItemData['superiorfork'] | undefined => {
+    const superiorfork: NonNullable<WikiItemData['superiorfork']> = {};
+    if (typeof hierarchy.origin === 'string' && hierarchy.origin.trim() !== '') {
+        superiorfork.origin = hierarchy.origin;
+    }
+    if (typeof hierarchy.superior === 'string' && hierarchy.superior.trim() !== '') {
+        superiorfork.superior = hierarchy.superior;
+    }
+    if (typeof hierarchy.fork === 'number') {
+        superiorfork.fork = hierarchy.fork;
+    }
+    if (inheritsreq) {
+        superiorfork.inheritsreq = true;
+    }
+    return Object.keys(superiorfork).length > 0 ? superiorfork : undefined;
 };
 
 class Logger {
@@ -1981,6 +2016,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 enItem as { translator?: string } | undefined
             );
             appendEnglishShadowFields(zhOut, enOut);
+            const superiorfork = buildSuperiorfork({ origin, superior, fork });
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -1989,9 +2025,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 ...common,
                 translator,
                 isBaseItem: false,
-                origin,
-                superior,
-                fork,
+                ...(superiorfork ? { superiorfork } : {}),
                 full: itemFluffMgr.getFull(id),
                 displayName: {
                     zh: (() => {
@@ -2510,12 +2544,14 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             appendEnglishShadowFields(zhOut, enOut);
         }
 
-        // 构建 superiorfork 块
-        const superiorfork: Record<string, any> = {};
-        if (opts.superior) superiorfork.superior = opts.superior;
-        if (opts.origin) superiorfork.origin = opts.origin;
-        if (opts.fork) superiorfork.fork = opts.fork;
-        if (isInheritsDerived) superiorfork.inheritsreq = true;
+        const superiorfork = buildSuperiorfork(
+            {
+                superior: opts.superior,
+                origin: opts.origin,
+                fork: opts.fork,
+            },
+            isInheritsDerived
+        );
 
         return {
             dataType: 'item',
@@ -2525,7 +2561,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             translator,
             rarity: opts.rarity ?? enItem.rarity,
             isBaseItem: false,
-            ...(Object.keys(superiorfork).length > 0 ? { superiorfork } : {}),
+            ...(superiorfork ? { superiorfork } : {}),
             full: opts.full,
             displayName: {
                 zh: (() => {
@@ -3405,6 +3441,19 @@ const printProgress = (message: string) => {
         spellMgr.loadData(spellFiles.zh, spellFiles.en);
         await spellMgr.generateFiles();
         printProgress(`spell 完成 (${spellMgr.db.size})`);
+
+        const wikiPageGenerator = new WikiPageGenerator({
+            books: bookFiles,
+            spells: spellMgr.db,
+            baseItems: baseItemMgr.db,
+            items: itemMgr.db,
+            magicVariants: magicVariantMgr.db,
+            logger: message => printProgress(`wikiPage: ${message}`),
+        });
+        const wikiPageResult = await wikiPageGenerator.generateAll();
+        printProgress(
+            `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+        );
 
         await idMgr.generateFiles();
         await tagParser.generateFiles();
