@@ -48,6 +48,190 @@ import {
     WikiSpellData,
 } from './types/spells';
 
+/**
+ * 直接在字符串上替换 {=bonusWeapon} 和 {=bonusWeaponDamage}
+ */
+const replaceBonusInString = (str: string, itemData: any): string => {
+    if (typeof str !== 'string') return str;
+    
+    let result = str;
+    
+    // 处理 {=bonusWeapon}
+    if (result.includes('{=bonusWeapon}')) {
+        // 获取 bonusWeapon 值，优先级：
+        // 1. zh.inherits.bonusWeapon 或 en.inherits.bonusWeapon（同块）
+        // 2. itemData.bonusWeapon
+        // 3. itemData.weapon.bonusWeapon
+        // 4. itemData.bonus.weapon
+        let bonusValue: number | undefined;
+        
+        // 检查 zh.inherits.bonusWeapon
+        if (itemData.zh && itemData.zh.inherits && itemData.zh.inherits.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.zh.inherits.bonusWeapon);
+        }
+        // 检查 en.inherits.bonusWeapon
+        else if (itemData.en && itemData.en.inherits && itemData.en.inherits.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.en.inherits.bonusWeapon);
+        }
+        // 检查 itemData.bonusWeapon
+        else if (itemData.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.bonusWeapon);
+        }
+        // 检查 itemData.weapon.bonusWeapon
+        else if (itemData.weapon && itemData.weapon.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.weapon.bonusWeapon);
+        }
+        // 检查 itemData.bonus.weapon
+        else if (itemData.bonus && itemData.bonus.weapon !== undefined) {
+            bonusValue = Number(itemData.bonus.weapon);
+        }
+        
+        // 替换为 {@bonusweapon +数值} 格式
+        if (bonusValue !== undefined && !isNaN(bonusValue)) {
+            const sign = bonusValue >= 0 ? '+' : '';
+            result = result.replace(/{=bonusWeapon}/g, `{@bonusweapon ${sign}${bonusValue}}`);
+        }
+    }
+    
+    // 处理 {=bonusWeaponDamage}
+    if (result.includes('{=bonusWeaponDamage}')) {
+        // 获取 bonusWeaponDamage 值，优先级：
+        // 1. zh.inherits.bonusWeaponDamage 或 en.inherits.bonusWeaponDamage（同块）
+        // 2. itemData.bonusWeaponDamage
+        // 3. itemData.bonus.WeaponDamage
+        let bonusValue: number | undefined;
+        
+        // 检查 zh.inherits.bonusWeaponDamage
+        if (itemData.zh && itemData.zh.inherits && itemData.zh.inherits.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.zh.inherits.bonusWeaponDamage);
+        }
+        // 检查 en.inherits.bonusWeaponDamage
+        else if (itemData.en && itemData.en.inherits && itemData.en.inherits.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.en.inherits.bonusWeaponDamage);
+        }
+        // 检查 itemData.bonusWeaponDamage
+        else if (itemData.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.bonusWeaponDamage);
+        }
+        // 检查 itemData.bonus.WeaponDamage
+        else if (itemData.bonus && itemData.bonus.WeaponDamage !== undefined) {
+            bonusValue = Number(itemData.bonus.WeaponDamage);
+        }
+        
+        // 替换为 {@bonusweapon +数值} 格式
+        if (bonusValue !== undefined && !isNaN(bonusValue)) {
+            const sign = bonusValue >= 0 ? '+' : '';
+            result = result.replace(/{=bonusWeaponDamage}/g, `{@bonusweapon ${sign}${bonusValue}}`);
+        }
+    }
+    
+    return result;
+};
+
+/**
+ * 处理物品数据中的 bonus 替换（直接修改原始对象）
+ */
+const processBonusReplacements = (itemData: any): any => {
+    // 处理 zh 部分
+    if (itemData.zh) {
+        // 处理 entries
+        if (itemData.zh.entries) {
+            if (Array.isArray(itemData.zh.entries)) {
+                itemData.zh.entries = itemData.zh.entries.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.zh.entries === 'string') {
+                itemData.zh.entries = replaceBonusInString(itemData.zh.entries, itemData);
+            }
+        }
+        
+        // 处理 html
+        if (typeof itemData.zh.html === 'string') {
+            itemData.zh.html = replaceBonusInString(itemData.zh.html, itemData);
+        }
+        
+        // 处理 entries_en
+        if (itemData.zh.entries_en) {
+            if (Array.isArray(itemData.zh.entries_en)) {
+                itemData.zh.entries_en = itemData.zh.entries_en.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.zh.entries_en === 'string') {
+                itemData.zh.entries_en = replaceBonusInString(itemData.zh.entries_en, itemData);
+            }
+        }
+        
+        // 处理 html_en
+        if (typeof itemData.zh.html_en === 'string') {
+            itemData.zh.html_en = replaceBonusInString(itemData.zh.html_en, itemData);
+        }
+        
+        // 处理 inherits 部分
+        if (itemData.zh.inherits) {
+            // 处理 inherits.entries
+            if (itemData.zh.inherits.entries) {
+                if (Array.isArray(itemData.zh.inherits.entries)) {
+                    itemData.zh.inherits.entries = itemData.zh.inherits.entries.map((entry: any) => {
+                        if (typeof entry === 'string') {
+                            return replaceBonusInString(entry, itemData);
+                        }
+                        return entry;
+                    });
+                } else if (typeof itemData.zh.inherits.entries === 'string') {
+                    itemData.zh.inherits.entries = replaceBonusInString(itemData.zh.inherits.entries, itemData);
+                }
+            }
+        }
+    }
+    
+    // 处理 en 部分
+    if (itemData.en) {
+        // 处理 entries
+        if (itemData.en.entries) {
+            if (Array.isArray(itemData.en.entries)) {
+                itemData.en.entries = itemData.en.entries.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.en.entries === 'string') {
+                itemData.en.entries = replaceBonusInString(itemData.en.entries, itemData);
+            }
+        }
+        
+        // 处理 html
+        if (typeof itemData.en.html === 'string') {
+            itemData.en.html = replaceBonusInString(itemData.en.html, itemData);
+        }
+        
+        // 处理 inherits 部分
+        if (itemData.en.inherits) {
+            // 处理 inherits.entries
+            if (itemData.en.inherits.entries) {
+                if (Array.isArray(itemData.en.inherits.entries)) {
+                    itemData.en.inherits.entries = itemData.en.inherits.entries.map((entry: any) => {
+                        if (typeof entry === 'string') {
+                            return replaceBonusInString(entry, itemData);
+                        }
+                        return entry;
+                    });
+                } else if (typeof itemData.en.inherits.entries === 'string') {
+                    itemData.en.inherits.entries = replaceBonusInString(itemData.en.inherits.entries, itemData);
+                }
+            }
+        }
+    }
+    
+    return itemData;
+};
+
 export const createOutputFolders = async () => {
     // delete ./output folder and all files
     try {
@@ -56,7 +240,7 @@ export const createOutputFolders = async () => {
     } catch (error) {
         // do nothing, folder does not exist
     }
-    const dirs = ['collection', 'item', 'spell'];
+    const dirs = ['collection', 'item', 'spell', 'generated'];
     for (const dir of dirs) {
         const dirPath = path.join('./output', dir);
         try {
@@ -779,6 +963,42 @@ class ItemTypeMgr implements DataMgr<ItemType> {
             this.db.set(id, typeData);
         }
     }
+
+    // 从 baseItemMgr 收集各类型对应的基础物品列表
+    collectBaseItems(baseItemMgr: BaseItemMgr) {
+        // 创建类型缩写到物品ID列表的映射
+        const typeToItemsMap = new Map<string, string[]>();
+
+        for (const [itemId, itemData] of baseItemMgr.db) {
+            // 只处理基础物品
+            if (!itemData.isBaseItem) continue;
+
+            // 获取物品的类型
+            const itemType = itemData.type;
+            if (!itemType) continue;
+
+            // 提取类型缩写（去掉来源部分）
+            const typeAbbr = itemType.split('|')[0];
+
+            // 将物品ID添加到对应类型缩写的列表中
+            if (!typeToItemsMap.has(typeAbbr)) {
+                typeToItemsMap.set(typeAbbr, []);
+            }
+            typeToItemsMap.get(typeAbbr)!.push(itemId);
+        }
+
+        // 将收集到的基础物品列表更新到每个类型数据中
+        for (const [typeId, typeData] of this.db) {
+            // 使用类型缩写作为键来获取基础物品列表
+            const abbreviation = typeData.abbreviation;
+            const baseItemList = typeToItemsMap.get(abbreviation);
+            
+            if (baseItemList && baseItemList.length > 0) {
+                typeData.baseItemList = baseItemList;
+            }
+        }
+    }
+
     async generateFiles() {
         const outputPath = './output/collection/itemTypeCollection.json';
         try {
@@ -787,11 +1007,116 @@ class ItemTypeMgr implements DataMgr<ItemType> {
         } catch (error) {
             // do nothing, file does not exist
         }
+
+        // 收集所有数据
+        const data = Array.from(this.db.values());
+
+        // 为只有旧版来源（PHB/DMG）的类别创建新版副本（XPHB/XDMG）
+        const additionalTypes: WikiItemTypeData[] = [];
+        const typeMap = new Map<string, WikiItemTypeData[]>();
+
+        // 按 abbreviation 分组
+        for (const typeData of data) {
+            const abbr = typeData.abbreviation;
+            if (!typeMap.has(abbr)) {
+                typeMap.set(abbr, []);
+            }
+            typeMap.get(abbr)!.push(typeData);
+        }
+
+        // 检查每个类别，补全缺失的新版或旧版来源
+        for (const [abbr, types] of typeMap) {
+            const hasXPHB = types.some(t => t.mainSource.source === 'XPHB');
+            const hasXDMG = types.some(t => t.mainSource.source === 'XDMG');
+            const hasPHB = types.some(t => t.mainSource.source === 'PHB');
+            const hasDMG = types.some(t => t.mainSource.source === 'DMG');
+
+            // 双向补全：PHB <-> XPHB
+            if (hasPHB && !hasXPHB) {
+                // 有 PHB 但没有 XPHB，创建 XPHB 副本
+                const phbType = types.find(t => t.mainSource.source === 'PHB')!;
+                const xphbType = this.createNewVersionType(phbType, 'XPHB');
+                additionalTypes.push(xphbType);
+            } else if (!hasPHB && hasXPHB) {
+                // 有 XPHB 但没有 PHB，创建 PHB 副本
+                const xphbType = types.find(t => t.mainSource.source === 'XPHB')!;
+                const phbType = this.createNewVersionType(xphbType, 'PHB');
+                additionalTypes.push(phbType);
+            }
+
+            // 双向补全：DMG <-> XDMG
+            if (hasDMG && !hasXDMG) {
+                // 有 DMG 但没有 XDMG，创建 XDMG 副本
+                const dmgType = types.find(t => t.mainSource.source === 'DMG')!;
+                const xdmgType = this.createNewVersionType(dmgType, 'XDMG');
+                additionalTypes.push(xdmgType);
+            } else if (!hasDMG && hasXDMG) {
+                // 有 XDMG 但没有 DMG，创建 DMG 副本
+                const xdmgType = types.find(t => t.mainSource.source === 'XDMG')!;
+                const dmgType = this.createNewVersionType(xdmgType, 'DMG');
+                additionalTypes.push(dmgType);
+            }
+        }
+
+        // 合并原始数据和新增数据
+        const allData = [...data, ...additionalTypes];
+
+        // 添加 WI|XDMG 类别（奇物）
+        const wiXdmgType: WikiItemTypeData = {
+            dataType: 'itemType',
+            uid: 'itemType_WI|XDMG',
+            id: 'WI|XDMG',
+            abbreviation: 'WI',
+            mainSource: {
+                source: 'XDMG',
+                page: 217,
+            },
+            allSources: [],
+            displayName: {
+                zh: '奇物',
+                en: 'Wondrous Items',
+            },
+            zh: {
+                name: '奇物',
+                entries: ['奇物类别的物品包括但不限于诸如靴子、腰带、斗篷、护符、徽章、头饰之类的可着装物品。背包、毛毯、小型塑像、号角、乐器等物品也都归于此类。'],
+                html: '奇物类别的物品包括但不限于诸如靴子、腰带、斗篷、护符、徽章、头饰之类的可着装物品。背包、毛毯、小型塑像、号角、乐器等物品也都归于此类。',
+            },
+            en: {
+                name: 'Wondrous Items',
+                entries: ['Wondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and circlets. Bags, carpets, figurines, horns, musical instruments, and more also fall into this category.'],
+                html: 'Wondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and circlets. Bags, carpets, figurines, horns, musical instruments, and more also fall into this category.',
+            },
+        };
+        allData.push(wiXdmgType);
+
         const output = {
             type: 'itemTypeCollection',
-            data: Array.from(this.db.values()),
+            data: allData,
         };
         await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    }
+
+    // 创建新版或旧版来源的类别副本
+    private createNewVersionType(originalType: WikiItemTypeData, newSource: 'PHB' | 'DMG' | 'XPHB' | 'XDMG'): WikiItemTypeData {
+        const newId = `${originalType.abbreviation}|${newSource}`;
+
+        // 深拷贝原始数据
+        const newType: WikiItemTypeData = JSON.parse(JSON.stringify(originalType));
+
+        // 更新 ID 和来源信息
+        newType.uid = `itemType_${newId}`;
+        newType.id = newId;
+        newType.mainSource = {
+            source: newSource,
+            page: originalType.mainSource.page,
+        };
+
+        // 如果有 baseItemList，保留它
+        if (originalType.baseItemList) {
+            newType.baseItemList = originalType.baseItemList;
+        }
+
+        return newType;
     }
 }
 export const itemTypeMgr = new ItemTypeMgr();
@@ -1119,6 +1444,16 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
             const common = { ...split.common };
             
+            // 确保ItemGroup的items字段被包含在common对象中，并为没有来源的物品添加|DMG后缀
+            if ('items' in enItem && Array.isArray(enItem.items)) {
+                common.items = enItem.items.map((item: string) => {
+                    if (typeof item === 'string' && !item.includes('|')) {
+                        return `${item}|DMG`;
+                    }
+                    return item;
+                });
+            }
+            
             // 删除外面的bonusWeapon和critThreshold，只在weapon块中保留
             delete common.bonusWeapon;
             delete common.critThreshold;
@@ -1250,9 +1585,126 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            const simpletype = this.getSimpleType(itemData.type);
+            itemData.simpletype = simpletype;
+
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const baseItemMgr = new BaseItemMgr();
@@ -1447,6 +1899,16 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
             const common = { ...split.common };
             
+            // 确保ItemGroup的items字段被包含在common对象中，并为没有来源的物品添加|DMG后缀
+            if ('items' in enItem && Array.isArray(enItem.items)) {
+                common.items = enItem.items.map((item: string) => {
+                    if (typeof item === 'string' && !item.includes('|')) {
+                        return `${item}|DMG`;
+                    }
+                    return item;
+                });
+            }
+            
             // 删除外面的bonusWeapon和critThreshold，只在weapon块中保留
             delete common.bonusWeapon;
             delete common.critThreshold;
@@ -1580,8 +2042,170 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            const typeAbbr = itemData.type.split('|')[0];
+            let simpletype = '其他';
+            
+            // 【装备】
+            if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+                simpletype = '武器';
+            } else if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+                simpletype = '护甲';
+            } else if (typeAbbr === 'T' || typeAbbr === 'AT') {
+                simpletype = '工具';
+            } else if (typeAbbr === 'G') {
+                simpletype = '冒险用品';
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
+                simpletype = '坐骑与载具';
+            } else if (typeAbbr === 'FD') {
+                simpletype = '食物和饮品';
+            }
+            // 【宝藏】
+            else if (typeAbbr === '$C') {
+                simpletype = '钱币';
+            } else if (typeAbbr === 'TB') {
+                simpletype = '贸易金属条';
+            } else if (typeAbbr === 'TG') {
+                simpletype = '商业货物';
+            } else if (typeAbbr === '$G') {
+                simpletype = '宝石';
+            } else if (typeAbbr === '$A') {
+                simpletype = '艺术品';
+            }
+            // 【魔法物品】
+            else if (typeAbbr === 'P') {
+                simpletype = '药水';
+            } else if (typeAbbr === 'RG') {
+                simpletype = '戒指';
+            } else if (typeAbbr === 'RD') {
+                simpletype = '权杖';
+            } else if (typeAbbr === 'SC') {
+                simpletype = '卷轴';
+            } else if (typeAbbr === 'SCF') {
+                simpletype = '法杖';
+            } else if (typeAbbr === 'WD') {
+                simpletype = '魔杖';
+            } else if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+                simpletype = '奇物';
+            }
+            
+            itemData.simpletype = simpletype;
+
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const itemMgr = new ItemMgr(baseItemMgr);
@@ -1853,7 +2477,45 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             zhItem as { translator?: string } | undefined,
             enItem as { translator?: string } | undefined
         );
-        appendEnglishShadowFields(zhOut, enOut);
+
+        // 处理 inherits 相关逻辑
+        // 判断是否是衍生文件：有 origin 字段且 origin 与当前 id 不同，并且有 baseItem 字段（表示是在 inherits 基础上新生成的）
+        const isInheritsDerived = opts.origin && opts.origin !== opts.id && enItem.baseItem;
+        // 判断是否是基础 inherits 文件：有 inherits 字段但不是衍生文件
+        const isInheritsBase = enItem.inherits && !isInheritsDerived;
+
+        // 对于基础 inherits 文件，在 zh.inherits 中添加 ENG_namePrefix
+        if (isInheritsBase && zhOut.inherits) {
+            const enNamePrefix = enOut.inherits?.namePrefix;
+            if (enNamePrefix) {
+                zhOut.inherits.ENG_namePrefix = enNamePrefix;
+            }
+        }
+
+        // 对于衍生文件，添加 inheritsreq: true 并删除英文影子字段
+        if (isInheritsDerived) {
+            // 删除 zh 中的英文影子字段
+            delete zhOut.namePrefix_en;
+            delete zhOut.entries_en;
+            delete zhOut.html_en;
+            delete zhOut.baseItem_en;
+            delete zhOut.ENG_name;
+            delete zhOut.ENG_namePrefix;
+            // 删除最上层的 value 字段
+            delete common.value;
+        }
+
+        // 只有非 inherits 相关的文件才添加英文影子字段
+        if (!isInheritsBase && !isInheritsDerived) {
+            appendEnglishShadowFields(zhOut, enOut);
+        }
+
+        // 构建 superiorfork 块
+        const superiorfork: Record<string, any> = {};
+        if (opts.superior) superiorfork.superior = opts.superior;
+        if (opts.origin) superiorfork.origin = opts.origin;
+        if (opts.fork) superiorfork.fork = opts.fork;
+        if (isInheritsDerived) superiorfork.inheritsreq = true;
 
         return {
             dataType: 'item',
@@ -1863,9 +2525,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             translator,
             rarity: opts.rarity ?? enItem.rarity,
             isBaseItem: false,
-            origin: opts.origin,
-            superior: opts.superior,
-            fork: opts.fork ?? 0,
+            ...(Object.keys(superiorfork).length > 0 ? { superiorfork } : {}),
             full: opts.full,
             displayName: {
                 zh: (() => {
@@ -2147,6 +2807,16 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
                 const templateSuperior = templateSuperiorMap.get(id);
                 const templateFork = templateForkMap.get(id) ?? 1;
+                
+                // 判断是否是 inherits 衍生文件（有 inherits 字段的模板生成的衍生文件）
+                const isInheritsDerived = enItem.inherits;
+                
+                // 对于 inherits 衍生文件，full 从 inherits 母本文件（模板）继承
+                // 否则从基础物品继承
+                const full = isInheritsDerived 
+                    ? itemFluffMgr.getFull(id)  // 从 inherits 母本文件获取 fluff
+                    : this.baseItems.db.get(baseId)?.full;  // 从基础物品获取 fluff
+                
                 const derivedData = this.buildVariantItemData(mergedEn, mergedZh, {
                     id: derivedId,
                     source,
@@ -2157,7 +2827,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                     origin: id,
                     superior: templateSuperior || id,
                     fork: templateFork + 1,
-                    full: this.baseItems.db.get(baseId)?.full,
+                    full,
                 });
 
                 this.db.set(derivedId, derivedData);
@@ -2175,8 +2845,170 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            const typeAbbr = itemData.type.split('|')[0];
+            let simpletype = '其他';
+            
+            // 【装备】
+            if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+                simpletype = '武器';
+            } else if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+                simpletype = '护甲';
+            } else if (typeAbbr === 'T' || typeAbbr === 'AT') {
+                simpletype = '工具';
+            } else if (typeAbbr === 'G') {
+                simpletype = '冒险用品';
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
+                simpletype = '坐骑与载具';
+            } else if (typeAbbr === 'FD') {
+                simpletype = '食物和饮品';
+            }
+            // 【宝藏】
+            else if (typeAbbr === '$C') {
+                simpletype = '钱币';
+            } else if (typeAbbr === 'TB') {
+                simpletype = '贸易金属条';
+            } else if (typeAbbr === 'TG') {
+                simpletype = '商业货物';
+            } else if (typeAbbr === '$G') {
+                simpletype = '宝石';
+            } else if (typeAbbr === '$A') {
+                simpletype = '艺术品';
+            }
+            // 【魔法物品】
+            else if (typeAbbr === 'P') {
+                simpletype = '药水';
+            } else if (typeAbbr === 'RG') {
+                simpletype = '戒指';
+            } else if (typeAbbr === 'RD') {
+                simpletype = '权杖';
+            } else if (typeAbbr === 'SC') {
+                simpletype = '卷轴';
+            } else if (typeAbbr === 'SCF') {
+                simpletype = '法杖';
+            } else if (typeAbbr === 'WD') {
+                simpletype = '魔杖';
+            } else if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+                simpletype = '奇物';
+            }
+            
+            itemData.simpletype = simpletype;
+
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const magicVariantMgr = new MagicVariantMgr(baseItemMgr, itemMgr);
@@ -2546,8 +3378,7 @@ const printProgress = (message: string) => {
         printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
         itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemTypeMgr.generateFiles();
-        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
+        // 注意：itemTypeCollection.json 将在 baseItemMgr 加载完成后生成
 
         itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         await itemMasteryMgr.generateFiles();
@@ -2556,6 +3387,11 @@ const printProgress = (message: string) => {
         baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         await baseItemMgr.generateFiles();
         printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+
+        // 在 baseItemMgr 加载完成后，收集基础物品列表并生成 itemTypeCollection.json
+        itemTypeMgr.collectBaseItems(baseItemMgr);
+        await itemTypeMgr.generateFiles();
+        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
         itemMgr.loadData(itemFiles.zh, itemFiles.en);
         await itemMgr.generateFiles();
@@ -2573,6 +3409,7 @@ const printProgress = (message: string) => {
         await idMgr.generateFiles();
         await tagParser.generateFiles();
         await logger.generateFile();
+        await processGeneratedFiles();
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(
@@ -2585,3 +3422,112 @@ const printProgress = (message: string) => {
         process.exitCode = 1;
     }
 })();
+
+async function processGeneratedFiles() {
+    printProgress('开始处理 generated 文件夹');
+    const enGeneratedDir = path.join(config.DATA_EN_DIR, 'generated');
+    const zhGeneratedDir = path.join(config.DATA_ZH_DIR, 'generated');
+    const outputDir = path.join('./output', 'generated');
+
+    // 读取英文generated文件夹中的文件
+    let enFiles;
+    try {
+        enFiles = await fs.readdir(enGeneratedDir);
+    } catch (error) {
+        console.error('读取英文generated文件夹失败:', error);
+        return;
+    }
+    const jsonEnFiles = enFiles.filter(file => file.endsWith('.json'));
+
+    // 读取中文generated文件夹中的文件
+    let zhFiles;
+    try {
+        zhFiles = await fs.readdir(zhGeneratedDir);
+    } catch (error) {
+        console.error('读取中文generated文件夹失败:', error);
+        return;
+    }
+    const jsonZhFiles = zhFiles.filter(file => file.endsWith('.json'));
+
+    // 处理英文JSON文件
+    for (const file of jsonEnFiles) {
+        const inputPath = path.join(enGeneratedDir, file);
+        
+        try {
+            const data = await fs.readFile(inputPath, 'utf-8');
+            const parsedData = JSON.parse(data);
+            
+            // 特殊处理 gendata-tables.json 文件
+            if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
+                await processTablesFile(parsedData.table, 'en');
+            } else {
+                // 普通文件处理
+                const outputPath = path.join(outputDir, `${path.parse(file).name}-en.json`);
+                const formattedData = JSON.stringify(parsedData, null, 2);
+                await fs.writeFile(outputPath, formattedData, 'utf-8');
+            }
+        } catch (error) {
+            console.error(`处理英文文件失败: ${file}`, error);
+        }
+    }
+
+    // 处理中文JSON文件
+    for (const file of jsonZhFiles) {
+        const inputPath = path.join(zhGeneratedDir, file);
+        
+        try {
+            const data = await fs.readFile(inputPath, 'utf-8');
+            const parsedData = JSON.parse(data);
+            
+            // 特殊处理 gendata-tables.json 文件
+            if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
+                await processTablesFile(parsedData.table, 'zh');
+            } else {
+                // 普通文件处理
+                const outputPath = path.join(outputDir, file);
+                const formattedData = JSON.stringify(parsedData, null, 2);
+                await fs.writeFile(outputPath, formattedData, 'utf-8');
+            }
+        } catch (error) {
+            console.error(`处理中文文件失败: ${file}`, error);
+        }
+    }
+
+    printProgress('generated 文件夹处理完成');
+}
+
+// 处理表格文件，将表格按照 source 和 name 分割输出
+async function processTablesFile(tables: any[], language: 'en' | 'zh') {
+    const tablesOutputDir = path.join('./output', 'generated', 'tables', language);
+    await fs.mkdir(tablesOutputDir, { recursive: true });
+    
+    for (const table of tables) {
+        if (!table.source || !table.name) {
+            console.warn('表格缺少source或name字段，跳过:', table);
+            continue;
+        }
+        
+        // 清理文件名中的非法字符
+        const sanitizeFileName = (name: string): string => {
+            // Windows非法字符: < > : " / \ | ? *
+            return name.replace(/[<>:"/\\|?*]/g, '_');
+        };
+        
+        // 生成文件名：tables_1_来源_1_表格名.json
+        const safeName = sanitizeFileName(table.name);
+        const fileName = `tables_1_${table.source}_1_${safeName}.json`;
+        const outputPath = path.join(tablesOutputDir, fileName);
+        
+        try {
+            // 添加 dataType 字段
+            const tableWithDataType = {
+                dataType: 'table',
+                ...table
+            };
+            const formattedData = JSON.stringify(tableWithDataType, null, 2);
+            await fs.writeFile(outputPath, formattedData, 'utf-8');
+        } catch (error) {
+            console.error(`处理表格失败: ${fileName}`, error);
+        }
+    }
+}

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "getCnRepo": "node --import ./loader.js src/getGitRepo.ts",
-    "start": "node --import ./loader.js src/prepareData.ts"
+    "start": "node --import ./loader.js src/prepareData.ts",
+    "processGenerated": "node --import ./loader.js src/processGenerated.ts"
   },
   "author": "",
   "license": "ISC",
