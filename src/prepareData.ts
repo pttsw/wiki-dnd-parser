@@ -874,6 +874,34 @@ class ItemTypeMgr implements DataMgr<ItemType> {
         // 合并原始数据和新增数据
         const allData = [...data, ...additionalTypes];
 
+        // 添加 WI|XDMG 类别（奇物）
+        const wiXdmgType: WikiItemTypeData = {
+            dataType: 'itemType',
+            uid: 'itemType_WI|XDMG',
+            id: 'WI|XDMG',
+            abbreviation: 'WI',
+            mainSource: {
+                source: 'XDMG',
+                page: 217,
+            },
+            allSources: [],
+            displayName: {
+                zh: '奇物',
+                en: 'Wondrous Items',
+            },
+            zh: {
+                name: '奇物',
+                entries: ['奇物类别的物品包括但不限于诸如靴子、腰带、斗篷、护符、徽章、头饰之类的可着装物品。背包、毛毯、小型塑像、号角、乐器等物品也都归于此类。'],
+                html: '奇物类别的物品包括但不限于诸如靴子、腰带、斗篷、护符、徽章、头饰之类的可着装物品。背包、毛毯、小型塑像、号角、乐器等物品也都归于此类。',
+            },
+            en: {
+                name: 'Wondrous Items',
+                entries: ['Wondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and circlets. Bags, carpets, figurines, horns, musical instruments, and more also fall into this category.'],
+                html: 'Wondrous Items include wearable items such as boots, belts, capes, amulets, brooches, and circlets. Bags, carpets, figurines, horns, musical instruments, and more also fall into this category.',
+            },
+        };
+        allData.push(wiXdmgType);
+
         const output = {
             type: 'itemTypeCollection',
             data: allData,
@@ -1370,9 +1398,114 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            itemData.simpletype = this.getSimpleType(itemData.type);
+
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const baseItemMgr = new BaseItemMgr();
@@ -1710,8 +1843,159 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            const typeAbbr = itemData.type.split('|')[0];
+            let simpletype = '其他';
+            
+            // 【装备】
+            if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+                simpletype = '武器';
+            } else if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+                simpletype = '护甲';
+            } else if (typeAbbr === 'T' || typeAbbr === 'AT') {
+                simpletype = '工具';
+            } else if (typeAbbr === 'G') {
+                simpletype = '冒险用品';
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+                simpletype = '坐骑与载具';
+            } else if (typeAbbr === 'FD') {
+                simpletype = '食物和饮品';
+            }
+            // 【宝藏】
+            else if (typeAbbr === '$C') {
+                simpletype = '钱币';
+            } else if (typeAbbr === 'TB') {
+                simpletype = '贸易金属条';
+            } else if (typeAbbr === 'TG') {
+                simpletype = '商业货物';
+            } else if (typeAbbr === '$G') {
+                simpletype = '宝石';
+            } else if (typeAbbr === '$A') {
+                simpletype = '艺术品';
+            }
+            // 【魔法物品】
+            else if (typeAbbr === 'P') {
+                simpletype = '药水';
+            } else if (typeAbbr === 'RG') {
+                simpletype = '戒指';
+            } else if (typeAbbr === 'RD') {
+                simpletype = '权杖';
+            } else if (typeAbbr === 'SC') {
+                simpletype = '卷轴';
+            } else if (typeAbbr === 'SCF') {
+                simpletype = '法杖';
+            } else if (typeAbbr === 'WD') {
+                simpletype = '魔杖';
+            } else if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+                simpletype = '奇物';
+            }
+            
+            itemData.simpletype = simpletype;
+
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const itemMgr = new ItemMgr(baseItemMgr);
@@ -2351,8 +2635,159 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             );
             const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
+
+            // 如果物品没有 type 字段，添加默认值 WI|XDMG
+            if (!itemData.type) {
+                itemData.type = 'WI|XDMG';
+            }
+
+            // 添加 itemtype 字段（type 去掉 | 后面的部分）
+            itemData.itemtype = itemData.type.split('|')[0];
+
+            // 添加 simpletype 字段（简略分类）
+            const typeAbbr = itemData.type.split('|')[0];
+            let simpletype = '其他';
+            
+            // 【装备】
+            if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+                simpletype = '武器';
+            } else if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+                simpletype = '护甲';
+            } else if (typeAbbr === 'T' || typeAbbr === 'AT') {
+                simpletype = '工具';
+            } else if (typeAbbr === 'G') {
+                simpletype = '冒险用品';
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+                simpletype = '坐骑与载具';
+            } else if (typeAbbr === 'FD') {
+                simpletype = '食物和饮品';
+            }
+            // 【宝藏】
+            else if (typeAbbr === '$C') {
+                simpletype = '钱币';
+            } else if (typeAbbr === 'TB') {
+                simpletype = '贸易金属条';
+            } else if (typeAbbr === 'TG') {
+                simpletype = '商业货物';
+            } else if (typeAbbr === '$G') {
+                simpletype = '宝石';
+            } else if (typeAbbr === '$A') {
+                simpletype = '艺术品';
+            }
+            // 【魔法物品】
+            else if (typeAbbr === 'P') {
+                simpletype = '药水';
+            } else if (typeAbbr === 'RG') {
+                simpletype = '戒指';
+            } else if (typeAbbr === 'RD') {
+                simpletype = '权杖';
+            } else if (typeAbbr === 'SC') {
+                simpletype = '卷轴';
+            } else if (typeAbbr === 'SCF') {
+                simpletype = '法杖';
+            } else if (typeAbbr === 'WD') {
+                simpletype = '魔杖';
+            } else if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+                simpletype = '奇物';
+            }
+            
+            itemData.simpletype = simpletype;
+
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
         }
+    }
+
+    // 获取物品的简略分类
+    private getSimpleType(type: string): string {
+        const typeAbbr = type.split('|')[0];
+        
+        // 【装备】
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 工具
+        if (typeAbbr === 'T' || typeAbbr === 'AT') {
+            return '工具';
+        }
+        // 冒险装备
+        if (typeAbbr === 'G') {
+            return '冒险用品';
+        }
+        // 坐骑与载具
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+            return '坐骑与载具';
+        }
+        // 服务
+        if (typeAbbr === 'FD') {
+            return '食物和饮品';
+        }
+        
+        // 【宝藏】
+        // 钱币
+        if (typeAbbr === '$C') {
+            return '钱币';
+        }
+        // 贸易金属条
+        if (typeAbbr === 'TB') {
+            return '贸易金属条';
+        }
+        // 商业货物
+        if (typeAbbr === 'TG') {
+            return '商业货物';
+        }
+        // 宝石
+        if (typeAbbr === '$G') {
+            return '宝石';
+        }
+        // 艺术品
+        if (typeAbbr === '$A') {
+            return '艺术品';
+        }
+        
+        // 【魔法物品】
+        // 护甲
+        if (typeAbbr === 'LA' || typeAbbr === 'MA' || typeAbbr === 'HA' || typeAbbr === 'S') {
+            return '护甲';
+        }
+        // 药水
+        if (typeAbbr === 'P') {
+            return '药水';
+        }
+        // 戒指
+        if (typeAbbr === 'RG') {
+            return '戒指';
+        }
+        // 权杖
+        if (typeAbbr === 'RD') {
+            return '权杖';
+        }
+        // 卷轴
+        if (typeAbbr === 'SC') {
+            return '卷轴';
+        }
+        // 法杖
+        if (typeAbbr === 'SCF') {
+            return '法杖';
+        }
+        // 魔杖
+        if (typeAbbr === 'WD') {
+            return '魔杖';
+        }
+        // 武器
+        if (typeAbbr === 'M' || typeAbbr === 'R' || typeAbbr === 'A' || typeAbbr === 'AF') {
+            return '武器';
+        }
+        // 奇物
+        if (typeAbbr === 'OTH' || typeAbbr === 'INS' || typeAbbr === 'WI') {
+            return '奇物';
+        }
+        
+        return '其他';
     }
 }
 export const magicVariantMgr = new MagicVariantMgr(baseItemMgr, itemMgr);
