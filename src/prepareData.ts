@@ -48,6 +48,190 @@ import {
     WikiSpellData,
 } from './types/spells';
 
+/**
+ * 直接在字符串上替换 {=bonusWeapon} 和 {=bonusWeaponDamage}
+ */
+const replaceBonusInString = (str: string, itemData: any): string => {
+    if (typeof str !== 'string') return str;
+    
+    let result = str;
+    
+    // 处理 {=bonusWeapon}
+    if (result.includes('{=bonusWeapon}')) {
+        // 获取 bonusWeapon 值，优先级：
+        // 1. zh.inherits.bonusWeapon 或 en.inherits.bonusWeapon（同块）
+        // 2. itemData.bonusWeapon
+        // 3. itemData.weapon.bonusWeapon
+        // 4. itemData.bonus.weapon
+        let bonusValue: number | undefined;
+        
+        // 检查 zh.inherits.bonusWeapon
+        if (itemData.zh && itemData.zh.inherits && itemData.zh.inherits.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.zh.inherits.bonusWeapon);
+        }
+        // 检查 en.inherits.bonusWeapon
+        else if (itemData.en && itemData.en.inherits && itemData.en.inherits.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.en.inherits.bonusWeapon);
+        }
+        // 检查 itemData.bonusWeapon
+        else if (itemData.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.bonusWeapon);
+        }
+        // 检查 itemData.weapon.bonusWeapon
+        else if (itemData.weapon && itemData.weapon.bonusWeapon !== undefined) {
+            bonusValue = Number(itemData.weapon.bonusWeapon);
+        }
+        // 检查 itemData.bonus.weapon
+        else if (itemData.bonus && itemData.bonus.weapon !== undefined) {
+            bonusValue = Number(itemData.bonus.weapon);
+        }
+        
+        // 替换为 {@bonusweapon +数值} 格式
+        if (bonusValue !== undefined && !isNaN(bonusValue)) {
+            const sign = bonusValue >= 0 ? '+' : '';
+            result = result.replace(/{=bonusWeapon}/g, `{@bonusweapon ${sign}${bonusValue}}`);
+        }
+    }
+    
+    // 处理 {=bonusWeaponDamage}
+    if (result.includes('{=bonusWeaponDamage}')) {
+        // 获取 bonusWeaponDamage 值，优先级：
+        // 1. zh.inherits.bonusWeaponDamage 或 en.inherits.bonusWeaponDamage（同块）
+        // 2. itemData.bonusWeaponDamage
+        // 3. itemData.bonus.WeaponDamage
+        let bonusValue: number | undefined;
+        
+        // 检查 zh.inherits.bonusWeaponDamage
+        if (itemData.zh && itemData.zh.inherits && itemData.zh.inherits.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.zh.inherits.bonusWeaponDamage);
+        }
+        // 检查 en.inherits.bonusWeaponDamage
+        else if (itemData.en && itemData.en.inherits && itemData.en.inherits.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.en.inherits.bonusWeaponDamage);
+        }
+        // 检查 itemData.bonusWeaponDamage
+        else if (itemData.bonusWeaponDamage !== undefined) {
+            bonusValue = Number(itemData.bonusWeaponDamage);
+        }
+        // 检查 itemData.bonus.WeaponDamage
+        else if (itemData.bonus && itemData.bonus.WeaponDamage !== undefined) {
+            bonusValue = Number(itemData.bonus.WeaponDamage);
+        }
+        
+        // 替换为 {@bonusweapon +数值} 格式
+        if (bonusValue !== undefined && !isNaN(bonusValue)) {
+            const sign = bonusValue >= 0 ? '+' : '';
+            result = result.replace(/{=bonusWeaponDamage}/g, `{@bonusweapon ${sign}${bonusValue}}`);
+        }
+    }
+    
+    return result;
+};
+
+/**
+ * 处理物品数据中的 bonus 替换（直接修改原始对象）
+ */
+const processBonusReplacements = (itemData: any): any => {
+    // 处理 zh 部分
+    if (itemData.zh) {
+        // 处理 entries
+        if (itemData.zh.entries) {
+            if (Array.isArray(itemData.zh.entries)) {
+                itemData.zh.entries = itemData.zh.entries.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.zh.entries === 'string') {
+                itemData.zh.entries = replaceBonusInString(itemData.zh.entries, itemData);
+            }
+        }
+        
+        // 处理 html
+        if (typeof itemData.zh.html === 'string') {
+            itemData.zh.html = replaceBonusInString(itemData.zh.html, itemData);
+        }
+        
+        // 处理 entries_en
+        if (itemData.zh.entries_en) {
+            if (Array.isArray(itemData.zh.entries_en)) {
+                itemData.zh.entries_en = itemData.zh.entries_en.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.zh.entries_en === 'string') {
+                itemData.zh.entries_en = replaceBonusInString(itemData.zh.entries_en, itemData);
+            }
+        }
+        
+        // 处理 html_en
+        if (typeof itemData.zh.html_en === 'string') {
+            itemData.zh.html_en = replaceBonusInString(itemData.zh.html_en, itemData);
+        }
+        
+        // 处理 inherits 部分
+        if (itemData.zh.inherits) {
+            // 处理 inherits.entries
+            if (itemData.zh.inherits.entries) {
+                if (Array.isArray(itemData.zh.inherits.entries)) {
+                    itemData.zh.inherits.entries = itemData.zh.inherits.entries.map((entry: any) => {
+                        if (typeof entry === 'string') {
+                            return replaceBonusInString(entry, itemData);
+                        }
+                        return entry;
+                    });
+                } else if (typeof itemData.zh.inherits.entries === 'string') {
+                    itemData.zh.inherits.entries = replaceBonusInString(itemData.zh.inherits.entries, itemData);
+                }
+            }
+        }
+    }
+    
+    // 处理 en 部分
+    if (itemData.en) {
+        // 处理 entries
+        if (itemData.en.entries) {
+            if (Array.isArray(itemData.en.entries)) {
+                itemData.en.entries = itemData.en.entries.map((entry: any) => {
+                    if (typeof entry === 'string') {
+                        return replaceBonusInString(entry, itemData);
+                    }
+                    return entry;
+                });
+            } else if (typeof itemData.en.entries === 'string') {
+                itemData.en.entries = replaceBonusInString(itemData.en.entries, itemData);
+            }
+        }
+        
+        // 处理 html
+        if (typeof itemData.en.html === 'string') {
+            itemData.en.html = replaceBonusInString(itemData.en.html, itemData);
+        }
+        
+        // 处理 inherits 部分
+        if (itemData.en.inherits) {
+            // 处理 inherits.entries
+            if (itemData.en.inherits.entries) {
+                if (Array.isArray(itemData.en.inherits.entries)) {
+                    itemData.en.inherits.entries = itemData.en.inherits.entries.map((entry: any) => {
+                        if (typeof entry === 'string') {
+                            return replaceBonusInString(entry, itemData);
+                        }
+                        return entry;
+                    });
+                } else if (typeof itemData.en.inherits.entries === 'string') {
+                    itemData.en.inherits.entries = replaceBonusInString(itemData.en.inherits.entries, itemData);
+                }
+            }
+        }
+    }
+    
+    return itemData;
+};
+
 export const createOutputFolders = async () => {
     // delete ./output folder and all files
     try {
@@ -793,16 +977,19 @@ class ItemTypeMgr implements DataMgr<ItemType> {
             const itemType = itemData.type;
             if (!itemType) continue;
 
-            // 将物品ID添加到对应类型的列表中
-            if (!typeToItemsMap.has(itemType)) {
-                typeToItemsMap.set(itemType, []);
+            // 提取类型缩写（去掉来源部分）
+            const typeAbbr = itemType.split('|')[0];
+
+            // 将物品ID添加到对应类型缩写的列表中
+            if (!typeToItemsMap.has(typeAbbr)) {
+                typeToItemsMap.set(typeAbbr, []);
             }
-            typeToItemsMap.get(itemType)!.push(itemId);
+            typeToItemsMap.get(typeAbbr)!.push(itemId);
         }
 
         // 将收集到的基础物品列表更新到每个类型数据中
         for (const [typeId, typeData] of this.db) {
-            // 提取类型缩写（去掉来源部分）
+            // 使用类型缩写作为键来获取基础物品列表
             const abbreviation = typeData.abbreviation;
             const baseItemList = typeToItemsMap.get(abbreviation);
             
@@ -1408,9 +1595,21 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             itemData.itemtype = itemData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            itemData.simpletype = this.getSimpleType(itemData.type);
+            const simpletype = this.getSimpleType(itemData.type);
+            itemData.simpletype = simpletype;
 
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
     }
@@ -1437,7 +1636,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             return '冒险用品';
         }
         // 坐骑与载具
-        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
             return '坐骑与载具';
         }
         // 服务
@@ -1865,7 +2064,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 simpletype = '工具';
             } else if (typeAbbr === 'G') {
                 simpletype = '冒险用品';
-            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
                 simpletype = '坐骑与载具';
             } else if (typeAbbr === 'FD') {
                 simpletype = '食物和饮品';
@@ -1901,7 +2100,18 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             
             itemData.simpletype = simpletype;
 
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
         }
     }
 
@@ -1927,7 +2137,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             return '冒险用品';
         }
         // 坐骑与载具
-        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
             return '坐骑与载具';
         }
         // 服务
@@ -2657,7 +2867,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 simpletype = '工具';
             } else if (typeAbbr === 'G') {
                 simpletype = '冒险用品';
-            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+            } else if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
                 simpletype = '坐骑与载具';
             } else if (typeAbbr === 'FD') {
                 simpletype = '食物和饮品';
@@ -2693,7 +2903,18 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             
             itemData.simpletype = simpletype;
 
-            await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
+            // 添加 MItype 字段（当 rarity 为指定值时）
+            const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
+                itemData.MItype = simpletype;
+                // 添加 MagicItem 字段
+                itemData.MagicItem = true;
+            }
+
+            // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
+            const processedItemData = processBonusReplacements(itemData);
+
+            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
         }
     }
 
@@ -2719,7 +2940,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             return '冒险用品';
         }
         // 坐骑与载具
-        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC') {
+        if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {
             return '坐骑与载具';
         }
         // 服务
