@@ -1000,9 +1000,12 @@ class ItemTypeMgr implements DataMgr<ItemType> {
     }
 
     // 从 baseItemMgr 收集各类型对应的基础物品列表
+    // 匹配逻辑与 requires 中 type key 的匹配逻辑一致
     collectBaseItems(baseItemMgr: BaseItemMgr) {
-        // 创建类型缩写到物品ID列表的映射
-        const typeToItemsMap = new Map<string, string[]>();
+        // 创建类型到物品ID列表的映射
+        // 支持精确匹配（如 "M|PHB"）和前缀匹配（如 "M" 匹配 "M|PHB"、"M|XPHB"）
+        const exactTypeToItemsMap = new Map<string, string[]>();
+        const prefixTypeToItemsMap = new Map<string, string[]>();
 
         for (const [itemId, itemData] of baseItemMgr.db) {
             // 只处理基础物品
@@ -1012,23 +1015,38 @@ class ItemTypeMgr implements DataMgr<ItemType> {
             const itemType = itemData.type;
             if (!itemType) continue;
 
-            // 提取类型缩写（去掉来源部分）
-            const typeAbbr = itemType.split('|')[0];
-
-            // 将物品ID添加到对应类型缩写的列表中
-            if (!typeToItemsMap.has(typeAbbr)) {
-                typeToItemsMap.set(typeAbbr, []);
+            // 精确匹配：使用完整的 type（如 "M|PHB"）
+            if (!exactTypeToItemsMap.has(itemType)) {
+                exactTypeToItemsMap.set(itemType, []);
             }
-            typeToItemsMap.get(typeAbbr)!.push(itemId);
+            exactTypeToItemsMap.get(itemType)!.push(itemId);
+
+            // 前缀匹配：提取类型缩写（如 "M"）
+            const typeAbbr = itemType.split('|')[0];
+            if (!prefixTypeToItemsMap.has(typeAbbr)) {
+                prefixTypeToItemsMap.set(typeAbbr, []);
+            }
+            prefixTypeToItemsMap.get(typeAbbr)!.push(itemId);
         }
 
         // 将收集到的基础物品列表更新到每个类型数据中
         for (const [typeId, typeData] of this.db) {
-            // 使用类型缩写作为键来获取基础物品列表
             const abbreviation = typeData.abbreviation;
-            const baseItemList = typeToItemsMap.get(abbreviation);
-            
-            if (baseItemList && baseItemList.length > 0) {
+            let baseItemList: string[] = [];
+
+            // 首先尝试精确匹配（如 "M|PHB"）
+            const exactMatch = exactTypeToItemsMap.get(typeId);
+            if (exactMatch) {
+                baseItemList = exactMatch;
+            } else {
+                // 如果精确匹配失败，尝试前缀匹配（如 "M" 匹配所有 "M|xxx"）
+                const prefixMatch = prefixTypeToItemsMap.get(abbreviation);
+                if (prefixMatch) {
+                    baseItemList = prefixMatch;
+                }
+            }
+
+            if (baseItemList.length > 0) {
                 typeData.baseItemList = baseItemList;
             }
         }
@@ -2328,6 +2346,12 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const baseProps = Array.isArray(baseValue) ? baseValue : [];
             return baseProps.includes(expected);
         }
+        if (key === 'type') {
+            // type 支持精确匹配或前缀匹配（如 "M" 匹配 "M|PHB"、"M|XPHB"）
+            const baseStr = String(baseValue || '');
+            const expectedStr = String(expected);
+            return baseStr === expectedStr || baseStr.startsWith(expectedStr + '|');
+        }
         return baseValue === expected;
     }
 
@@ -2763,7 +2787,10 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const allSources = buildAllSources(collectRelatedIds(id));
             const directParent = parentByChild.get(id);
             const topSuperior = this.getTopSuperior(id, parentByChild);
-            const templateFork = Math.max(1, this.getForkDepth(id, parentByChild));
+            const forkDepth = this.getForkDepth(id, parentByChild);
+            // 只有当物品有上层物品时，才保持 Math.max(1, ...) 的逻辑
+            // 否则直接使用计算出的 fork depth
+            const templateFork = directParent ? Math.max(1, forkDepth) : forkDepth;
 
             const templateData = this.buildVariantItemData(enItem, zhItem, {
                 id,
