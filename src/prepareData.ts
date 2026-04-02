@@ -126,6 +126,38 @@ const replaceBonusInString = (str: string, itemData: any): string => {
         }
     }
     
+    // 处理 {=bonusAc}
+    if (result.includes('{=bonusAc}')) {
+        // 获取 bonusAc 值，优先级：
+        // 1. zh.inherits.bonusAc 或 en.inherits.bonusAc（同块）
+        // 2. itemData.bonusAc
+        // 3. itemData.bonus.ac
+        let bonusValue: number | undefined;
+        
+        // 检查 zh.inherits.bonusAc
+        if (itemData.zh && itemData.zh.inherits && itemData.zh.inherits.bonusAc !== undefined) {
+            bonusValue = Number(itemData.zh.inherits.bonusAc);
+        }
+        // 检查 en.inherits.bonusAc
+        else if (itemData.en && itemData.en.inherits && itemData.en.inherits.bonusAc !== undefined) {
+            bonusValue = Number(itemData.en.inherits.bonusAc);
+        }
+        // 检查 itemData.bonusAc
+        else if (itemData.bonusAc !== undefined) {
+            bonusValue = Number(itemData.bonusAc);
+        }
+        // 检查 itemData.bonus.ac
+        else if (itemData.bonus && itemData.bonus.ac !== undefined) {
+            bonusValue = Number(itemData.bonus.ac);
+        }
+        
+        // 替换为 {@bonusAc +数值} 格式
+        if (bonusValue !== undefined && !isNaN(bonusValue)) {
+            const sign = bonusValue >= 0 ? '+' : '';
+            result = result.replace(/{=bonusAc}/g, `{@bonusAc ${sign}${bonusValue}}`);
+        }
+    }
+    
     return result;
 };
 
