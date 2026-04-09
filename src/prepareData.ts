@@ -50,6 +50,34 @@ import {
 import { WikiPageGenerator } from './wikiPageGenerator.js';
 
 /**
+ * 生成图鉴名称列表文件
+ * @param type 图鉴类型，如 'item' 或 'spell'
+ * @param items 物品或法术数据数组
+ * @param outputDir 输出目录
+ */
+async function generateCollectionNameList(type: string, items: any[], outputDir: string) {
+    try {
+        const data = items.map(item => ({
+            id: item.id || '',
+            src: item.mainSource?.source || '',
+            name_en: item.displayName?.en || '',
+            name_zh: item.displayName?.zh || item.displayName?.en || ''
+        }));
+        
+        const output = {
+            type: type,
+            data: data
+        };
+        
+        const outputPath = path.join(outputDir, `${type}namelist.json`);
+        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+        console.log(`已生成 ${type}namelist.json 文件：${outputPath}`);
+    } catch (error) {
+        console.error(`生成 ${type}namelist.json 文件失败:`, error);
+    }
+}
+
+/**
  * 直接在字符串上替换 {=bonusWeapon} 和 {=bonusWeaponDamage}
  */
 const replaceBonusInString = (str: string, itemData: any): string => {
@@ -1909,24 +1937,50 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             return sources;
         };
 
-        const parentByChild = new Map<string, string>();
+        // 建立从childId到所有可能parentId列表的映射
+        const parentsByChild = new Map<string, string[]>();
         for (const group of en.itemGroup || []) {
             const parentId = this.getId(group);
             for (const childId of group.items || []) {
-                if (!parentByChild.has(childId)) {
-                    parentByChild.set(childId, parentId);
+                // 为没有来源后缀的物品添加|DMG后缀，确保格式一致
+                let processedChildId = childId;
+                if (typeof processedChildId === 'string' && !processedChildId.includes('|')) {
+                    processedChildId = `${processedChildId}|DMG`;
                 }
+                if (!parentsByChild.has(processedChildId)) {
+                    parentsByChild.set(processedChildId, []);
+                }
+                parentsByChild.get(processedChildId)!.push(parentId);
             }
         }
 
+        // 优先选择名字不含(*)的parent
+        const selectBestParent = (parents: string[]): string => {
+            // 首先尝试找不含(*)的
+            const nonStarParents = parents.filter(p => !p.includes('*'));
+            if (nonStarParents.length > 0) {
+                return nonStarParents[0];
+            }
+            // 如果都有(*)，返回第一个
+            return parents[0];
+        };
+
+        const getParent = (id: string): string | undefined => {
+            const parents = parentsByChild.get(id);
+            if (!parents || parents.length === 0) return undefined;
+            return selectBestParent(parents);
+        };
+
         const getTopSuperior = (id: string): string | undefined => {
-            const firstParent = parentByChild.get(id);
+            const firstParent = getParent(id);
             if (!firstParent) return undefined;
             const visited = new Set<string>([id]);
             let current = firstParent;
-            while (parentByChild.has(current) && !visited.has(current)) {
+            while (true) {
+                const nextParents = parentsByChild.get(current);
+                if (!nextParents || nextParents.length === 0 || visited.has(current)) break;
                 visited.add(current);
-                current = parentByChild.get(current)!;
+                current = selectBestParent(nextParents);
             }
             return current;
         };
@@ -1935,8 +1989,10 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             const visited = new Set<string>([id]);
             let depth = 0;
             let current = id;
-            while (parentByChild.has(current)) {
-                const parent = parentByChild.get(current)!;
+            while (true) {
+                const nextParents = parentsByChild.get(current);
+                if (!nextParents || nextParents.length === 0) break;
+                const parent = selectBestParent(nextParents);
                 if (visited.has(parent)) break;
                 visited.add(parent);
                 depth += 1;
@@ -1948,7 +2004,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         // 第二遍：生成数据
         for (const enItem of enItems) {
             const id = this.getId(enItem);
-            const origin = parentByChild.get(id);
+            const origin = getParent(id);
             const superior = getTopSuperior(id);
             const fork = getForkDepth(id);
 
@@ -2659,40 +2715,67 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         };
     }
 
-    private getParentByChildMap(): Map<string, string> {
-        const parentByChild = new Map<string, string>();
-        if (!this.items.raw.en) return parentByChild;
+    private getParentByChildMap(): Map<string, string[]> {
+        const parentsByChild = new Map<string, string[]>();
+        if (!this.items.raw.en) return parentsByChild;
         const enItems = [...(this.items.raw.en.item || []), ...(this.items.raw.en.itemGroup || [])];
         for (const parent of enItems) {
             const parentId = this.items.getId(parent);
             const children = (parent as ItemGroup).items || [];
             for (const childId of children) {
-                if (!parentByChild.has(childId)) {
-                    parentByChild.set(childId, parentId);
+                // 为没有来源后缀的物品添加|DMG后缀，确保格式一致
+                let processedChildId = childId;
+                if (typeof processedChildId === 'string' && !processedChildId.includes('|')) {
+                    processedChildId = `${processedChildId}|DMG`;
                 }
+                if (!parentsByChild.has(processedChildId)) {
+                    parentsByChild.set(processedChildId, []);
+                }
+                parentsByChild.get(processedChildId)!.push(parentId);
             }
         }
-        return parentByChild;
+        return parentsByChild;
     }
 
-    private getTopSuperior(id: string, parentByChild: Map<string, string>): string | undefined {
-        const firstParent = parentByChild.get(id);
+    // 优先选择名字不含(*)的parent
+    private selectBestParent(parents: string[]): string {
+        // 首先尝试找不含(*)的
+        const nonStarParents = parents.filter(p => !p.includes('*'));
+        if (nonStarParents.length > 0) {
+            return nonStarParents[0];
+        }
+        // 如果都有(*)，返回第一个
+        return parents[0];
+    }
+
+    private getParent(id: string, parentsByChild: Map<string, string[]>): string | undefined {
+        const parents = parentsByChild.get(id);
+        if (!parents || parents.length === 0) return undefined;
+        return this.selectBestParent(parents);
+    }
+
+    private getTopSuperior(id: string, parentsByChild: Map<string, string[]>): string | undefined {
+        const firstParent = this.getParent(id, parentsByChild);
         if (!firstParent) return undefined;
         const visited = new Set<string>([id]);
         let current = firstParent;
-        while (parentByChild.has(current) && !visited.has(current)) {
+        while (true) {
+            const nextParents = parentsByChild.get(current);
+            if (!nextParents || nextParents.length === 0 || visited.has(current)) break;
             visited.add(current);
-            current = parentByChild.get(current)!;
+            current = this.selectBestParent(nextParents);
         }
         return current;
     }
 
-    private getForkDepth(id: string, parentByChild: Map<string, string>): number {
+    private getForkDepth(id: string, parentsByChild: Map<string, string[]>): number {
         const visited = new Set<string>([id]);
         let depth = 0;
         let current = id;
-        while (parentByChild.has(current)) {
-            const parent = parentByChild.get(current)!;
+        while (true) {
+            const nextParents = parentsByChild.get(current);
+            if (!nextParents || nextParents.length === 0) break;
+            const parent = this.selectBestParent(nextParents);
             if (visited.has(parent)) break;
             visited.add(parent);
             depth += 1;
@@ -2747,7 +2830,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         for (const baseZh of this.baseItems.raw.zh?.baseitem || []) {
             baseZhById.set(this.baseItems.getId(baseZh), baseZh);
         }
-        const parentByChild = this.getParentByChildMap();
+        const parentsByChild = this.getParentByChildMap();
         const occupiedIds = new Set<string>([
             ...this.baseItems.db.keys(),
             ...this.items.db.keys(),
@@ -2817,9 +2900,9 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
             const source = this.getSource(enItem);
             const allSources = buildAllSources(collectRelatedIds(id));
-            const directParent = parentByChild.get(id);
-            const topSuperior = this.getTopSuperior(id, parentByChild);
-            const forkDepth = this.getForkDepth(id, parentByChild);
+            const directParent = this.getParent(id, parentsByChild);
+            const topSuperior = this.getTopSuperior(id, parentsByChild);
+            const forkDepth = this.getForkDepth(id, parentsByChild);
             // 只有当物品有上层物品时，才保持 Math.max(1, ...) 的逻辑
             // 否则直接使用计算出的 fork depth
             const templateFork = directParent ? Math.max(1, forkDepth) : forkDepth;
@@ -3496,10 +3579,25 @@ const printProgress = (message: string) => {
         await magicVariantMgr.generateFiles();
         printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
 
+        // 生成物品名称列表
+        const collectionDir = path.join('./output', 'collection');
+        await fs.mkdir(collectionDir, { recursive: true });
+        
+        // 合并所有物品数据（基础物品、普通物品、变体物品）
+        const allItems = [
+            ...Array.from(baseItemMgr.db.values()),
+            ...Array.from(itemMgr.db.values()),
+            ...Array.from(magicVariantMgr.db.values())
+        ];
+        await generateCollectionNameList('item', allItems, collectionDir);
+
         spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
         spellMgr.loadData(spellFiles.zh, spellFiles.en);
         await spellMgr.generateFiles();
         printProgress(`spell 完成 (${spellMgr.db.size})`);
+
+        // 生成法术名称列表
+        await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), collectionDir);
 
         const wikiPageGenerator = new WikiPageGenerator({
             books: bookFiles,
