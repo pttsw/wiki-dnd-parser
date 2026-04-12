@@ -7,6 +7,7 @@ import {
     WikiBookEntry,
 } from './types/books';
 import { promises as fs } from 'fs';
+import { createHash } from 'crypto';
 import path from 'path';
 import chalk from 'chalk';
 import { FeatFile, FeatFileEntry, WikiFeatData } from './types/feat';
@@ -47,6 +48,19 @@ import {
     SpellFluffFile,
     WikiSpellData,
 } from './types/spells';
+import {
+    MonsterFile,
+    MonsterFileEntry,
+    MonsterFluffEntry,
+    MonsterFluffFile,
+    WikiBestiaryData,
+} from './types/bestiary';
+import {
+    getBestiaryId,
+    normalizeMonsterReferenceSources,
+    resolveMonsterFluffContent,
+    splitBestiaryRecord,
+} from './bestiaryUtils.js';
 import { WikiPageGenerator } from './wikiPageGenerator.js';
 
 /**
@@ -302,7 +316,7 @@ export const createOutputFolders = async () => {
             // do nothing, folder does not exist
         }
     }
-    const dirs = ['collection', 'item', 'spell', 'generated'];
+    const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary'];
     for (const dir of dirs) {
         const dirPath = path.join('./output', dir);
         try {
@@ -432,6 +446,34 @@ const appendEnglishShadowFields = (
         if (zhOut[enKey] === undefined) {
             zhOut[enKey] = enValue;
         }
+    }
+};
+
+const resolveCaseInsensitiveOutputFileName = (
+    usedFileNames: Set<string>,
+    preferredFileName: string,
+    uniqueSeed: string
+): string => {
+    const normalize = (value: string) => value.toLocaleLowerCase('en-US');
+    const preferredKey = normalize(preferredFileName);
+    if (!usedFileNames.has(preferredKey)) {
+        usedFileNames.add(preferredKey);
+        return preferredFileName;
+    }
+
+    const ext = path.extname(preferredFileName);
+    const base = ext ? preferredFileName.slice(0, -ext.length) : preferredFileName;
+    const hash = createHash('sha1').update(uniqueSeed).digest('hex').slice(0, 8);
+    let counter = 1;
+    while (true) {
+        const suffix = counter === 1 ? hash : `${hash}_${counter}`;
+        const nextFileName = `${base}_${suffix}${ext}`;
+        const nextKey = normalize(nextFileName);
+        if (!usedFileNames.has(nextKey)) {
+            usedFileNames.add(nextKey);
+            return nextFileName;
+        }
+        counter += 1;
     }
 };
 
@@ -3448,6 +3490,266 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 
 export const spellMgr = new SpellMgr();
 
+class BestiaryMgr implements DataMgr<MonsterFileEntry> {
+    raw: {
+        zh: MonsterFileEntry[];
+        en: MonsterFileEntry[];
+    } = {
+            zh: [],
+            en: [],
+        };
+    fluff: { zh: Map<string, MonsterFluffEntry>; en: Map<string, MonsterFluffEntry> } = {
+        zh: new Map(),
+        en: new Map(),
+    };
+    db: Map<string, WikiBestiaryData> = new Map();
+    reprintMap: Map<string, string[]> = new Map();
+
+    getId(monster: MonsterFileEntry): string {
+        return getBestiaryId(monster);
+    }
+
+    loadFluff(zh: MonsterFluffFile | null, en: MonsterFluffFile | null) {
+        this.fluff.zh.clear();
+        this.fluff.en.clear();
+        for (const item of en?.monsterFluff || []) {
+            this.fluff.en.set(this.getId(item as MonsterFileEntry), item);
+        }
+        for (const item of zh?.monsterFluff || []) {
+            this.fluff.zh.set(this.getId(item as MonsterFileEntry), item);
+        }
+    }
+
+    loadData(zh: MonsterFile | null, en: MonsterFile | null) {
+        this.raw.zh = [...(zh?.monster || [])];
+        this.raw.en = [...(en?.monster || [])];
+        this.db.clear();
+        this.reprintMap.clear();
+
+        idMgr.compare(
+            'bestiary',
+            { zh: zh?.monster || [], en: en?.monster || [] },
+            {
+                getId: item => this.getId(item!),
+                getEnTitle: item => item.name,
+                getZhTitle: item => item.name,
+            }
+        );
+
+        for (const enMonster of this.raw.en) {
+            const id = this.getId(enMonster);
+            for (const target of normalizeReprintedAs(enMonster.reprintedAs)) {
+                if (!this.reprintMap.has(target)) {
+                    this.reprintMap.set(target, []);
+                }
+                this.reprintMap.get(target)!.push(id);
+            }
+        }
+
+        const monsterMap = new Map<string, MonsterFileEntry>();
+        for (const enMonster of this.raw.en) {
+            monsterMap.set(this.getId(enMonster), enMonster);
+        }
+        const zhMap = new Map<string, MonsterFileEntry>();
+        for (const zhMonster of this.raw.zh) {
+            zhMap.set(this.getId(zhMonster), zhMonster);
+        }
+
+        const collectRelatedIds = (startId: string): string[] => {
+            const visited = new Set<string>();
+            const stack = [startId];
+            while (stack.length > 0) {
+                const currentId = stack.pop()!;
+                if (visited.has(currentId)) continue;
+                visited.add(currentId);
+
+                const current = monsterMap.get(currentId);
+                if (current) {
+                    for (const nextId of normalizeReprintedAs(current.reprintedAs)) {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    }
+                }
+                for (const nextId of this.reprintMap.get(currentId) || []) {
+                    if (!visited.has(nextId)) stack.push(nextId);
+                }
+            }
+            return [...visited];
+        };
+
+        const buildAllSources = (ids: string[]) => {
+            const sources: { source: string; page: number }[] = [];
+            const seen = new Set<string>();
+            const addSource = (source: string, page: number) => {
+                if (!source) return;
+                const key = `${source}|${page}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                sources.push({ source, page });
+            };
+
+            for (const relatedId of ids) {
+                const relatedMonster = monsterMap.get(relatedId);
+                if (!relatedMonster) {
+                    const fallbackSource = relatedId.split('|').pop();
+                    if (fallbackSource) addSource(fallbackSource, 0);
+                    continue;
+                }
+                addSource(relatedMonster.source, relatedMonster.page || 0);
+                for (const extra of normalizeMonsterReferenceSources(relatedMonster)) {
+                    addSource(extra.source, extra.page);
+                }
+                for (const extra of parseReprintedAsSources(relatedMonster.reprintedAs)) {
+                    addSource(extra.source, extra.page);
+                }
+            }
+            return sources;
+        };
+
+        for (const enMonster of this.raw.en) {
+            const id = this.getId(enMonster);
+            const zhMonster = zhMap.get(id);
+            const fluffEn = this.fluff.en.get(id);
+            const fluffZh = this.fluff.zh.get(id);
+
+            if (!zhMonster) {
+                logger.log('BestiaryMgr', `未找到中文怪物：${enMonster.name} (${id})`);
+            }
+            if (fluffEn && !fluffZh) {
+                logger.log('BestiaryMgr', `未找到中文怪物Fluff：${enMonster.name} (${id})`);
+            }
+
+            const relatedVersions = new Set<string>();
+            normalizeReprintedAs(enMonster.reprintedAs).forEach(target => relatedVersions.add(target));
+            this.reprintMap.get(id)?.forEach(sourceId => relatedVersions.add(sourceId));
+
+            const split = splitBestiaryRecord(enMonster, zhMonster);
+            const common = { ...split.common };
+            const enOut = { ...split.en };
+            const zhOut = { ...split.zh };
+            const translator = extractTranslator(common, enOut, zhOut, zhMonster, enMonster);
+            const referenceSources = normalizeMonsterReferenceSources(enMonster);
+            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en);
+            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh);
+
+            const bestiaryData: WikiBestiaryData = {
+                dataType: 'bestiary',
+                uid: `bestiary_${id}`,
+                id,
+                ...common,
+                referenceSources,
+                translator,
+                displayName: {
+                    zh: zhMonster ? zhMonster.name : null,
+                    en: enMonster.name,
+                },
+                mainSource: {
+                    source: enMonster.source,
+                    page: enMonster.page || 0,
+                },
+                allSources: buildAllSources(collectRelatedIds(id)),
+                relatedVersions: relatedVersions.size > 0 ? [...relatedVersions] : undefined,
+                full: fullEn || fullZh ? { en: fullEn, zh: fullZh } : undefined,
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+                en: enOut,
+            };
+            this.db.set(id, bestiaryData);
+        }
+
+        for (const [id, zhFluff] of this.fluff.zh) {
+            if (!monsterMap.has(id)) {
+                logger.log('BestiaryMgr', `中文怪物Fluff缺少英文主条目：${zhFluff.name} (${id})`);
+            }
+        }
+
+        const fluffOnlyIds = new Set<string>([
+            ...this.fluff.en.keys(),
+            ...this.fluff.zh.keys(),
+        ]);
+        for (const id of fluffOnlyIds) {
+            if (this.db.has(id) || monsterMap.has(id)) continue;
+
+            const fluffEn = this.fluff.en.get(id);
+            const fluffZh = this.fluff.zh.get(id);
+            const source = fluffEn?.source || fluffZh?.source;
+            if (!source) continue;
+
+            const enOut: Record<string, any> = fluffEn
+                ? { name: fluffEn.name }
+                : { name: fluffZh?.ENG_name || fluffZh?.name || id.split('|')[0] };
+            const zhOut: Record<string, any> = fluffZh
+                ? {
+                    name: fluffZh.name,
+                    ...(fluffZh.ENG_name ? { ENG_name: fluffZh.ENG_name } : {}),
+                }
+                : {};
+            const common: Record<string, any> = {
+                source,
+                page: 0,
+            };
+            const translator = extractTranslator(
+                common,
+                enOut,
+                zhOut,
+                fluffZh as { translator?: string } | undefined,
+                fluffEn as { translator?: string } | undefined
+            );
+            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en);
+            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh);
+            if (!fullEn && !fullZh) continue;
+
+            const bestiaryData: WikiBestiaryData = {
+                dataType: 'bestiary',
+                uid: `bestiary_${id}`,
+                id,
+                ...common,
+                referenceSources: [],
+                translator,
+                displayName: {
+                    zh: fluffZh ? fluffZh.name : null,
+                    en: fluffEn?.name || fluffZh?.ENG_name || fluffZh?.name || id.split('|')[0],
+                },
+                mainSource: {
+                    source,
+                    page: 0,
+                },
+                allSources: [{ source, page: 0 }],
+                full: {
+                    en: fullEn,
+                    zh: fullZh,
+                },
+                zh: Object.keys(zhOut).length > 0 ? zhOut : null,
+                en: enOut,
+            };
+            this.db.set(id, bestiaryData);
+        }
+    }
+
+    async generateFiles() {
+        const outputDir = './output/bestiary';
+        await fs.mkdir(outputDir, { recursive: true });
+        const writtenFileNames = new Set<string>();
+
+        for (const [id, bestiaryData] of this.db) {
+            const baseName = mwUtil.getMwTitle(
+                bestiaryData.displayName.en || bestiaryData.displayName.zh || id
+            );
+            const preferredFileName = `bestiary_1_${bestiaryData.mainSource.source}_1_${baseName}.json`;
+            const fileName = resolveCaseInsensitiveOutputFileName(
+                writtenFileNames,
+                preferredFileName,
+                id
+            );
+            if (fileName !== preferredFileName) {
+                logger.log('BestiaryMgr', `怪物导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${id})`);
+            }
+            const filePath = path.join(outputDir, fileName);
+            await fs.writeFile(filePath, JSON.stringify(bestiaryData, null, 2), 'utf-8');
+        }
+    }
+}
+
+export const bestiaryMgr = new BestiaryMgr();
+
 const readJson = async <T>(filePath: string): Promise<T> => {
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content) as T;
@@ -3512,6 +3814,56 @@ const loadIndexedSpellFluffData = async (): Promise<{ en: SpellFluffFile; zh: Sp
     return { en, zh };
 };
 
+const loadIndexedBestiaryData = async (): Promise<{ en: MonsterFile; zh: MonsterFile }> => {
+    const [enIndex, zhIndex] = await Promise.all([
+        readJson<Record<string, string>>(path.join(config.DATA_EN_DIR, 'bestiary/index.json')),
+        readJson<Record<string, string>>(path.join(config.DATA_ZH_DIR, 'bestiary/index.json')),
+    ]);
+
+    const loadBestiarySet = async (
+        baseDir: string,
+        indexMap: Record<string, string>
+    ): Promise<MonsterFile> => {
+        const monster: MonsterFileEntry[] = [];
+        for (const fileName of Object.values(indexMap)) {
+            const data = await readJson<MonsterFile>(path.join(baseDir, 'bestiary', fileName));
+            monster.push(...(data.monster || []));
+        }
+        return { monster };
+    };
+
+    const [en, zh] = await Promise.all([
+        loadBestiarySet(config.DATA_EN_DIR, enIndex),
+        loadBestiarySet(config.DATA_ZH_DIR, zhIndex),
+    ]);
+    return { en, zh };
+};
+
+const loadIndexedBestiaryFluffData = async (): Promise<{ en: MonsterFluffFile; zh: MonsterFluffFile }> => {
+    const [enIndex, zhIndex] = await Promise.all([
+        readJson<Record<string, string>>(path.join(config.DATA_EN_DIR, 'bestiary/fluff-index.json')),
+        readJson<Record<string, string>>(path.join(config.DATA_ZH_DIR, 'bestiary/fluff-index.json')),
+    ]);
+
+    const loadBestiaryFluffSet = async (
+        baseDir: string,
+        indexMap: Record<string, string>
+    ): Promise<MonsterFluffFile> => {
+        const monsterFluff: MonsterFluffEntry[] = [];
+        for (const fileName of Object.values(indexMap)) {
+            const data = await readJson<MonsterFluffFile>(path.join(baseDir, 'bestiary', fileName));
+            monsterFluff.push(...(data.monsterFluff || []));
+        }
+        return { monsterFluff };
+    };
+
+    const [en, zh] = await Promise.all([
+        loadBestiaryFluffSet(config.DATA_EN_DIR, enIndex),
+        loadBestiaryFluffSet(config.DATA_ZH_DIR, zhIndex),
+    ]);
+    return { en, zh };
+};
+
 const printProgress = (message: string) => {
     console.log(chalk.cyan(`[prepareData] ${message}`));
 };
@@ -3534,12 +3886,16 @@ const printProgress = (message: string) => {
             ]);
         printProgress('基础 JSON 已加载');
 
-        const [spellFiles, spellFluffFiles] = await Promise.all([
+        const [spellFiles, spellFluffFiles, bestiaryFiles, bestiaryFluffFiles] = await Promise.all([
             loadIndexedSpellData(),
             loadIndexedSpellFluffData(),
+            loadIndexedBestiaryData(),
+            loadIndexedBestiaryFluffData(),
         ]);
         await spellMgr.loadSources(path.join(config.DATA_EN_DIR, 'spells/sources.json'));
-        printProgress('法术索引与来源映射已加载');
+        printProgress(
+            `法术与怪物索引已加载 (spell=${spellFiles.en.spell.length}, bestiary=${bestiaryFiles.en.monster.length})`
+        );
 
         itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
 
@@ -3596,6 +3952,11 @@ const printProgress = (message: string) => {
         await spellMgr.generateFiles();
         printProgress(`spell 完成 (${spellMgr.db.size})`);
 
+        bestiaryMgr.loadFluff(bestiaryFluffFiles.zh, bestiaryFluffFiles.en);
+        bestiaryMgr.loadData(bestiaryFiles.zh, bestiaryFiles.en);
+        await bestiaryMgr.generateFiles();
+        printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
+
         // 生成法术名称列表
         await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), collectionDir);
 
@@ -3620,7 +3981,7 @@ const printProgress = (message: string) => {
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(
             chalk.green(
-                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}`
+                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}`
             )
         );
     } catch (error) {
