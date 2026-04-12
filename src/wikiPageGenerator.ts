@@ -207,7 +207,7 @@ export class WikiPageGenerator {
     }
 
     private async writePage(dir: string, title: string, content: string): Promise<boolean> {
-        const filePath = path.join(dir, `${title}.txt`);
+        const filePath = path.join(dir, `${title}.wiki`);
         const normalizedContent = `${content}\n`;
         const existing = this.writtenFiles.get(filePath);
 
@@ -304,13 +304,23 @@ export class WikiPageGenerator {
                 written += 1;
             }
 
+            // 检查 mainContent 是否是重定向内容
+            let redirectTarget = mainTitle;
+            const redirectMatch = mainContent.match(/^#重定向 \[\[(.*?)\]\]$/);
+            if (redirectMatch) {
+                // 提取重定向目标的 wiki 标题
+                const wikiTarget = redirectMatch[1];
+                // 将 wiki 标题转换回文件标题格式
+                redirectTarget = wikiTarget.replace(/\//g, '_1_');
+            }
+
             const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, mainTitle)) {
+            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, redirectTarget)) {
                 written += 1;
             }
 
             const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, mainTitle)) {
+            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, redirectTarget)) {
                 written += 1;
             }
         }
