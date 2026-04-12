@@ -8,7 +8,7 @@
 运行逻辑概览
 1. `createOutputFolders` 清空并重建 `./output` 目录结构。
 2. 从 `src/config.ts` 的 `DATA_EN_DIR` / `DATA_ZH_DIR` 读取 JSON。
-3. 依次处理：书籍、专长、物品基础数据、物品、法术。
+3. 依次处理：书籍、专长、物品基础数据、物品、法术、怪物。
 4. 各 *Mgr 做中英合并、ID 对齐、缺失记录。
 5. `parseContent` 将 entries 解析为 HTML，并把 `{@tag ...}` 转成 `{{@tag|...}}`。
 6. 输出产物到 `./output`，最后生成日志、ID 对照与标签统计。
@@ -31,6 +31,7 @@
 - `output/collection/itemTypeCollection.json`
 - `output/item/*.json`（基础物品与物品）
 - `output/spell/*.json`
+- `output/bestiary/*.json`
 - `output/logs.json`（缺失或异常记录）
 - `output/idMgr.json` / `output/idMgr.xlsx`（中英 ID 对照）
 - `output/tags.json`（解析到的 @tag 列表）
