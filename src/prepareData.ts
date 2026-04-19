@@ -3529,7 +3529,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         const calculateHierarchy = (id: string, visited = new Set<string>()): { fork: number; superior: string; origin: string } => {
             // 避免循环引用
             if (visited.has(id)) {
-                return { fork: 1, superior: id, origin: id };
+                return { fork: 0, superior: id, origin: id };
             }
             
             // 检查是否已经计算过
@@ -3570,9 +3570,9 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 hierarchyMap.set(id, currentHierarchy);
                 return currentHierarchy;
             } else {
-                // 没有上级文件，层级为 1
+                // 没有上级文件，层级为 0（顶层）
                 const currentHierarchy = {
-                    fork: 1,
+                    fork: 0,
                     superior: id,
                     origin: id
                 };
