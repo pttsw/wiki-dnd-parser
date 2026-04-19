@@ -58,6 +58,13 @@ export const splitBestiaryRecord = (
         if (skipKeys.has(key)) continue;
         const enValue = en?.[key];
         const zhValue = zh?.[key];
+        
+        // 特殊处理 type 字段，总是使用英文数据的 type 值
+        if (key === 'type' && enValue !== undefined) {
+            common[key] = enValue;
+            continue;
+        }
+        
         if (hasLocalizedDifference(enValue, zhValue)) {
             if (enValue !== undefined) enOut[key] = enValue;
             if (zhValue !== undefined) zhOut[key] = zhValue;

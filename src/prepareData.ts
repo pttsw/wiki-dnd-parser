@@ -3520,6 +3520,77 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         }
     }
 
+    // 构建怪物的层级关系
+    private buildMonsterHierarchy() {
+        const hierarchyMap = new Map<string, { fork: number; superior: string; origin: string }>();
+        const childrenMap = new Map<string, string[]>(); // 记录每个上级怪物的直接下级
+        
+        // 递归计算层级关系
+        const calculateHierarchy = (id: string, visited = new Set<string>()): { fork: number; superior: string; origin: string } => {
+            // 避免循环引用
+            if (visited.has(id)) {
+                return { fork: 1, superior: id, origin: id };
+            }
+            
+            // 检查是否已经计算过
+            if (hierarchyMap.has(id)) {
+                return hierarchyMap.get(id)!;
+            }
+            
+            // 获取怪物的 fluff 数据
+            const fluffEn = this.fluff.en.get(id);
+            const fluffZh = this.fluff.zh.get(id);
+            const fluff = fluffEn || fluffZh;
+            
+            // 检查是否有上级文件
+            if (fluff?._copy && (fluff._copy.ENG_name || fluff._copy.name) && fluff._copy.source) {
+                // 构建上级文件的 ID
+                const parentName = fluff._copy.ENG_name || fluff._copy.name;
+                const parentId = `${parentName.trim()}|${fluff._copy.source}`;
+                
+                // 递归计算上级文件的层级关系
+                visited.add(id);
+                const parentHierarchy = calculateHierarchy(parentId, visited);
+                visited.delete(id);
+                
+                // 计算当前文件的层级关系
+                const currentHierarchy = {
+                    fork: parentHierarchy.fork + 1,
+                    superior: parentHierarchy.superior,
+                    origin: parentId
+                };
+                
+                // 记录当前怪物作为上级的直接下级
+                if (!childrenMap.has(parentId)) {
+                    childrenMap.set(parentId, []);
+                }
+                childrenMap.get(parentId)!.push(id);
+                
+                // 缓存结果
+                hierarchyMap.set(id, currentHierarchy);
+                return currentHierarchy;
+            } else {
+                // 没有上级文件，层级为 1
+                const currentHierarchy = {
+                    fork: 1,
+                    superior: id,
+                    origin: id
+                };
+                
+                // 缓存结果
+                hierarchyMap.set(id, currentHierarchy);
+                return currentHierarchy;
+            }
+        };
+        
+        // 为所有怪物计算层级关系
+        for (const id of this.db.keys()) {
+            calculateHierarchy(id);
+        }
+        
+        return { hierarchyMap, childrenMap };
+    }
+
     loadData(zh: MonsterFile | null, en: MonsterFile | null) {
         this.raw.zh = [...(zh?.monster || [])];
         this.raw.en = [...(en?.monster || [])];
@@ -3719,9 +3790,151 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 },
                 zh: Object.keys(zhOut).length > 0 ? zhOut : null,
                 en: enOut,
+                onlyfull: true,
             };
             this.db.set(id, bestiaryData);
         }
+
+        // 构建怪物的层级关系并添加 superiorfork 字段
+        const { hierarchyMap, childrenMap } = this.buildMonsterHierarchy();
+        for (const [id, bestiaryData] of this.db) {
+            const hierarchy = hierarchyMap.get(id);
+            if (hierarchy) {
+                bestiaryData.superiorfork = {
+                    fork: hierarchy.fork,
+                    ...(hierarchy.fork > 1 ? { superior: hierarchy.superior, origin: hierarchy.origin } : {})
+                };
+            }
+            
+            // 添加 bestiaries 字段，记录直接下级
+            const children = childrenMap.get(id);
+            if (children && children.length > 0) {
+                bestiaryData.bestiaries = children;
+            }
+        }
+    }
+
+    // 处理怪物 fluff 数据中的特定格式文本
+    private processFluffSections(data: any) {
+        if (!data || !data.full) return data;
+
+        // 处理英文和中文的 fluff 数据
+        const languages = ['en', 'zh'];
+        for (const lang of languages) {
+            const fluff = data.full[lang];
+            if (!fluff || !Array.isArray(fluff.entries)) continue;
+
+            for (const section of fluff.entries) {
+                if (section.type === 'section' && Array.isArray(section.entries) && section.entries.length >= 2) {
+                    // 检查第一句是否是 {@i ...} 格式
+                    const firstEntry = section.entries[0];
+                    if (typeof firstEntry === 'string' && firstEntry.match(/^\{@i (.+)\}$/)) {
+                        const sumMatch = firstEntry.match(/^\{@i (.+)\}$/);
+                        if (sumMatch) {
+                            const sum = sumMatch[1];
+
+                            // 检查第二句是否是列表格式
+                            const secondEntry = section.entries[1];
+                            if (
+                                secondEntry.type === 'list' &&
+                                secondEntry.style === 'list-hang-notitle' &&
+                                Array.isArray(secondEntry.items) &&
+                                secondEntry.items.length >= 2
+                            ) {
+                                // 检查是否有栖息地和宝藏项
+                                let habitat: string | undefined;
+                                let treasure: string | undefined;
+
+                                for (const item of secondEntry.items) {
+                                    if (item.type === 'item') {
+                                        // 检查栖息地项
+                                        if (
+                                            (item.name === 'Habitat:' || item.name === '栖息地') &&
+                                            item.entry
+                                        ) {
+                                            habitat = item.entry;
+                                        }
+                                        // 检查宝藏项
+                                        if (
+                                            (item.name === 'Treasure:' || item.name === '宝藏：') &&
+                                            item.entry
+                                        ) {
+                                            treasure = item.entry;
+                                        }
+                                    }
+                                }
+
+                                // 如果找到所有必要的字段，进行转换
+                                if (sum && habitat && treasure) {
+                                    section.sum = sum;
+                                    section.habitat = habitat;
+                                    section.treasure = treasure;
+                                    
+                                    // 从 entries 中移除前两个元素
+                                    section.entries = section.entries.slice(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return data;
+    }
+
+    // 处理 alignment 文本生成
+    private processAlignmentText(alignmentData: any, alignmentPrefix: string = ''): string {
+        const alignmentMap: Record<string, string> = {
+            'L,G': '守序善良',
+            'L,E': '守序邪恶',
+            'C,G': '混乱善良',
+            'C,E': '混乱邪恶',
+            'N,G': '中立善良',
+            'N,E': '中立邪恶',
+            'L,N': '守序中立',
+            'C,N': '混乱中立',
+            'N': '绝对中立',
+            'U': '无阵营',
+            'A': '任意阵营'
+        };
+
+        const OrTitle: Record<string, string> = {
+            'zh': '或',
+            'en': ' or '
+        };
+
+        const alignmenttags = Array.isArray(alignmentData) ? alignmentData : (alignmentData?.alignment || []);
+        const defaultPrefix = alignmentData?.alignmentPrefix || alignmentPrefix || '';
+
+        let result = '';
+        const ataglist: string[] = [];
+
+        for (const atag of alignmenttags) {
+            if (typeof atag === 'string') {
+                const text = alignmentMap[atag] || atag;
+                result += text;
+            } else if (typeof atag === 'object' && atag !== null) {
+                const atagalignment = atag.alignment || (Array.isArray(alignmentData) ? alignmentData : alignmentData?.alignment) || [];
+                const chance = atag.chance || 0;
+                const atagalignmentPrefix = atag.alignmentPrefix || defaultPrefix;
+
+                let atagalignment_text = atagalignmentPrefix;
+                const atagKey = Array.isArray(atagalignment) ? atagalignment.join(',') : (atagalignment || '');
+                atagalignment_text += alignmentMap[atagKey] || atagKey;
+
+                if (chance > 0) {
+                    atagalignment_text += '（' + chance + '%）';
+                }
+                ataglist.push(atagalignment_text);
+            }
+        }
+
+        if (ataglist.length > 0) {
+            result = ataglist.join(OrTitle['zh']);
+        }
+
+        return result;
     }
 
     async generateFiles() {
@@ -3730,10 +3943,62 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         const writtenFileNames = new Set<string>();
 
         for (const [id, bestiaryData] of this.db) {
+            // 处理 fluff 数据中的特定格式文本
+            const processedData = this.processFluffSections({ ...bestiaryData });
+
+            // 处理 alignment 字段
+            if (processedData.alignment) {
+                // 构建 alignment 块
+                const alignmentBlock: any = {
+                    alignment: processedData.alignment
+                };
+
+                // 生成 alignmenttext
+                alignmentBlock.alignmenttext = this.processAlignmentText(processedData.alignment);
+
+                // 处理 alignmentPrefix
+                if (processedData.en?.alignmentPrefix) {
+                    alignmentBlock.alignmentPrefix = processedData.en.alignmentPrefix;
+                    delete processedData.en.alignmentPrefix;
+                }
+                if (processedData.zh?.alignmentPrefix) {
+                    delete processedData.zh.alignmentPrefix;
+                }
+
+                // 替换原有的 alignment 字段
+                processedData.alignment = alignmentBlock;
+            }
+
+            // 调整字段顺序，将 displayName、mainSource、allSources、translator 移到 page 下方
+            const displayName = processedData.displayName;
+            const mainSource = processedData.mainSource;
+            const allSources = processedData.allSources;
+            const translator = processedData.translator;
+
+            delete processedData.displayName;
+            delete processedData.mainSource;
+            delete processedData.allSources;
+            delete processedData.translator;
+
+            // 重新构建对象，按新顺序放置字段
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 page 字段后插入需要移动的字段
+                if (key === 'page') {
+                    if (displayName) reorderedData.displayName = displayName;
+                    if (mainSource) reorderedData.mainSource = mainSource;
+                    if (allSources) reorderedData.allSources = allSources;
+                    if (translator !== undefined) reorderedData.translator = translator;
+                }
+            }
+
             const baseName = mwUtil.getMwTitle(
-                bestiaryData.displayName.en || bestiaryData.displayName.zh || id
+                reorderedData.displayName?.en || reorderedData.displayName?.zh || id
             );
-            const preferredFileName = `bestiary_1_${bestiaryData.mainSource.source}_1_${baseName}.json`;
+            const preferredFileName = `bestiary_1_${reorderedData.mainSource.source}_1_${baseName}.json`;
             const fileName = resolveCaseInsensitiveOutputFileName(
                 writtenFileNames,
                 preferredFileName,
@@ -3743,7 +4008,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 logger.log('BestiaryMgr', `怪物导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${id})`);
             }
             const filePath = path.join(outputDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(bestiaryData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(reorderedData, null, 2), 'utf-8');
         }
     }
 }
@@ -3959,6 +4224,9 @@ const printProgress = (message: string) => {
 
         // 生成法术名称列表
         await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), collectionDir);
+
+        // 生成怪物名称列表
+        await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), collectionDir);
 
         const wikiPageGenerator = new WikiPageGenerator({
             books: bookFiles,
