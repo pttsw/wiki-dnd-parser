@@ -3904,7 +3904,10 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             'en': ' or '
         };
 
-        const alignmenttags = Array.isArray(alignmentData) ? alignmentData : (alignmentData?.alignment || []);
+        // 提取alignment数组
+        const alignmenttags = Array.isArray(alignmentData) 
+            ? alignmentData 
+            : (alignmentData?.alignment || []);
         const defaultPrefix = alignmentData?.alignmentPrefix || alignmentPrefix || '';
 
         let result = '';
@@ -3915,10 +3918,12 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 const text = alignmentMap[atag] || atag;
                 result += text;
             } else if (typeof atag === 'object' && atag !== null) {
-                const atagalignment = atag.alignment || (Array.isArray(alignmentData) ? alignmentData : alignmentData?.alignment) || [];
+                // 获取该标签的alignment数组
+                const atagalignment = atag.alignment || [];
                 const chance = atag.chance || 0;
                 const atagalignmentPrefix = atag.alignmentPrefix || defaultPrefix;
 
+                // 构建该标签的alignment文本
                 let atagalignment_text = atagalignmentPrefix;
                 const atagKey = Array.isArray(atagalignment) ? atagalignment.join(',') : (atagalignment || '');
                 atagalignment_text += alignmentMap[atagKey] || atagKey;
@@ -3984,21 +3989,34 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             const reorderedData: Record<string, any> = {};
             const keys = Object.keys(processedData);
 
+            // 记录是否已经插入了需要移动的字段
+            let insertedMovedFields = false;
+
             for (const key of keys) {
                 reorderedData[key] = processedData[key];
-                // 在 page 字段后插入需要移动的字段
-                if (key === 'page') {
+                // 在 page 字段后插入需要移动的字段（仅插入一次）
+                if (key === 'page' && !insertedMovedFields) {
                     if (displayName) reorderedData.displayName = displayName;
                     if (mainSource) reorderedData.mainSource = mainSource;
                     if (allSources) reorderedData.allSources = allSources;
                     if (translator !== undefined) reorderedData.translator = translator;
+                    insertedMovedFields = true;
                 }
+            }
+
+            // 如果没有 page 字段，则在最后插入需要移动的字段
+            if (!insertedMovedFields) {
+                if (displayName) reorderedData.displayName = displayName;
+                if (mainSource) reorderedData.mainSource = mainSource;
+                if (allSources) reorderedData.allSources = allSources;
+                if (translator !== undefined) reorderedData.translator = translator;
             }
 
             const baseName = mwUtil.getMwTitle(
                 reorderedData.displayName?.en || reorderedData.displayName?.zh || id
             );
-            const preferredFileName = `bestiary_1_${reorderedData.mainSource.source}_1_${baseName}.json`;
+            const sourceId = reorderedData.mainSource?.source || 'UNKNOWN';
+            const preferredFileName = `bestiary_1_${sourceId}_1_${baseName}.json`;
             const fileName = resolveCaseInsensitiveOutputFileName(
                 writtenFileNames,
                 preferredFileName,
