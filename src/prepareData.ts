@@ -1738,7 +1738,8 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -1746,25 +1747,56 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const simpletype = this.getSimpleType(itemData.type);
-            itemData.simpletype = simpletype;
+            const simpletype = this.getSimpleType(reorderedData.type);
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
     }
@@ -2222,7 +2254,8 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -2230,11 +2263,42 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const typeAbbr = itemData.type.split('|')[0];
+            const typeAbbr = reorderedData.type.split('|')[0];
             let simpletype = '其他';
             
             // 【装备】
@@ -2280,20 +2344,20 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 simpletype = '奇物';
             }
             
-            itemData.simpletype = simpletype;
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
         }
     }
 
@@ -3063,7 +3127,8 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
             const filePath = path.join(outputDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -3071,11 +3136,42 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const typeAbbr = itemData.type.split('|')[0];
+            const typeAbbr = reorderedData.type.split('|')[0];
             let simpletype = '其他';
             
             // 【装备】
@@ -3121,20 +3217,20 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 simpletype = '奇物';
             }
             
-            itemData.simpletype = simpletype;
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
         }
     }
 
@@ -3974,16 +4070,29 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 processedData.alignment = alignmentBlock;
             }
 
-            // 调整字段顺序，将 displayName、mainSource、allSources、translator 移到 page 下方
+            // 检查 navpills（已在数据加载后添加）
+            const navpills = processedData.navpills;
+            // 检查 isnavpill（从收集到的 ids 中检查）
+            const isnavpill = isnavpillIds.has(id);
+            // 提取 onlyfull 和 superiorfork
+            const onlyfull = processedData.onlyfull;
+            const superiorfork = processedData.superiorfork;
+
+            // 调整字段顺序
             const displayName = processedData.displayName;
             const mainSource = processedData.mainSource;
             const allSources = processedData.allSources;
             const translator = processedData.translator;
+            const full = processedData.full;
 
             delete processedData.displayName;
             delete processedData.mainSource;
             delete processedData.allSources;
             delete processedData.translator;
+            delete processedData.full;
+            delete processedData.onlyfull;
+            delete processedData.superiorfork;
+            delete processedData.navpills;
 
             // 重新构建对象，按新顺序放置字段
             const reorderedData: Record<string, any> = {};
@@ -3991,10 +4100,11 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
 
             // 记录是否已经插入了需要移动的字段
             let insertedMovedFields = false;
+            let insertedFullFields = false;
 
             for (const key of keys) {
                 reorderedData[key] = processedData[key];
-                // 在 page 字段后插入需要移动的字段（仅插入一次）
+                // 在 page 字段后插入 displayName 等字段（仅插入一次）
                 if (key === 'page' && !insertedMovedFields) {
                     if (displayName) reorderedData.displayName = displayName;
                     if (mainSource) reorderedData.mainSource = mainSource;
@@ -4002,15 +4112,34 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                     if (translator !== undefined) reorderedData.translator = translator;
                     insertedMovedFields = true;
                 }
+                // 在 full 字段前插入 onlyfull、superiorfork、navpills、isnavpill
+                if (key.startsWith('full') && !insertedFullFields) {
+                    if (onlyfull) reorderedData.onlyfull = onlyfull;
+                    if (superiorfork !== undefined) reorderedData.superiorfork = superiorfork;
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
             }
 
-            // 如果没有 page 字段，则在最后插入需要移动的字段
+            // 如果没有 page 字段，则在最后插入 displayName 等字段
             if (!insertedMovedFields) {
                 if (displayName) reorderedData.displayName = displayName;
                 if (mainSource) reorderedData.mainSource = mainSource;
                 if (allSources) reorderedData.allSources = allSources;
                 if (translator !== undefined) reorderedData.translator = translator;
             }
+
+            // 如果没有触发 full 字段的判断，则在最后插入 full 前的字段
+            if (!insertedFullFields) {
+                if (onlyfull) reorderedData.onlyfull = onlyfull;
+                if (superiorfork !== undefined) reorderedData.superiorfork = superiorfork;
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
+            // 添加 full 字段
+            if (full) reorderedData.full = full;
 
             const baseName = mwUtil.getMwTitle(
                 reorderedData.displayName?.en || reorderedData.displayName?.zh || id
@@ -4151,12 +4280,28 @@ const printProgress = (message: string) => {
     console.log(chalk.cyan(`[prepareData] ${message}`));
 };
 
+// tbui-nav-pills 配置
+interface TbuiNavPillsConfig {
+    uids?: string[];
+}
+
+let tbuiNavPillsConfig: TbuiNavPillsConfig = {};
+let isnavpillIds = new Set<string>();
+
 (async () => {
     try {
         const startedAt = Date.now();
         printProgress('开始准备数据');
         await createOutputFolders();
         printProgress('输出目录已重建');
+
+        // 加载 tbui-nav-pills 配置
+        try {
+            tbuiNavPillsConfig = await readJson(path.join('config', 'tbui-nav-pills.json'));
+            printProgress('tbui-nav-pills 配置已加载');
+        } catch (error) {
+            printProgress('未找到 tbui-nav-pills.json，将跳过 navpills 功能');
+        }
 
         const [bookFiles, featFiles, itemBaseFiles, itemFiles, magicVariantFiles, itemFluffFiles] =
             await Promise.all([
@@ -4183,38 +4328,109 @@ const printProgress = (message: string) => {
         itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
 
         bookMgr.loadData(bookFiles.zh, bookFiles.en);
-        await bookMgr.generateFiles();
-        printProgress(`book 完成 (${bookMgr.db.size})`);
 
         featMgr.loadData(featFiles.zh, featFiles.en);
-        await featMgr.generateFiles();
-        printProgress(`feat 完成 (${featMgr.db.size})`);
 
         itemPropertyMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemPropertyMgr.generateFiles();
-        printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
         itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         // 注意：itemTypeCollection.json 将在 baseItemMgr 加载完成后生成
 
         itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemMasteryMgr.generateFiles();
-        printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
 
         baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await baseItemMgr.generateFiles();
-        printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
 
         // 在 baseItemMgr 加载完成后，收集基础物品列表并生成 itemTypeCollection.json
         itemTypeMgr.collectBaseItems(baseItemMgr);
+
+        itemMgr.loadData(itemFiles.zh, itemFiles.en);
+
+        magicVariantMgr.loadData(magicVariantFiles.zh, magicVariantFiles.en);
+
+        spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
+        spellMgr.loadData(spellFiles.zh, spellFiles.en);
+
+        bestiaryMgr.loadFluff(bestiaryFluffFiles.zh, bestiaryFluffFiles.en);
+        bestiaryMgr.loadData(bestiaryFiles.zh, bestiaryFiles.en);
+        
+        // 统一收集所有需要添加 navpills 和 isnavpill 的 id
+        const navpillsUids = new Set(tbuiNavPillsConfig.uids || []);
+        
+        // 收集怪物相关
+        for (const [id, data] of bestiaryMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).bestiaries) {
+                    for (const bid of (data as any).bestiaries) {
+                        isnavpillIds.add(bid);
+                    }
+                }
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集基础物品相关
+        for (const [id, data] of baseItemMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集物品相关
+        for (const [id, data] of itemMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集魔法变体相关
+        for (const [id, data] of magicVariantMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 现在开始生成文件
+        await bookMgr.generateFiles();
+        printProgress(`book 完成 (${bookMgr.db.size})`);
+
+        await featMgr.generateFiles();
+        printProgress(`feat 完成 (${featMgr.db.size})`);
+
+        await itemPropertyMgr.generateFiles();
+        printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
+
+        await itemMasteryMgr.generateFiles();
+        printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
+
+        await baseItemMgr.generateFiles();
+        printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+
         await itemTypeMgr.generateFiles();
         printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
-        itemMgr.loadData(itemFiles.zh, itemFiles.en);
         await itemMgr.generateFiles();
         printProgress(`item 完成 (${itemMgr.db.size})`);
 
-        magicVariantMgr.loadData(magicVariantFiles.zh, magicVariantFiles.en);
         await magicVariantMgr.generateFiles();
         printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
 
@@ -4230,13 +4446,9 @@ const printProgress = (message: string) => {
         ];
         await generateCollectionNameList('item', allItems, collectionDir);
 
-        spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
-        spellMgr.loadData(spellFiles.zh, spellFiles.en);
         await spellMgr.generateFiles();
         printProgress(`spell 完成 (${spellMgr.db.size})`);
 
-        bestiaryMgr.loadFluff(bestiaryFluffFiles.zh, bestiaryFluffFiles.en);
-        bestiaryMgr.loadData(bestiaryFiles.zh, bestiaryFiles.en);
         await bestiaryMgr.generateFiles();
         printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
 
