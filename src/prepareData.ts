@@ -3898,7 +3898,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             if (hierarchy) {
                 bestiaryData.superiorfork = {
                     fork: hierarchy.fork,
-                    ...(hierarchy.fork > 1 ? { superior: hierarchy.superior, origin: hierarchy.origin } : {})
+                    ...(hierarchy.fork > 0 ? { superior: hierarchy.superior, origin: hierarchy.origin } : {})
                 };
             }
             
