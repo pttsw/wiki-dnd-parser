@@ -1,3 +1,7 @@
 {
-  "uids": ["bestiary_Dragons|MM"]
+  "uids": [
+	"bestiary_Dragons|MM",
+	"bestiary_Chromatic Dragons|MM",
+	"bestiary_Metallic Dragons|MM"
+  ]
 }

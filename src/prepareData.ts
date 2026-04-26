@@ -3905,7 +3905,30 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             // 添加 bestiaries 字段，记录直接下级
             const children = childrenMap.get(id);
             if (children && children.length > 0) {
-                bestiaryData.bestiaries = children;
+                // 按照年龄阶段排序：Wyrmling -> Young -> Adult -> Ancient
+                const sortedChildren = [...children].sort((a, b) => {
+                    // 定义年龄阶段的优先级
+                    const getAgePriority = (id: string) => {
+                        if (id.includes('Wyrmling')) return 0;
+                        if (id.includes('Young')) return 1;
+                        if (id.includes('Adult')) return 2;
+                        if (id.includes('Ancient')) return 3;
+                        return 99; // 其他情况放在最后
+                    };
+                    
+                    // 比较年龄优先级
+                    const priorityA = getAgePriority(a);
+                    const priorityB = getAgePriority(b);
+                    
+                    if (priorityA !== priorityB) {
+                        return priorityA - priorityB;
+                    }
+                    
+                    // 年龄阶段相同则按字母顺序排序
+                    return a.localeCompare(b);
+                });
+                
+                bestiaryData.bestiaries = sortedChildren;
             }
         }
     }

@@ -59,8 +59,22 @@ export const splitBestiaryRecord = (
         const enValue = en?.[key];
         const zhValue = zh?.[key];
         
-        // 特殊处理 type 字段，总是使用英文数据的 type 值
-        if (key === 'type' && enValue !== undefined) {
+        // 特殊处理某些字段，总是使用英文数据
+        const englishOnlyKeys = new Set([
+            'type',
+            'environment',
+            'treasure',
+            'dragonAge',
+            'traitTags',
+            'actionTags',
+            'conditionInflictSpell',
+            'savingThrowForced',
+            'savingThrowForcedLegendary',
+            'savingThrowForcedSpell',
+			'group'
+        ]);
+        
+        if (englishOnlyKeys.has(key) && enValue !== undefined) {
             common[key] = enValue;
             continue;
         }
