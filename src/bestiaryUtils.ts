@@ -71,7 +71,8 @@ export const splitBestiaryRecord = (
             'savingThrowForced',
             'savingThrowForcedLegendary',
             'savingThrowForcedSpell',
-			'group'
+			'group',
+			'initiative'
         ]);
         
         if (englishOnlyKeys.has(key) && enValue !== undefined) {
@@ -126,16 +127,25 @@ const applyArrayCopyMod = (
 export const resolveMonsterFluffContent = (
     item: MonsterFluffEntry | undefined,
     fluffMap: Map<string, MonsterFluffEntry>,
-    visited = new Set<string>()
+    visited = new Set<string>(),
+    useCopy = true // 新增参数控制是否使用_copy追踪
 ): MonsterFluffContent | undefined => {
     if (!item) return undefined;
+    
+    // 如果不使用_copy追踪，直接返回当前item的内容
+    if (!useCopy) {
+        const { entries, images } = item;
+        if (!entries && !images) return undefined;
+        return { entries, images };
+    }
+    
     const copy = item._copy;
     let inherited: MonsterFluffContent | undefined;
     if (copy?.name && copy?.source) {
         const copyId = `${copy.name}|${copy.source}`;
         if (!visited.has(copyId)) {
             visited.add(copyId);
-            inherited = resolveMonsterFluffContent(fluffMap.get(copyId), fluffMap, visited);
+            inherited = resolveMonsterFluffContent(fluffMap.get(copyId), fluffMap, visited, useCopy);
         }
     }
 

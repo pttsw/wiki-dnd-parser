@@ -3795,8 +3795,8 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             const zhOut = { ...split.zh };
             const translator = extractTranslator(common, enOut, zhOut, zhMonster, enMonster);
             const referenceSources = normalizeMonsterReferenceSources(enMonster);
-            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en);
-            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh);
+            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en, new Set(), false); // 英文不使用_copy追踪
+            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh); // 中文保持原有的_copy追踪
 
             const bestiaryData: WikiBestiaryData = {
                 dataType: 'bestiary',
@@ -4091,6 +4091,71 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
 
                 // 替换原有的 alignment 字段
                 processedData.alignment = alignmentBlock;
+            }
+
+            // 处理 initiative 字段（参考render.js的getInitiativeBonusNumber和_getInitiativePassive逻辑）
+            if (processedData.initiative !== undefined) {
+                // 检查dex是否存在且没有special属性
+                const dex = processedData.dex;
+                
+                if (typeof processedData.initiative === 'number') {
+                    // 如果原始数据中initiative是数字，保持原样输出（如人工生命仆从）
+                    // 不做任何处理
+                } else if (typeof processedData.initiative === 'object') {
+                    // 如果原始数据中initiative是对象
+                    if (processedData.initiative.initiative !== undefined) {
+                        // 如果initiative.initiative已有值，使用它计算average
+                        if (dex !== undefined && !dex.special) {
+                            const dexMod = Math.floor((dex - 10) / 2);
+                            processedData.initiative.average = 10 + processedData.initiative.initiative;
+                            // 如果有advantageMode，需要调整
+                            if (processedData.initiative.advantageMode === 'adv') {
+                                processedData.initiative.average += 5;
+                            } else if (processedData.initiative.advantageMode === 'dis') {
+                                processedData.initiative.average -= 5;
+                            }
+                        }
+                    } else if (dex !== undefined && !dex.special) {
+                        // 如果没有initiative.initiative，需要计算
+                        // 计算熟练加值（使用正确的crToPb逻辑）
+                        const getProficiencyBonus = (cr: number) => {
+                            if (cr < 0) return null;
+                            if (cr < 5) return 2;
+                            return Math.ceil(cr / 4) + 1;
+                        };
+                        
+                        const cr = processedData.cr || 0;
+                        const proficiencyBonus = getProficiencyBonus(cr);
+                        const dexMod = Math.floor((dex - 10) / 2);
+                        
+                        // 计算先攻加值
+                        let initiativeMod = dexMod;
+                        if (processedData.initiative.proficiency && cr < 100 && proficiencyBonus !== null) {
+                            initiativeMod += processedData.initiative.proficiency * proficiencyBonus;
+                        }
+                        
+                        // 计算先攻定值
+                        let initiativeAverage = 10 + initiativeMod;
+                        if (processedData.initiative.advantageMode === 'adv') {
+                            initiativeAverage += 5;
+                        } else if (processedData.initiative.advantageMode === 'dis') {
+                            initiativeAverage -= 5;
+                        }
+                        
+                        processedData.initiative.initiative = initiativeMod;
+                        processedData.initiative.average = initiativeAverage;
+                    }
+                }
+            } else {
+                // 如果initiative未定义，且dex存在且没有special属性，生成initiative
+                const dex = processedData.dex;
+                if (dex !== undefined && !dex.special) {
+                    const dexMod = Math.floor((dex - 10) / 2);
+                    processedData.initiative = {
+                        initiative: dexMod,
+                        average: 10 + dexMod
+                    };
+                }
             }
 
             // 检查 navpills（已在数据加载后添加）
