@@ -54,8 +54,119 @@ export const splitBestiaryRecord = (
     const zhOut: Record<string, any> = {};
     const keys = new Set([...Object.keys(en || {}), ...Object.keys(zh || {})]);
 
+    // 翻译表
+    const translationMap: Record<string, string> = {
+        'Aartuk': '蔬菜人语',
+        'darkvision 60 ft': '黑暗视觉60尺'
+    };
+
+    // 翻译函数
+    const translateValue = (value: string): string => {
+        return translationMap[value] || value;
+    };
+
+    // 处理senses和languages字段，确保它们有zh和en版本
+    const processLocalizedField = (key: string) => {
+        const enValue = en?.[key];
+        let zhValue = zh?.[key];
+
+        if (enValue !== undefined) {
+            enOut[key] = enValue;
+        }
+
+        // 如果有中文数据，检查是否需要翻译
+        if (zhValue !== undefined) {
+            // 如果中文数据和英文数据相同，说明可能没有真正翻译，需要尝试翻译
+            const needTranslate = JSON.stringify(zhValue) === JSON.stringify(enValue);
+            
+            if (needTranslate) {
+                // 需要翻译
+                if (Array.isArray(enValue)) {
+                    zhOut[key] = enValue.map(item => {
+                        if (typeof item === 'string') {
+                            // 尝试精确匹配翻译
+                            if (translationMap[item]) {
+                                return translationMap[item];
+                            }
+                            // 尝试部分匹配（处理包含额外信息的字符串）
+                            for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                                if (item.includes(enWord)) {
+                                    return item.replace(enWord, zhWord);
+                                }
+                            }
+                            return item;
+                        }
+                        return item;
+                    });
+                } else if (typeof enValue === 'string') {
+                    // 尝试精确匹配翻译
+                    if (translationMap[enValue]) {
+                        zhOut[key] = translationMap[enValue];
+                    } else {
+                        // 尝试部分匹配
+                        let result = enValue;
+                        for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                            if (result.includes(enWord)) {
+                                result = result.replace(enWord, zhWord);
+                            }
+                        }
+                        zhOut[key] = result;
+                    }
+                } else {
+                    zhOut[key] = enValue;
+                }
+            } else {
+                // 使用已有中文数据
+                zhOut[key] = zhValue;
+            }
+        } else if (enValue !== undefined) {
+            // 如果没有中文，尝试翻译
+            if (Array.isArray(enValue)) {
+                zhOut[key] = enValue.map(item => {
+                    if (typeof item === 'string') {
+                        // 尝试精确匹配翻译
+                        if (translationMap[item]) {
+                            return translationMap[item];
+                        }
+                        // 尝试部分匹配（处理包含额外信息的字符串）
+                        for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                            if (item.includes(enWord)) {
+                                return item.replace(enWord, zhWord);
+                            }
+                        }
+                        return item;
+                    }
+                    return item;
+                });
+            } else if (typeof enValue === 'string') {
+                // 尝试精确匹配翻译
+                if (translationMap[enValue]) {
+                    zhOut[key] = translationMap[enValue];
+                } else {
+                    // 尝试部分匹配
+                    let result = enValue;
+                    for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                        if (result.includes(enWord)) {
+                            result = result.replace(enWord, zhWord);
+                        }
+                    }
+                    zhOut[key] = result;
+                }
+            } else {
+                zhOut[key] = enValue;
+            }
+        }
+    };
+
     for (const key of keys) {
         if (skipKeys.has(key)) continue;
+
+        // 特殊处理senses和languages字段
+        if (key === 'senses' || key === 'languages') {
+            processLocalizedField(key);
+            continue;
+        }
+
         const enValue = en?.[key];
         const zhValue = zh?.[key];
         
