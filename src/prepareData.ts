@@ -92,6 +92,108 @@ async function generateCollectionNameList(type: string, items: any[], outputDir:
 }
 
 /**
+ * 从 parser.js 中提取过时源数据列表
+ * @param parserJsPath parser.js 文件路径
+ * @returns 过时源数据的 Set
+ */
+async function getLegacySources(parserJsPath: string): Promise<Set<string>> {
+    // 默认的过时源数据列表（当无法从 parser.js 获取时使用）
+    const legacySources = new Set<string>([
+        'PHB',    // 玩家手册 (2014)
+        'MM',     // 怪物手册 (2014)
+        'DMG',    // 城主指南 (2014)
+        'VGM',    // 瓦罗怪物指南
+        'MTF',    // 魔邓肯的众敌卷册
+    ]);
+    
+    try {
+        const content = await fs.readFile(parserJsPath, 'utf-8');
+        
+        // 1. 匹配 Parser.SOURCES_LEGACY_WOTC = new Set([...])，支持多行
+        const match = content.match(/Parser\.SOURCES_LEGACY_WOTC\s*=\s*new\s+Set\s*\(\s*\[([\s\S]*?)\]\s*\)/);
+        if (match && match[1]) {
+            // 清空默认列表
+            legacySources.clear();
+            
+            // 2. 提取 Set 中的变量名（如 Parser.SRC_PHB）
+            const varRegex = /Parser\.SRC_\w+/g;
+            let varMatch;
+            const legacyVars: string[] = [];
+            while ((varMatch = varRegex.exec(match[1])) !== null) {
+                legacyVars.push(varMatch[0]);
+            }
+            
+            // 3. 构建变量名到书籍ID的映射
+            const srcVarRegex = /(Parser\.SRC_\w+)\s*=\s*['"]([^'"]+)['"]/g;
+            const varToId: Record<string, string> = {};
+            let srcMatch;
+            while ((srcMatch = srcVarRegex.exec(content)) !== null) {
+                varToId[srcMatch[1]] = srcMatch[2];
+            }
+            
+            // 4. 根据变量名获取书籍ID
+            for (const legacyVar of legacyVars) {
+                const bookId = varToId[legacyVar];
+                if (bookId) {
+                    legacySources.add(bookId);
+                }
+            }
+            
+            console.log(`从 parser.js 获取到 ${legacySources.size} 个过时源数据: ${Array.from(legacySources).join(', ')}`);
+        } else {
+            console.log(`parser.js 中未找到 SOURCES_LEGACY_WOTC，使用默认列表`);
+        }
+    } catch (error) {
+        console.warn(`无法读取 parser.js 获取过时源数据列表，使用默认列表:`, error);
+    }
+    return legacySources;
+}
+
+/**
+ * 生成 Sources.json 文件
+ * @param bookMgr BookMgr 实例
+ * @param outputDir 输出目录
+ */
+async function generateSourcesJson(bookMgr: BookMgr, outputDir: string) {
+    try {
+        const enBooks = bookMgr.raw.en?.book || [];
+        const zhBooks = bookMgr.raw.zh?.book || [];
+
+        // 从 parser.js 中获取过时源数据列表
+        // parser.js 在 DATA_EN_DIR 的同级目录 js/ 下
+        const dataEnDir = path.dirname(config.DATA_EN_DIR);
+        const parserJsPath = path.join(dataEnDir, 'js/parser.js');
+        const legacySources = await getLegacySources(parserJsPath);
+
+        const data: Record<string, any> = {};
+
+        for (const enBook of enBooks) {
+            const id = enBook.id;
+            const zhBook = zhBooks.find(b => b.id === id);
+
+            data[id] = {
+                id: id,
+                source_name: enBook.name,
+                source_published: enBook.published || '',
+                source_zhname: zhBook ? zhBook.name : enBook.name,
+                newest: !legacySources.has(id)
+            };
+        }
+
+        const output = {
+            type: 'sources',
+            data: data
+        };
+
+        const outputPath = path.join(outputDir, 'Sources.json');
+        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+        console.log(`已生成 Sources.json 文件：${outputPath}`);
+    } catch (error) {
+        console.error(`生成 Sources.json 文件失败:`, error);
+    }
+}
+
+/**
  * 直接在字符串上替换 {=bonusWeapon} 和 {=bonusWeaponDamage}
  */
 const replaceBonusInString = (str: string, itemData: any): string => {
@@ -307,31 +409,40 @@ const processBonusReplacements = (itemData: any): any => {
     return itemData;
 };
 
-export const createOutputFolders = async () => {
-    for (const targetDir of ['./output', './output_page']) {
+export const createOutputFolders = async (generatePages: boolean) => {
+    if (!generatePages) {
+        // npm run start: 只创建 output 目录
         try {
-            await fs.access(targetDir);
-            await fs.rm(targetDir, { recursive: true, force: true });
+            await fs.access('./output');
+            await fs.rm('./output', { recursive: true, force: true });
         } catch (error) {
             // do nothing, folder does not exist
         }
-    }
-    const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary'];
-    for (const dir of dirs) {
-        const dirPath = path.join('./output', dir);
-        try {
-            await fs.access(dirPath);
-        } catch (error) {
-            await fs.mkdir(dirPath, { recursive: true });
+        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist'];
+        for (const dir of dirs) {
+            const dirPath = path.join('./output', dir);
+            try {
+                await fs.access(dirPath);
+            } catch (error) {
+                await fs.mkdir(dirPath, { recursive: true });
+            }
         }
-    }
-    const pageDirs = ['spells', 'items'];
-    for (const dir of pageDirs) {
-        const dirPath = path.join('./output_page', dir);
+    } else {
+        // npm run page: 只创建 output_page 目录
         try {
-            await fs.access(dirPath);
+            await fs.access('./output_page');
+            await fs.rm('./output_page', { recursive: true, force: true });
         } catch (error) {
-            await fs.mkdir(dirPath, { recursive: true });
+            // do nothing, folder does not exist
+        }
+        const pageDirs = ['spells', 'items'];
+        for (const dir of pageDirs) {
+            const dirPath = path.join('./output_page', dir);
+            try {
+                await fs.access(dirPath);
+            } catch (error) {
+                await fs.mkdir(dirPath, { recursive: true });
+            }
         }
     }
     return true;
@@ -4378,9 +4489,13 @@ let isnavpillIds = new Set<string>();
 
 (async () => {
     try {
+        // 解析命令行参数
+        const args = process.argv.slice(2);
+        const generatePages = args.includes('--page');
+        
         const startedAt = Date.now();
         printProgress('开始准备数据');
-        await createOutputFolders();
+        await createOutputFolders(generatePages);
         printProgress('输出目录已重建');
 
         // 加载 tbui-nav-pills 配置
@@ -4497,72 +4612,76 @@ let isnavpillIds = new Set<string>();
             }
         }
         
-        // 现在开始生成文件
-        await bookMgr.generateFiles();
-        printProgress(`book 完成 (${bookMgr.db.size})`);
+        if (!generatePages) {
+            // npm run start: 只生成基础数据到 output 目录
+            await bookMgr.generateFiles();
+            printProgress(`book 完成 (${bookMgr.db.size})`);
 
-        await featMgr.generateFiles();
-        printProgress(`feat 完成 (${featMgr.db.size})`);
+            await featMgr.generateFiles();
+            printProgress(`feat 完成 (${featMgr.db.size})`);
 
-        await itemPropertyMgr.generateFiles();
-        printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
+            await itemPropertyMgr.generateFiles();
+            printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
-        await itemMasteryMgr.generateFiles();
-        printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
+            await itemMasteryMgr.generateFiles();
+            printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
 
-        await baseItemMgr.generateFiles();
-        printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+            await baseItemMgr.generateFiles();
+            printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
 
-        await itemTypeMgr.generateFiles();
-        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
+            await itemTypeMgr.generateFiles();
+            printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
-        await itemMgr.generateFiles();
-        printProgress(`item 完成 (${itemMgr.db.size})`);
+            await itemMgr.generateFiles();
+            printProgress(`item 完成 (${itemMgr.db.size})`);
 
-        await magicVariantMgr.generateFiles();
-        printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
+            await magicVariantMgr.generateFiles();
+            printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
 
-        // 生成物品名称列表
-        const collectionDir = path.join('./output', 'collection');
-        await fs.mkdir(collectionDir, { recursive: true });
-        
-        // 合并所有物品数据（基础物品、普通物品、变体物品）
-        const allItems = [
-            ...Array.from(baseItemMgr.db.values()),
-            ...Array.from(itemMgr.db.values()),
-            ...Array.from(magicVariantMgr.db.values())
-        ];
-        await generateCollectionNameList('item', allItems, collectionDir);
+            const namelistDir = path.join('./output', 'namelist');
+            await fs.mkdir(namelistDir, { recursive: true });
 
-        await spellMgr.generateFiles();
-        printProgress(`spell 完成 (${spellMgr.db.size})`);
+            await generateSourcesJson(bookMgr, namelistDir);
 
-        await bestiaryMgr.generateFiles();
-        printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
+            // 合并所有物品数据（基础物品、普通物品、变体物品）
+            const allItems = [
+                ...Array.from(baseItemMgr.db.values()),
+                ...Array.from(itemMgr.db.values()),
+                ...Array.from(magicVariantMgr.db.values())
+            ];
+            await generateCollectionNameList('item', allItems, namelistDir);
 
-        // 生成法术名称列表
-        await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), collectionDir);
+            await spellMgr.generateFiles();
+            printProgress(`spell 完成 (${spellMgr.db.size})`);
 
-        // 生成怪物名称列表
-        await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), collectionDir);
+            await bestiaryMgr.generateFiles();
+            printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
 
-        const wikiPageGenerator = new WikiPageGenerator({
-            books: bookFiles,
-            spells: spellMgr.db,
-            baseItems: baseItemMgr.db,
-            items: itemMgr.db,
-            magicVariants: magicVariantMgr.db,
-            logger: message => printProgress(`wikiPage: ${message}`),
-        });
-        const wikiPageResult = await wikiPageGenerator.generateAll();
-        printProgress(
-            `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
-        );
+            // 生成法术名称列表
+            await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), namelistDir);
 
-        await idMgr.generateFiles();
-        await tagParser.generateFiles();
-        await logger.generateFile();
-        await processGeneratedFiles();
+            // 生成怪物名称列表
+            await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), namelistDir);
+
+            await idMgr.generateFiles();
+            await tagParser.generateFiles();
+            await logger.generateFile();
+            await processGeneratedFiles();
+        } else {
+            // npm run page: 只生成 wiki 页面到 output_page 目录
+            const wikiPageGenerator = new WikiPageGenerator({
+                books: bookFiles,
+                spells: spellMgr.db,
+                baseItems: baseItemMgr.db,
+                items: itemMgr.db,
+                magicVariants: magicVariantMgr.db,
+                logger: message => printProgress(`wikiPage: ${message}`),
+            });
+            const wikiPageResult = await wikiPageGenerator.generateAll();
+            printProgress(
+                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+            );
+        }
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(

@@ -7,6 +7,7 @@
   "scripts": {
     "getCnRepo": "node --import ./loader.js src/getGitRepo.ts",
     "start": "node --import ./loader.js src/prepareData.ts",
+    "page": "node --import ./loader.js src/prepareData.ts --page",
     "processGenerated": "node --import ./loader.js src/processGenerated.ts"
   },
   "author": "",
