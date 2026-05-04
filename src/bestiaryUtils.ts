@@ -57,7 +57,7 @@ export const splitBestiaryRecord = (
     // 翻译表
     const translationMap: Record<string, string> = {
         'Aartuk': '蔬菜人语',
-        'darkvision 60 ft': '黑暗视觉60尺'
+        'darkvision': '黑暗视觉',
     };
 
     // 翻译函数
@@ -68,59 +68,17 @@ export const splitBestiaryRecord = (
     // 处理senses和languages字段，确保它们有zh和en版本
     const processLocalizedField = (key: string) => {
         const enValue = en?.[key];
-        let zhValue = zh?.[key];
+        const zhValue = zh?.[key];
 
         if (enValue !== undefined) {
             enOut[key] = enValue;
         }
 
-        // 如果有中文数据，检查是否需要翻译
-        if (zhValue !== undefined) {
-            // 如果中文数据和英文数据相同，说明可能没有真正翻译，需要尝试翻译
-            const needTranslate = JSON.stringify(zhValue) === JSON.stringify(enValue);
-            
-            if (needTranslate) {
-                // 需要翻译
-                if (Array.isArray(enValue)) {
-                    zhOut[key] = enValue.map(item => {
-                        if (typeof item === 'string') {
-                            // 尝试精确匹配翻译
-                            if (translationMap[item]) {
-                                return translationMap[item];
-                            }
-                            // 尝试部分匹配（处理包含额外信息的字符串）
-                            for (const [enWord, zhWord] of Object.entries(translationMap)) {
-                                if (item.includes(enWord)) {
-                                    return item.replace(enWord, zhWord);
-                                }
-                            }
-                            return item;
-                        }
-                        return item;
-                    });
-                } else if (typeof enValue === 'string') {
-                    // 尝试精确匹配翻译
-                    if (translationMap[enValue]) {
-                        zhOut[key] = translationMap[enValue];
-                    } else {
-                        // 尝试部分匹配
-                        let result = enValue;
-                        for (const [enWord, zhWord] of Object.entries(translationMap)) {
-                            if (result.includes(enWord)) {
-                                result = result.replace(enWord, zhWord);
-                            }
-                        }
-                        zhOut[key] = result;
-                    }
-                } else {
-                    zhOut[key] = enValue;
-                }
-            } else {
-                // 使用已有中文数据
-                zhOut[key] = zhValue;
-            }
-        } else if (enValue !== undefined) {
-            // 如果没有中文，尝试翻译
+        // 如果有英文数据但没有中文，或者中文数据与英文数据相同，则翻译
+        const needTranslate = zhValue === undefined || JSON.stringify(zhValue) === JSON.stringify(enValue);
+
+        if (needTranslate && enValue !== undefined) {
+            // 需要翻译
             if (Array.isArray(enValue)) {
                 zhOut[key] = enValue.map(item => {
                     if (typeof item === 'string') {
@@ -155,6 +113,9 @@ export const splitBestiaryRecord = (
             } else {
                 zhOut[key] = enValue;
             }
+        } else if (zhValue !== undefined) {
+            // 使用已有中文数据
+            zhOut[key] = zhValue;
         }
     };
 
