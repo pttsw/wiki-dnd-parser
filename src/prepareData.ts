@@ -152,12 +152,38 @@ async function getLegacySources(parserJsPath: string): Promise<Set<string>> {
 /**
  * 生成 Sources.json 文件
  * @param bookMgr BookMgr 实例
+ * @param featMgr FeatMgr 实例
+ * @param spellMgr SpellMgr 实例
+ * @param baseItemMgr BaseItemMgr 实例
+ * @param itemMgr ItemMgr 实例
+ * @param magicVariantMgr MagicVariantMgr 实例
+ * @param bestiaryMgr BestiaryMgr 实例
  * @param outputDir 输出目录
  */
-async function generateSourcesJson(bookMgr: BookMgr, outputDir: string) {
+async function generateSourcesJson(
+    bookMgr: BookMgr,
+    featMgr: FeatMgr,
+    spellMgr: SpellMgr,
+    baseItemMgr: BaseItemMgr,
+    itemMgr: ItemMgr,
+    magicVariantMgr: MagicVariantMgr,
+    bestiaryMgr: BestiaryMgr,
+    outputDir: string
+) {
     try {
         const enBooks = bookMgr.raw.en?.book || [];
         const zhBooks = bookMgr.raw.zh?.book || [];
+
+        // 加载 adventures.json
+        const adventureFilePath = path.join(config.DATA_ZH_DIR, 'adventures.json');
+        let enAdventures: any[] = [];
+        try {
+            const content = await fs.readFile(adventureFilePath, 'utf-8');
+            const adventureData = JSON.parse(content);
+            enAdventures = adventureData.adventure || [];
+        } catch (error) {
+            // adventures.json 可能不存在，使用空数组
+        }
 
         // 从 parser.js 中获取过时源数据列表
         // parser.js 在 DATA_EN_DIR 的同级目录 js/ 下
@@ -165,18 +191,97 @@ async function generateSourcesJson(bookMgr: BookMgr, outputDir: string) {
         const parserJsPath = path.join(dataEnDir, 'js/parser.js');
         const legacySources = await getLegacySources(parserJsPath);
 
+        // 收集每个来源包含的类别
+        const sourceTypes: Record<string, Set<string>> = {};
+
+        // 初始化每个书籍来源
+        for (const enBook of enBooks) {
+            sourceTypes[enBook.id] = new Set();
+        }
+
+        // 初始化每个冒险来源
+        for (const adv of enAdventures) {
+            sourceTypes[adv.id] = new Set();
+        }
+
+        // 收集专长来源
+        for (const item of featMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('feat');
+            }
+        }
+
+        // 收集法术来源
+        for (const item of spellMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('spell');
+            }
+        }
+
+        // 收集基础物品来源
+        for (const item of baseItemMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集物品来源
+        for (const item of itemMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集魔法变体来源
+        for (const item of magicVariantMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集怪物来源
+        for (const item of bestiaryMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('bestiary');
+            }
+        }
+
         const data: Record<string, any> = {};
 
+        // 生成书籍来源数据
         for (const enBook of enBooks) {
             const id = enBook.id;
             const zhBook = zhBooks.find(b => b.id === id);
 
             data[id] = {
                 id: id,
+                type: 'book',
                 source_name: enBook.name,
                 source_published: enBook.published || '',
                 source_zhname: zhBook ? zhBook.name : enBook.name,
-                newest: !legacySources.has(id)
+                newest: !legacySources.has(id),
+                have: Array.from(sourceTypes[id] || [])
+            };
+        }
+
+        // 生成冒险来源数据
+        for (const adv of enAdventures) {
+            const id = adv.id;
+
+            data[id] = {
+                id: id,
+                type: 'adventure',
+                source_name: adv.name,
+                source_published: adv.published || '',
+                source_zhname: adv.name,
+                newest: !legacySources.has(id),
+                have: Array.from(sourceTypes[id] || [])
             };
         }
 
@@ -4638,10 +4743,25 @@ let isnavpillIds = new Set<string>();
             await magicVariantMgr.generateFiles();
             printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
 
+            await spellMgr.generateFiles();
+            printProgress(`spell 完成 (${spellMgr.db.size})`);
+
+            await bestiaryMgr.generateFiles();
+            printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
+
             const namelistDir = path.join('./output', 'namelist');
             await fs.mkdir(namelistDir, { recursive: true });
 
-            await generateSourcesJson(bookMgr, namelistDir);
+            await generateSourcesJson(
+                bookMgr,
+                featMgr,
+                spellMgr,
+                baseItemMgr,
+                itemMgr,
+                magicVariantMgr,
+                bestiaryMgr,
+                namelistDir
+            );
 
             // 合并所有物品数据（基础物品、普通物品、变体物品）
             const allItems = [
@@ -4650,12 +4770,6 @@ let isnavpillIds = new Set<string>();
                 ...Array.from(magicVariantMgr.db.values())
             ];
             await generateCollectionNameList('item', allItems, namelistDir);
-
-            await spellMgr.generateFiles();
-            printProgress(`spell 完成 (${spellMgr.db.size})`);
-
-            await bestiaryMgr.generateFiles();
-            printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
 
             // 生成法术名称列表
             await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), namelistDir);
