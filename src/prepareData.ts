@@ -515,8 +515,10 @@ const processBonusReplacements = (itemData: any): any => {
 };
 
 export const createOutputFolders = async (generatePages: boolean) => {
+    console.log(`createOutputFolders 被调用，generatePages: ${generatePages}`);
     if (!generatePages) {
         // npm run start: 只创建 output 目录
+        console.log('创建 output 目录...');
         try {
             await fs.access('./output');
             await fs.rm('./output', { recursive: true, force: true });
@@ -530,26 +532,30 @@ export const createOutputFolders = async (generatePages: boolean) => {
                 await fs.access(dirPath);
             } catch (error) {
                 await fs.mkdir(dirPath, { recursive: true });
+                console.log(`  已创建目录: ${dirPath}`);
             }
         }
     } else {
         // npm run page: 只创建 output_page 目录
+        console.log('创建 output_page 目录...');
         try {
             await fs.access('./output_page');
             await fs.rm('./output_page', { recursive: true, force: true });
         } catch (error) {
             // do nothing, folder does not exist
         }
-        const pageDirs = ['spells', 'items'];
+        const pageDirs = ['spells', 'items', 'bestiary'];
         for (const dir of pageDirs) {
             const dirPath = path.join('./output_page', dir);
             try {
                 await fs.access(dirPath);
             } catch (error) {
                 await fs.mkdir(dirPath, { recursive: true });
+                console.log(`  已创建目录: ${dirPath}`);
             }
         }
     }
+    console.log('createOutputFolders 完成');
     return true;
 };
 
@@ -4218,20 +4224,26 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         return data;
     }
 
-    // 处理 alignment 文本生成
-    private processAlignmentText(alignmentData: any, alignmentPrefix: string = ''): string {
-        const alignmentMap: Record<string, string> = {
-            'L,G': '守序善良',
-            'L,E': '守序邪恶',
-            'C,G': '混乱善良',
-            'C,E': '混乱邪恶',
-            'N,G': '中立善良',
-            'N,E': '中立邪恶',
-            'L,N': '守序中立',
-            'C,N': '混乱中立',
-            'N': '绝对中立',
+    // 处理 alignment 文本生成（参考Lua函数）
+    private processAlignmentText(alignmentData: any, language: string = 'zh'): string {
+        const alignment_Type: Record<string, string> = {
+            'L': '守序',
+            'C': '混乱',
+            'G': '善良',
+            'N': '中立',
+            'E': '邪恶',
             'U': '无阵营',
             'A': '任意阵营'
+        };
+
+        const alignment_Type_en: Record<string, string> = {
+            'L': 'lawful',
+            'C': 'chaotic',
+            'G': 'good',
+            'N': 'neutral',
+            'E': 'evil',
+            'U': 'Unaligned',
+            'A': 'Any Alignment'
         };
 
         const OrTitle: Record<string, string> = {
@@ -4239,29 +4251,56 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             'en': ' or '
         };
 
-        // 提取alignment数组
+        if (!alignmentData) {
+            return '';
+        }
+
+        // 提取alignment数组和prefix
         const alignmenttags = Array.isArray(alignmentData) 
             ? alignmentData 
             : (alignmentData?.alignment || []);
-        const defaultPrefix = alignmentData?.alignmentPrefix || alignmentPrefix || '';
+        const alignmentPrefix = alignmentData?.alignmentPrefix || '';
 
         let result = '';
         const ataglist: string[] = [];
 
         for (const atag of alignmenttags) {
             if (typeof atag === 'string') {
-                const text = alignmentMap[atag] || atag;
-                result += text;
+                // 直接映射单个字符（alignment已经是数组，每个元素是单个字符如"N"或"G"）
+                if (language === 'zh') {
+                    result += alignment_Type[atag] || atag;
+                } else {
+                    result += alignment_Type_en[atag] || atag;
+                }
             } else if (typeof atag === 'object' && atag !== null) {
-                // 获取该标签的alignment数组
-                const atagalignment = atag.alignment || [];
+                const atagalignment = atag.alignment || '';
                 const chance = atag.chance || 0;
-                const atagalignmentPrefix = atag.alignmentPrefix || defaultPrefix;
+                const atagalignmentPrefix = atag.alignmentPrefix || alignmentPrefix || '';
 
-                // 构建该标签的alignment文本
-                let atagalignment_text = atagalignmentPrefix;
-                const atagKey = Array.isArray(atagalignment) ? atagalignment.join(',') : (atagalignment || '');
-                atagalignment_text += alignmentMap[atagKey] || atagKey;
+                // 处理子alignment（可能是字符串或数组）
+                let subAlignmentText = '';
+                if (typeof atagalignment === 'string') {
+                    const tags = atagalignment.split(',');
+                    for (const tag of tags) {
+                        if (language === 'zh') {
+                            subAlignmentText += alignment_Type[tag] || tag;
+                        } else {
+                            subAlignmentText += alignment_Type_en[tag] || tag;
+                        }
+                    }
+                } else if (Array.isArray(atagalignment)) {
+                    for (const tag of atagalignment) {
+                        if (typeof tag === 'string') {
+                            if (language === 'zh') {
+                                subAlignmentText += alignment_Type[tag] || tag;
+                            } else {
+                                subAlignmentText += alignment_Type_en[tag] || tag;
+                            }
+                        }
+                    }
+                }
+
+                let atagalignment_text = atagalignmentPrefix + subAlignmentText;
 
                 if (chance > 0) {
                     atagalignment_text += '（' + chance + '%）';
@@ -4271,7 +4310,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         }
 
         if (ataglist.length > 0) {
-            result = ataglist.join(OrTitle['zh']);
+            result = ataglist.join(OrTitle[language]);
         }
 
         return result;
@@ -4594,9 +4633,11 @@ let isnavpillIds = new Set<string>();
 
 (async () => {
     try {
+        console.log('程序开始执行...');
         // 解析命令行参数
         const args = process.argv.slice(2);
         const generatePages = args.includes('--page');
+        console.log(`命令行参数: ${args}, generatePages: ${generatePages}`);
         
         const startedAt = Date.now();
         printProgress('开始准备数据');
@@ -4668,9 +4709,15 @@ let isnavpillIds = new Set<string>();
         for (const [id, data] of bestiaryMgr.db) {
             if (navpillsUids.has(data.uid)) {
                 (data as any).navpills = true;
+                (data as any).isnavpill = true;
+                
                 if ((data as any).bestiaries) {
                     for (const bid of (data as any).bestiaries) {
                         isnavpillIds.add(bid);
+                        const childData = bestiaryMgr.db.get(bid);
+                        if (childData) {
+                            (childData as any).isnavpill = true;
+                        }
                     }
                 }
                 if ((data as any).items) {
@@ -4789,11 +4836,12 @@ let isnavpillIds = new Set<string>();
                 baseItems: baseItemMgr.db,
                 items: itemMgr.db,
                 magicVariants: magicVariantMgr.db,
+                bestiary: bestiaryMgr.db,
                 logger: message => printProgress(`wikiPage: ${message}`),
             });
             const wikiPageResult = await wikiPageGenerator.generateAll();
             printProgress(
-                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
             );
         }
 

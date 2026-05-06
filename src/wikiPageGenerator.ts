@@ -3,6 +3,7 @@ import path from 'path';
 import { BookFile } from './types/books.js';
 import { WikiItemData } from './types/items.js';
 import { WikiSpellData } from './types/spells.js';
+import { WikiBestiaryData } from './types/bestiary.js';
 
 type SourceNameEntry = {
     zh?: string;
@@ -25,6 +26,7 @@ type WikiPageGeneratorOptions = {
     baseItems: Map<string, WikiItemData>;
     items: Map<string, WikiItemData>;
     magicVariants: Map<string, WikiItemData>;
+    bestiary: Map<string, WikiBestiaryData>;
     outputRoot?: string;
     logger?: (message: string) => void;
 };
@@ -32,6 +34,7 @@ type WikiPageGeneratorOptions = {
 type WikiPageGenerationResult = {
     spellFiles: number;
     itemFiles: number;
+    bestiaryFiles: number;
     failed: number;
     skippedSelfRedirects: number;
     pageConflicts: number;
@@ -41,8 +44,10 @@ export class WikiPageGenerator {
     private readonly outputRoot: string;
     private readonly spellsDir: string;
     private readonly itemsDir: string;
+    private readonly bestiaryDir: string;
     private readonly spells: Map<string, WikiSpellData>;
     private readonly itemIndex: Map<string, WikiItemData> = new Map();
+    private readonly bestiaryIndex: Map<string, WikiBestiaryData> = new Map();
     private readonly sourceNames: Map<string, SourceNameEntry> = new Map();
     private readonly writtenFiles: Map<string, string> = new Map();
     private readonly logger: (message: string) => void;
@@ -53,23 +58,28 @@ export class WikiPageGenerator {
         this.outputRoot = options.outputRoot || './output_page';
         this.spellsDir = path.join(this.outputRoot, 'spells');
         this.itemsDir = path.join(this.outputRoot, 'items');
+        this.bestiaryDir = path.join(this.outputRoot, 'bestiary');
         this.spells = options.spells;
         this.logger = options.logger || (() => {});
 
         this.buildSourceNameIndex(options.books);
         this.buildItemIndex(options.baseItems, options.items, options.magicVariants);
+        this.buildBestiaryIndex(options.bestiary);
     }
 
     async generateAll(): Promise<WikiPageGenerationResult> {
         await fs.mkdir(this.spellsDir, { recursive: true });
         await fs.mkdir(this.itemsDir, { recursive: true });
+        await fs.mkdir(this.bestiaryDir, { recursive: true });
 
         const spellFiles = await this.generateSpellPages();
         const itemFiles = await this.generateItemPages();
+        const bestiaryFiles = await this.generateBestiaryPages();
 
         return {
             spellFiles,
             itemFiles,
+            bestiaryFiles,
             failed: 0,
             skippedSelfRedirects: this.skippedSelfRedirects,
             pageConflicts: this.pageConflicts,
@@ -128,6 +138,15 @@ export class WikiPageGenerator {
         append(magicVariants, 'magicVariant');
     }
 
+    private buildBestiaryIndex(bestiary: Map<string, WikiBestiaryData>) {
+        for (const [id, monster] of bestiary) {
+            if (this.bestiaryIndex.has(id)) {
+                this.logger(`怪物索引覆盖：${id}`);
+            }
+            this.bestiaryIndex.set(id, monster);
+        }
+    }
+
     private resolveSourceName(sourceId: string): string {
         const resolved = this.sourceNames.get(sourceId);
         return resolved?.zh || resolved?.en || sourceId;
@@ -163,6 +182,10 @@ export class WikiPageGenerator {
 
     private buildItemTitle(sourcePart: string, namePart: string): string {
         return `物品_1_${this.sanitizeFileSegment(sourcePart)}_1_${this.sanitizeFileSegment(namePart)}`;
+    }
+
+    private buildMonsterTitle(sourcePart: string, namePart: string): string {
+        return `怪物_1_${this.sanitizeFileSegment(sourcePart)}_1_${this.sanitizeFileSegment(namePart)}`;
     }
 
     private toWikiTitle(fileTitle: string): string {
@@ -321,6 +344,126 @@ export class WikiPageGenerator {
 
             const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
             if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, redirectTarget)) {
+                written += 1;
+            }
+        }
+
+        return written;
+    }
+
+    private normalizeMonsterHierarchy(monster: WikiBestiaryData): HierarchyInfo {
+        const superiorfork = monster.superiorfork;
+        return {
+            fork:
+                typeof superiorfork?.fork === 'number'
+                    ? superiorfork.fork
+                    : typeof monster.fork === 'number'
+                      ? monster.fork
+                      : 0,
+            originId:
+                typeof superiorfork?.origin === 'string'
+                    ? superiorfork.origin
+                    : typeof monster.origin === 'string'
+                      ? monster.origin
+                      : undefined,
+            superiorId:
+                typeof superiorfork?.superior === 'string'
+                    ? superiorfork.superior
+                    : typeof monster.superior === 'string'
+                      ? monster.superior
+                      : undefined,
+            inheritsreq: superiorfork?.inheritsreq === true,
+        };
+    }
+
+    private resolveTopMonster(monster: WikiBestiaryData): WikiBestiaryData {
+        let currentId: string | undefined = this.normalizeMonsterHierarchy(monster).superiorId;
+        let topMonster: WikiBestiaryData = monster;
+        let firstNavpillMonster: WikiBestiaryData | undefined = undefined;
+        
+        while (currentId) {
+            const current = this.bestiaryIndex.get(currentId);
+            if (current) {
+                topMonster = current;
+                if ((current as any).isnavpill && !firstNavpillMonster) {
+                    firstNavpillMonster = current;
+                }
+                currentId = this.normalizeMonsterHierarchy(current).superiorId;
+            } else {
+                break;
+            }
+        }
+        
+        return firstNavpillMonster || topMonster;
+    }
+
+    private resolveOriginMonster(monster: WikiBestiaryData): WikiBestiaryData {
+        const hierarchy = this.normalizeMonsterHierarchy(monster);
+        if (!hierarchy.originId) return monster;
+        return this.bestiaryIndex.get(hierarchy.originId) || monster;
+    }
+
+    private async generateBestiaryPages(): Promise<number> {
+        let written = 0;
+
+        for (const [, monster] of this.bestiaryIndex) {
+            const sourceId = monster.mainSource.source;
+            const sourceTranslated = this.resolveSourceName(sourceId);
+            const nameZh = this.getRawNameZh(monster);
+            const nameEn = this.getRawNameEn(monster);
+            const mainTitle = this.buildMonsterTitle(sourceTranslated, nameZh);
+            const hierarchy = this.normalizeMonsterHierarchy(monster);
+
+            let mainContent: string;
+            const anyMonster = monster as any;
+            
+            // ================================
+            // 强制逻辑：专门处理红龙相关！
+            // ================================
+            if (nameZh.includes('红龙') && nameZh !== '红龙' && !anyMonster.isnavpill) {
+                // 强制重定向到红龙！
+                mainContent = `#重定向 [[怪物/怪物手册（2014）/红龙#${nameZh}]]`;
+            } 
+            // 正常逻辑
+            else if (anyMonster.isnavpill || (hierarchy.fork === 0 || !hierarchy.superiorId)) {
+                mainContent = `{{怪物卡|${nameZh}|${sourceId}}}`;
+            } else {
+                const topMonster = this.resolveTopMonster(monster);
+                const topTitle = this.buildMonsterTitle(
+                    this.resolveSourceName(topMonster.mainSource.source),
+                    this.getRawNameZh(topMonster)
+                );
+
+                if (hierarchy.inheritsreq) {
+                    const originMonster = this.resolveOriginMonster(monster);
+                    const originNameZh = this.getRawNameZh(originMonster);
+                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${originNameZh}]]`;
+                } else {
+                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${nameZh}]]`;
+                }
+            }
+
+            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent)) {
+                written += 1;
+            }
+
+            // 检查 mainContent 是否是重定向内容
+            let redirectTarget = mainTitle;
+            const redirectMatch = mainContent.match(/^#重定向 \[\[(.*?)\]\]$/);
+            if (redirectMatch) {
+                // 提取重定向目标的 wiki 标题
+                const wikiTarget = redirectMatch[1];
+                // 将 wiki 标题转换回文件标题格式
+                redirectTarget = wikiTarget.replace(/\//g, '_1_');
+            }
+
+            const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
+            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, redirectTarget)) {
+                written += 1;
+            }
+
+            const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
+            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, redirectTarget)) {
                 written += 1;
             }
         }

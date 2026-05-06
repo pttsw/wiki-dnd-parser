@@ -122,8 +122,8 @@ export const splitBestiaryRecord = (
     for (const key of keys) {
         if (skipKeys.has(key)) continue;
 
-        // 特殊处理senses和languages字段
-        if (key === 'senses' || key === 'languages') {
+        // 特殊处理senses、languages、hp、ac、speed、skill字段
+        if (key === 'senses' || key === 'languages' || key === 'hp' || key === 'ac' || key === 'speed' || key === 'skill') {
             processLocalizedField(key);
             continue;
         }
