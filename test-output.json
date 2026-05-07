@@ -1,0 +1,56 @@
+{
+  "zh": {
+    "spellcasting": [
+      {
+        "type": "innate",
+        "spells": [
+          {
+            "atwill": [
+              "魔法飞弹"
+            ],
+            "level": 1
+          },
+          {
+            "daily": [
+              "火焰箭"
+            ],
+            "level": 2
+          },
+          {
+            "daily": [
+              "闪电箭"
+            ],
+            "level": 3
+          }
+        ]
+      }
+    ]
+  },
+  "en": {
+    "spellcasting": [
+      {
+        "type": "innate",
+        "daily": [
+          {
+            "times": "2e",
+            "spells": [
+              "lightning bolt"
+            ]
+          },
+          {
+            "times": "1e",
+            "spells": [
+              "magic missile"
+            ]
+          },
+          {
+            "times": "3",
+            "spells": [
+              "fireball"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

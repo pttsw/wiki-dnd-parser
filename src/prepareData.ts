@@ -48,6 +48,7 @@ import {
     SpellFluffFile,
     WikiSpellData,
 } from './types/spells';
+
 import {
     MonsterFile,
     MonsterFileEntry,
@@ -4316,6 +4317,68 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         return result;
     }
 
+    private transformSpellcastingSpells(data: Record<string, any>) {
+        try {
+            if (data.zh && data.zh.spellcasting && Array.isArray(data.zh.spellcasting)) {
+                for (const sc of data.zh.spellcasting) {
+                    if (sc.spells && typeof sc.spells === 'object' && !Array.isArray(sc.spells)) {
+                        sc.spells = this.convertSpellsToSortedArray(sc.spells);
+                    }
+                    if (sc.daily && typeof sc.daily === 'object' && !Array.isArray(sc.daily)) {
+                        sc.daily = this.convertDailyToSortedArray(sc.daily);
+                    }
+                }
+            }
+            if (data.en && data.en.spellcasting && Array.isArray(data.en.spellcasting)) {
+                for (const sc of data.en.spellcasting) {
+                    if (sc.spells && typeof sc.spells === 'object' && !Array.isArray(sc.spells)) {
+                        sc.spells = this.convertSpellsToSortedArray(sc.spells);
+                    }
+                    if (sc.daily && typeof sc.daily === 'object' && !Array.isArray(sc.daily)) {
+                        sc.daily = this.convertDailyToSortedArray(sc.daily);
+                    }
+                }
+            }
+        } catch (e) {
+            // 忽略错误，继续处理下一个怪物
+        }
+    }
+
+    private convertSpellsToSortedArray(spellsObj: Record<string, any>): any[] {
+        const transformed: any[] = [];
+        for (const [key, value] of Object.entries(spellsObj)) {
+            if (typeof value === 'object') {
+                const item = { ...value };
+                const level = parseInt(key, 10);
+                if (!isNaN(level)) {
+                    item.level = level;
+                }
+                transformed.push(item);
+            }
+        }
+        transformed.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+        return transformed;
+    }
+
+    private convertDailyToSortedArray(dailyObj: Record<string, any[]>): any[] {
+        const transformed: any[] = [];
+        for (const [key, spells] of Object.entries(dailyObj)) {
+            if (Array.isArray(spells)) {
+                transformed.push({ times: key, spells });
+            }
+        }
+        transformed.sort((a, b) => {
+            const aHasE = typeof a.times === 'string' && a.times.endsWith('e');
+            const bHasE = typeof b.times === 'string' && b.times.endsWith('e');
+            if (aHasE && !bHasE) return -1;
+            if (!aHasE && bHasE) return 1;
+            const aNum = typeof a.times === 'string' ? parseInt(a.times.replace('e', ''), 10) : 0;
+            const bNum = typeof b.times === 'string' ? parseInt(b.times.replace('e', ''), 10) : 0;
+            return bNum - aNum;
+        });
+        return transformed;
+    }
+
     async generateFiles() {
         const outputDir = './output/bestiary';
         await fs.mkdir(outputDir, { recursive: true });
@@ -4324,6 +4387,9 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         for (const [id, bestiaryData] of this.db) {
             // 处理 fluff 数据中的特定格式文本
             const processedData = this.processFluffSections({ ...bestiaryData });
+
+            // 处理 spellcasting 字段中的 spells 和 daily
+            // this.transformSpellcastingViaStringify(processedData);
 
             // 处理 alignment 字段
             if (processedData.alignment) {
@@ -4497,6 +4563,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             if (fileName !== preferredFileName) {
                 logger.log('BestiaryMgr', `怪物导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${id})`);
             }
+            this.transformSpellcastingSpells(reorderedData);
             const filePath = path.join(outputDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(reorderedData, null, 2), 'utf-8');
         }

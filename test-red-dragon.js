@@ -1,32 +1,48 @@
-#!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-console.log('=== 测试成年红龙重定向 ===');
-
-// 首先确保output目录存在，加载bestiary数据
-const outputDir = path.join(__dirname, 'output');
-
-if (!fs.existsSync(outputDir)) {
-    console.error('output目录不存在，请先运行npm run start');
-    process.exit(1);
+async function testRedDragonRedirect() {
+    const outputDir = './output/bestiary';
+    
+    // 查找青年红龙的文件
+    const files = fs.readdirSync(outputDir);
+    const youngRedDragonFile = files.find(f => f.includes('青年红龙'));
+    
+    if (!youngRedDragonFile) {
+        console.log('未找到青年红龙文件');
+        return;
+    }
+    
+    console.log(`找到青年红龙文件: ${youngRedDragonFile}`);
+    
+    // 检查重定向页面
+    const wikiPagesDir = './output/wiki';
+    if (!fs.existsSync(wikiPagesDir)) {
+        console.log('wiki目录不存在');
+        return;
+    }
+    
+    const wikiFiles = fs.readdirSync(wikiPagesDir);
+    const youngRedDragonWiki = wikiFiles.find(f => f.includes('青年红龙') && f.endsWith('.wik'));
+    
+    if (!youngRedDragonWiki) {
+        console.log('未找到青年红龙wiki页面');
+        return;
+    }
+    
+    console.log(`找到青年红龙wiki页面: ${youngRedDragonWiki}`);
+    
+    const content = fs.readFileSync(path.join(wikiPagesDir, youngRedDragonWiki), 'utf-8');
+    console.log('\n页面内容:');
+    console.log(content);
+    
+    if (content.includes('#重定向 [[怪物/怪物手册（2014）/红龙#青年红龙]]')) {
+        console.log('\n✓ 青年红龙正确重定向到红龙！');
+    } else if (content.includes('#重定向 [[怪物/怪物手册（2014）/龙#青年红龙]]')) {
+        console.log('\n✗ 青年红龙仍然错误重定向到龙！');
+    } else {
+        console.log('\n? 重定向格式未知');
+    }
 }
 
-console.log('output目录存在，检查bestiary数据...');
-
-// 现在让我们直接调用我们的prepareData和wikiPageGenerator逻辑
-// 但是为了简单，我们直接修改我们的逻辑，确保成年红龙正确重定向到红龙！
-
-console.log('让我们先看看问题到底在哪里...');
-
-console.log('\n=== 检查一下我们的resolveTopMonster函数逻辑 ===');
-console.log('关键问题：当前的resolveTopMonster是否正确？');
-console.log('我们需要：');
-console.log('1. 从当前怪物向上查找');
-console.log('2. 找到的第一个isnavpill=true的怪物就是我们要重定向的目标');
-console.log('3. 如果没有找到，则重定向到顶层怪物');
-console.log('\n我们的逻辑应该是正确的！');
+testRedDragonRedirect().catch(console.error);

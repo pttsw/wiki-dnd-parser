@@ -1,0 +1,125 @@
+{
+  "dataType": "bestiary",
+  "uid": "bestiary_Sylvira Savikas|BGDIA",
+  "id": "Sylvira Savikas|BGDIA",
+  "isNpc": true,
+  "isNamedCreature": true,
+  "source": "BGDIA",
+  "page": 46,
+  "displayName": {
+    "zh": "西尔维拉·萨维卡斯",
+    "en": "Sylvira Savikas"
+  },
+  "mainSource": {
+    "source": "BGDIA",
+    "page": 46
+  },
+  "allSources": [
+    {
+      "source": "BGDIA",
+      "page": 46
+    }
+  ],
+  "translator": "不全书",
+  "alignment": {
+    "alignment": [
+      "L",
+      "N"
+    ],
+    "alignmenttext": "守序中立"
+  },
+  "languageTags": [
+    "AB",
+    "C",
+    "CE",
+    "DR",
+    "I",
+    "P"
+  ],
+  "spellcastingTags": [
+    "CW"
+  ],
+  "hasToken": true,
+  "referenceSources": [],
+  "zh": {
+    "name": "西尔维拉·萨维卡斯",
+    "_copy": {
+      "ENG_name": "Archmage",
+      "name": "大法师",
+      "source": "MM"
+    },
+    "languages": [
+      "深渊语",
+      "天界语",
+      "通用语",
+      "龙语",
+      "炼狱语",
+      "原初语"
+    ],
+    "ENG_name": "Sylvira Savikas",
+    "_appliedMods": [
+      {
+        "type": "template",
+        "name": "提夫林",
+        "source": "PHB"
+      },
+      {
+        "type": "mod",
+        "target": "*",
+        "mode": "replaceTxt",
+        "replace": "大法师",
+        "with": "西尔维拉",
+        "flags": "i"
+      },
+      {
+        "type": "mod",
+        "target": "_",
+        "mode": "addSkills",
+        "skills": {
+          "investigation": 2
+        }
+      }
+    ]
+  },
+  "en": {
+    "name": "Sylvira Savikas",
+    "_copy": {
+      "name": "Archmage",
+      "source": "MM"
+    },
+    "languages": [
+      "Abyssal",
+      "Celestial",
+      "Common",
+      "Draconic",
+      "Infernal",
+      "Primordial"
+    ],
+    "_appliedMods": [
+      {
+        "type": "template",
+        "name": "Tiefling",
+        "source": "PHB"
+      },
+      {
+        "type": "mod",
+        "target": "*",
+        "mode": "replaceTxt",
+        "replace": "the archmage",
+        "with": "Sylvira",
+        "flags": "i"
+      },
+      {
+        "type": "mod",
+        "target": "_",
+        "mode": "addSkills",
+        "skills": {
+          "investigation": 2
+        }
+      }
+    ]
+  },
+  "superiorfork": {
+    "fork": 0
+  }
+}
