@@ -262,10 +262,11 @@ async function generateSourcesJson(
 
             data[id] = {
                 id: id,
+                src: id,
                 type: 'book',
-                source_name: enBook.name,
+                name_en: enBook.name,
                 source_published: enBook.published || '',
-                source_zhname: zhBook ? zhBook.name : enBook.name,
+                name_zh: zhBook ? zhBook.name : enBook.name,
                 newest: !legacySources.has(id),
                 have: Array.from(sourceTypes[id] || [])
             };
