@@ -279,9 +279,9 @@ async function generateSourcesJson(
             data[id] = {
                 id: id,
                 type: 'adventure',
-                source_name: adv.name,
+                name_en: adv.name,
                 source_published: adv.published || '',
-                source_zhname: adv.name,
+                name_zh: adv.name,
                 newest: !legacySources.has(id),
                 have: Array.from(sourceTypes[id] || [])
             };

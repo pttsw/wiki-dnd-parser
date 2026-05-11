@@ -1,0 +1,145 @@
+﻿{
+    "_hjschema":  "出版物",
+    "name":  "Adventure Atlas: The Mortuary",
+    "zh_name":  "冒险地图匣：葬仪社",
+    "id":  "AATM",
+    "booktype":  "电子资源",
+    "tag":  [
+                "额外资源"
+            ],
+    "newest":  true,
+    "id_zh":  "",
+    "order":  8,
+    "source":  "AATM",
+    "cover":  {
+                  "path":  "AATM.png",
+                  "type":  "internal"
+              },
+    "published":  "2023-10-17",
+    "author":  "Wizards RPG Team",
+    "merge":  "",
+    "contents":  [
+                     {
+                         "name":  "Adventure Atlas: The Mortuary",
+                         "zh_name":  "",
+                         "ordinal":  {
+                                         "type":  "text",
+                                         "identifier":  1
+                                     },
+                         "source":  "",
+                         "headers":  [
+                                         {
+                                             "name":  "Using This Supplement",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  1
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "001"
+                                         },
+                                         {
+                                             "name":  "Heralds of Dust",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  2
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "003"
+                                         },
+                                         {
+                                             "name":  "The Mortuary",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  3
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "00d"
+                                         },
+                                         {
+                                             "name":  "Appendix: Mortuary Creatures",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  4
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "02c"
+                                         }
+                                     ],
+                         "alonepage":  true,
+                         "id":  "000"
+                     },
+                     {
+                         "name":  "",
+                         "zh_name":  "图鉴",
+                         "ordinal":  {
+                                         "type":  "chapter",
+                                         "identifier":  2
+                                     },
+                         "source":  "",
+                         "headers":  [
+                                         {
+                                             "name":  "Heralds of Dust Exorcist",
+                                             "zh_name":  "灰烬先驱·驱魔师",
+                                             "ordinal":  {
+                                                             "type":  "bestiary",
+                                                             "identifier":  1
+                                                         },
+                                             "source":  "",
+                                             "alonepage":  true,
+                                             "headers":  [
+
+                                                         ],
+                                             "id":  "02f"
+                                         },
+                                         {
+                                             "name":  "Animated Coffin ",
+                                             "zh_name":  "活化棺材",
+                                             "ordinal":  {
+                                                             "type":  "bestiary",
+                                                             "identifier":  2
+                                                         },
+                                             "source":  "",
+                                             "alonepage":  true,
+                                             "headers":  [
+
+                                                         ]
+                                         }
+                                     ],
+                         "alonepage":  true
+                     },
+                     {
+                         "name":  "Credits",
+                         "zh_name":  "",
+                         "ordinal":  {
+                                         "type":  "appendix",
+                                         "identifier":  3
+                                     },
+                         "source":  "",
+                         "alonepage":  true,
+                         "headers":  [
+
+                                     ],
+                         "id":  "036"
+                     }
+                 ]
+}

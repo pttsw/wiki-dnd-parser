@@ -1,0 +1,1400 @@
+﻿{
+    "_hjschema":  "出版物",
+    "name":  "Boo\u0027s Astral Menagerie",
+    "zh_name":  "布布的星界怪兽展",
+    "id":  "BAM",
+    "booktype":  "扩展\u0026资源",
+    "tag":  [
+                "规则扩展"
+            ],
+    "newest":  true,
+    "id_zh":  "",
+    "order":  7,
+    "source":  "BAM",
+    "cover":  {
+                  "path":  "BAM.png",
+                  "type":  "internal"
+              },
+    "published":  "2022-08-16",
+    "author":  "Wizards RPG Team",
+    "merge":  "",
+    "contents":  [
+                     {
+                         "name":  "Introduction",
+                         "zh_name":  "简介",
+                         "ordinal":  {
+                                         "type":  "text",
+                                         "identifier":  1
+                                     },
+                         "source":  "",
+                         "headers":  [
+                                         {
+                                             "name":  "Astral Variants",
+                                             "zh_name":  "星界变体",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  1
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "003"
+                                         },
+                                         {
+                                             "name":  "Using a Stat Block",
+                                             "zh_name":  "使用资料卡",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  2
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "006"
+                                         },
+                                         {
+                                             "name":  "Astral Encounters",
+                                             "zh_name":  "星界遭遇",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  3
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "009"
+                                         },
+                                         {
+                                             "name":  "",
+                                             "zh_name":  "图鉴",
+                                             "ordinal":  {
+                                                             "type":  "chapter",
+                                                             "identifier":  4
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+                                                             {
+                                                                 "name":  "Aberration",
+                                                                 "zh_name":  "异怪",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  1
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Cosmic Horrors ",
+                                                                                     "zh_name":  "宇宙惊惧怪",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Esthetic ",
+                                                                                     "zh_name":  "美学舰兽",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  false,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Eye Monger ",
+                                                                                     "zh_name":  "大眼游星 ",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  3
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Feyr ",
+                                                                                     "zh_name":  "惊怖魔",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  4
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Gaj ",
+                                                                                     "zh_name":  "劫心六足甲",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  5
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  false,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Neh-thalggu",
+                                                                                     "zh_name":  "纳-萨古",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  6
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Neogi",
+                                                                                     "zh_name":  "纽吉怪",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  7
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Neogi Hatchling Swarm",
+                                                                                                         "zh_name":  "纽吉怪幼体集群",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Neogi Pirate",
+                                                                                                         "zh_name":  "纽吉怪海盗",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Neogi Void Hunter",
+                                                                                                         "zh_name":  "纽吉怪虚空猎手",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Psurlons",
+                                                                                     "zh_name":  "灵蠕妖",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  8
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Psurlon",
+                                                                                                         "zh_name":  "灵蠕妖",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Psurlon Leader ",
+                                                                                                         "zh_name":  "灵蠕妖领袖",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Psurlon Ringer",
+                                                                                                         "zh_name":  "灵蠕妖假替者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  false,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Zodar",
+                                                                                     "zh_name":  "佐达尔人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  9
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  false,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Beast",
+                                                                 "zh_name":  "野兽",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  2
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Space Eel ",
+                                                                                     "zh_name":  "太空鳗鱼",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Space Guppy ",
+                                                                                     "zh_name":  "太空孔雀鱼",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Space Hamsters",
+                                                                                     "zh_name":  "太空仓鼠",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  3
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Giant Space Hamster",
+                                                                                                         "zh_name":  "巨型太空仓鼠",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Space Hamster",
+                                                                                                         "zh_name":  "太空仓鼠",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  false,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Space Mollymawk ",
+                                                                                     "zh_name":  "空信天翁",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "leastname",
+                                                                                                     "identifier":  4
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Space Swine ",
+                                                                                     "zh_name":  "太空猪",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  5
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "",
+                                                                 "zh_name":  "天族",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  3
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Kindori ",
+                                                                                     "zh_name":  "鲸驮骊",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Reigar ",
+                                                                                     "zh_name":  "雷加尔人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Talarith",
+                                                                                                         "zh_name":  "华严",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "item",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Reigar ",
+                                                                                                         "zh_name":  "雷加尔人",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Starlight Apparition",
+                                                                                     "zh_name":  "星光幽体",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  3
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Mercane ",
+                                                                                     "zh_name":  "星海商族M",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  4
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Construct",
+                                                                 "zh_name":  "构装",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  4
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Autognome",
+                                                                                     "zh_name":  "自动侏儒",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Dragon",
+                                                                 "zh_name":  "龙类",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  5
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Lunar Dragon ",
+                                                                                     "zh_name":  "月亮龙",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Ancient Lunar Dragon",
+                                                                                                         "zh_name":  "远古月亮龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Adult Lunar Dragon",
+                                                                                                         "zh_name":  "成年月亮龙 ",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Young Lunar Dragon",
+                                                                                                         "zh_name":  "青年月亮龙 ",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  " Lunar Dragon Wyrmling ",
+                                                                                                         "zh_name":  "月亮龙雏龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  4
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  false,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Solar Dragons ",
+                                                                                     "zh_name":  "太阳龙",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Ancient Solar Dragon",
+                                                                                                         "zh_name":  "远古太阳龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Adult Solar Dragon",
+                                                                                                         "zh_name":  "成年太阳龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Young Solar Dragon",
+                                                                                                         "zh_name":  "青年太阳龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Solar Dragon Wyrmling",
+                                                                                                         "zh_name":  "太阳龙雏龙",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  4
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Elemental",
+                                                                 "zh_name":  "元素",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  6
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Chwinga Astronaut",
+                                                                                     "zh_name":  "怯蕴阿灵航天士",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Murder Comet ",
+                                                                                     "zh_name":  "杀戮彗星",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Fey",
+                                                                 "zh_name":  "妖精",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  7
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Dohwar",
+                                                                                     "zh_name":  "多瓦尔企鹅人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Fiend",
+                                                                 "zh_name":  "邪魔",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  8
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Space Clown ",
+                                                                                     "zh_name":  "太空小丑",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  false,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Giant",
+                                                                 "zh_name":  "巨人",
+                                                                 "ordinal":  {
+                                                                                 "type":  "text",
+                                                                                 "identifier":  9
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Braxat",
+                                                                                     "zh_name":  "巴夏特角兽巨人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "B\u0027rohg",
+                                                                                     "zh_name":  "毕罗格四臂巨人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Humanoid",
+                                                                 "zh_name":  "类人",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  10
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Astral Elf",
+                                                                                     "zh_name":  "星界精灵",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Astral Elf Aristocrat",
+                                                                                                         "zh_name":  "星界精灵贵族",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Astral Elf Commander",
+                                                                                                         "zh_name":  "星界精灵指挥官",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Astral Elf Honor Guard",
+                                                                                                         "zh_name":  "星界精灵荣耀守卫",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Astral Elf Star Priest",
+                                                                                                         "zh_name":  "星界精灵星辰祭司",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  4
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Astral Elf Warrior",
+                                                                                                         "zh_name":  "星界精灵战士",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  5
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Giff ",
+                                                                                     "zh_name":  "诘弗河马人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Giff Shipmate",
+                                                                                                         "zh_name":  "诘弗河马人船员",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Giff Shock Trooper",
+                                                                                                         "zh_name":  "诘弗河马人突击兵",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  0
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  false,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Giff Warlord",
+                                                                                                         "zh_name":  "诘弗河马人军阀 ",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Githyanki ",
+                                                                                     "zh_name":  "吉斯洋基人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  3
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Githyanki Buccaneer",
+                                                                                                         "zh_name":  "吉斯洋基人海盗",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Githyanki Star Seer",
+                                                                                                         "zh_name":  "吉斯洋基人星辰先知",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Githyanki Xenomancer",
+                                                                                                         "zh_name":  "吉斯洋基人异构师",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Hadozees",
+                                                                                     "zh_name":  "哈多兹鼯猴人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  4
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Hadozee Explorer ",
+                                                                                                         "zh_name":  "哈多兹鼯猴人探索者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Hadozee Shipmate",
+                                                                                                         "zh_name":  "哈多兹鼯猴人船员",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Hadozee Warrior",
+                                                                                                         "zh_name":  "哈多兹鼯猴人战士",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Monstrosity",
+                                                                 "zh_name":  "怪兽",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  11
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Megapede ",
+                                                                                     "zh_name":  "超极巨蜈蚣",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Scavver ",
+                                                                                     "zh_name":  "独眼印鱼 ",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Brown Scavver",
+                                                                                                         "zh_name":  "棕色独眼印鱼",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Gray Scavver",
+                                                                                                         "zh_name":  "灰色独眼印鱼",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Void Scavver",
+                                                                                                         "zh_name":  "虚空独眼印鱼",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Ssurran",
+                                                                                     "zh_name":  "索伦蜥蜴人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  3
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Ssurran Defiler",
+                                                                                                         "zh_name":  "索伦蜥蜴人污染者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Ssurran Defiler",
+                                                                                                         "zh_name":  "索伦蜥蜴人污染者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Thri-kreen",
+                                                                                     "zh_name":  "螳螂人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  4
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Thri-kreen Gladiator ",
+                                                                                                         "zh_name":  "螳螂人角斗士",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Thri-kreen Hunter ",
+                                                                                                         "zh_name":  "螳螂人猎手",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Thri-kreen Mystic ",
+                                                                                                         "zh_name":  "螳螂人秘术师",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Ooze",
+                                                                 "zh_name":  "泥怪",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  12
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Plasmoids",
+                                                                                     "zh_name":  "流浆体",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Plasmoid Boss",
+                                                                                                         "zh_name":  "流浆体头目",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Plasmoid Explorer",
+                                                                                                         "zh_name":  "流浆体探索者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  false,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Plasmoid Warrior",
+                                                                                                         "zh_name":  "流浆体战士",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Plant",
+                                                                 "zh_name":  "植物",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  12
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  true,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Aartuks",
+                                                                                     "zh_name":  "阿尔图克蔬菜人",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Aartuk Elder",
+                                                                                                         "zh_name":  "阿尔图克蔬菜人长者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Aartuk Starhorror",
+                                                                                                         "zh_name":  "阿尔图克蔬菜人怖星者",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Aartuk Weedling",
+                                                                                                         "zh_name":  "阿尔图克蔬菜人剪灭人",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "Jammer Leech",
+                                                                                     "zh_name":  "星舰水蛭",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "bestiary",
+                                                                                                     "identifier":  2
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  false,
+                                                                                     "headers":  [
+
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             },
+                                                             {
+                                                                 "name":  "Undead",
+                                                                 "zh_name":  "亡灵",
+                                                                 "ordinal":  {
+                                                                                 "type":  "chapter",
+                                                                                 "identifier":  14
+                                                                             },
+                                                                 "source":  "",
+                                                                 "alonepage":  false,
+                                                                 "headers":  [
+                                                                                 {
+                                                                                     "name":  "Vampirates",
+                                                                                     "zh_name":  "吸血骇盗",
+                                                                                     "ordinal":  {
+                                                                                                     "type":  "text",
+                                                                                                     "identifier":  1
+                                                                                                 },
+                                                                                     "source":  "",
+                                                                                     "alonepage":  true,
+                                                                                     "headers":  [
+                                                                                                     {
+                                                                                                         "name":  "Vampirate ",
+                                                                                                         "zh_name":  "吸血骇盗",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  1
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Vampirate Captain",
+                                                                                                         "zh_name":  "吸血骇盗船长",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  2
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "name":  "Vampirate Mage ",
+                                                                                                         "zh_name":  "吸血骇盗魔法师",
+                                                                                                         "ordinal":  {
+                                                                                                                         "type":  "bestiary",
+                                                                                                                         "identifier":  3
+                                                                                                                     },
+                                                                                                         "source":  "",
+                                                                                                         "alonepage":  true,
+                                                                                                         "headers":  [
+
+                                                                                                                     ]
+                                                                                                     }
+                                                                                                 ]
+                                                                                 }
+                                                                             ]
+                                                             }
+                                                         ],
+                                             "alonepage":  true
+                                         }
+                                     ],
+                         "alonepage":  true,
+                         "id":  "000"
+                     },
+                     {
+                         "name":  "Credits",
+                         "zh_name":  "",
+                         "ordinal":  {
+                                         "type":  "text",
+                                         "identifier":  2
+                                     },
+                         "source":  "",
+                         "headers":  [
+
+                                     ],
+                         "alonepage":  true,
+                         "id":  "001"
+                     }
+                 ]
+}

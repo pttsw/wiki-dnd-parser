@@ -1,0 +1,148 @@
+﻿{
+    "_hjschema":  "出版物",
+    "name":  "Adventurers League",
+    "zh_name":  "冒险者联盟",
+    "id":  "AL",
+    "booktype":  "贤者谏言\u0026杂项出版物",
+    "tag":  [
+                "杂项"
+            ],
+    "newest":  true,
+    "id_zh":  "",
+    "order":  12,
+    "source":  "AL",
+    "cover":  {
+                  "path":  "AL.png",
+                  "type":  "internal"
+              },
+    "published":  "2016-08-26",
+    "author":  "Wizards RPG Team",
+    "merge":  "",
+    "contents":  [
+                     {
+                         "name":  "Faction Guide",
+                         "zh_name":  "",
+                         "ordinal":  {
+                                         "type":  "text",
+                                         "identifier":  1
+                                     },
+                         "source":  "",
+                         "headers":  [
+                                         {
+                                             "name":  "Faction Advancement and Benefits",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  1
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "001"
+                                         },
+                                         {
+                                             "name":  "Apprenticeship",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  2
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "014"
+                                         },
+                                         {
+                                             "name":  "Harpers",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  3
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "022"
+                                         },
+                                         {
+                                             "name":  "Order of the Gauntlet",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  4
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "027"
+                                         },
+                                         {
+                                             "name":  "Emerald Enclave",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  5
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "02c"
+                                         },
+                                         {
+                                             "name":  "Lords\u0027 Alliance",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  6
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "031"
+                                         },
+                                         {
+                                             "name":  "Zhentarim",
+                                             "zh_name":  "",
+                                             "ordinal":  {
+                                                             "type":  "text",
+                                                             "identifier":  7
+                                                         },
+                                             "source":  "",
+                                             "headers":  [
+
+                                                         ],
+                                             "alonepage":  true,
+                                             "id":  "036"
+                                         }
+                                     ],
+                         "alonepage":  true,
+                         "id":  "000"
+                     },
+                     {
+                         "name":  "Further Information",
+                         "zh_name":  "",
+                         "ordinal":  {
+                                         "type":  "text",
+                                         "identifier":  2
+                                     },
+                         "source":  "",
+                         "headers":  [
+
+                                     ],
+                         "alonepage":  true,
+                         "id":  "03b"
+                     }
+                 ]
+}
