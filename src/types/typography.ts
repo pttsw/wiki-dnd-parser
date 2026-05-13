@@ -5,6 +5,45 @@ export type ParagraphCell = {
     entry?: string;
 };
 
+export type ParagraphHref = {
+    type?: string;
+    path?: string;
+    url?: string;
+    hash?: string;
+};
+
+export type ParagraphLink = {
+    type: 'link';
+    href?: ParagraphHref;
+    text?: string;
+};
+
+export type ParagraphInline = {
+    type: 'inline';
+    entries: (string | number | ParagraphLink)[];
+};
+
+export type ParagraphImage = {
+    type: 'image';
+    href?: ParagraphHref;
+    title?: string;
+    credit?: string;
+    width?: number;
+    height?: number;
+};
+
+export type ParagraphStatblockInline = {
+    type: 'statblockInline';
+    dataType?: string;
+    data?: {
+        ENG_name?: string;
+        name?: string;
+        source?: string;
+        page?: number;
+        [key: string]: any;
+    };
+};
+
 // 段落组
 export type ParagraphEntries = {
     name?: string;
@@ -28,6 +67,12 @@ export type ParaghaphInset = {
     type: 'inset';
     name: string;
     page?: number;
+    entries: ParagraphContentTypes[];
+};
+
+export type ParagraphInsetReadaloud = {
+    type: 'insetReadaloud';
+    name?: string;
     entries: ParagraphContentTypes[];
 };
 
@@ -67,7 +112,11 @@ export type ParagraphContentTypes =
     | ParagraphTable
     | ParagraphList
     | ParaghaphInset
+    | ParagraphInsetReadaloud
     | ParagraphSection
-    | ParagraphQuote;
+    | ParagraphQuote
+    | ParagraphInline
+    | ParagraphImage
+    | ParagraphStatblockInline;
 
 export type ParagraphGroup = ParagraphContentTypes[];

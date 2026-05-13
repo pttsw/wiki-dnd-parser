@@ -63,6 +63,9 @@ import {
     splitBestiaryRecord,
 } from './bestiaryUtils.js';
 import { WikiPageGenerator } from './wikiPageGenerator.js';
+import { genericProfiles } from './exporters/profiles.js';
+import { runGenericProfiles } from './exporters/genericProfileExporter.js';
+import { runClassProfileExporters } from './exporters/classProfileExporter.js';
 
 /**
  * 生成图鉴名称列表文件
@@ -4846,6 +4849,9 @@ let isnavpillIds = new Set<string>();
             }
         }
         
+        let genericProfileCounts: Record<string, number> = {};
+        let classProfileCounts = { class: 0, subclass: 0 };
+
         if (!generatePages) {
             // npm run start: 只生成基础数据到 output 目录
             await bookMgr.generateFiles();
@@ -4906,6 +4912,24 @@ let isnavpillIds = new Set<string>();
             // 生成怪物名称列表
             await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), namelistDir);
 
+            genericProfileCounts = await runGenericProfiles(genericProfiles, {
+                idMgr,
+                logger,
+            });
+            printProgress(
+                `genericProfile 完成 (${Object.entries(genericProfileCounts)
+                    .map(([dataType, count]) => `${dataType}=${count}`)
+                    .join(', ')})`
+            );
+
+            classProfileCounts = await runClassProfileExporters({
+                idMgr,
+                logger,
+            });
+            printProgress(
+                `classProfile 完成 (class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass})`
+            );
+
             await idMgr.generateFiles();
             await tagParser.generateFiles();
             await logger.generateFile();
@@ -4930,7 +4954,7 @@ let isnavpillIds = new Set<string>();
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(
             chalk.green(
-                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}`
+                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}, genericProfiles=${Object.values(genericProfileCounts).reduce((sum, count) => sum + count, 0)}, class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass}`
             )
         );
     } catch (error) {

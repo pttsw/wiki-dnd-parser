@@ -5,11 +5,17 @@ import type {
     ParagraphCell,
     ParagraphContentTypes,
     ParagraphEntries,
+    ParagraphHref,
+    ParagraphImage,
+    ParagraphInsetReadaloud,
+    ParagraphInline,
+    ParagraphLink,
     ParagraphGroup,
     ParagraphList,
     ParagraphListItem,
     ParagraphQuote,
     ParagraphSection,
+    ParagraphStatblockInline,
     ParagraphTable,
 } from './types/typography';
 
@@ -103,13 +109,93 @@ export const parseContent = (content: ParagraphGroup): string => {
     return output.join('\n');
 };
 
+const escapeAttribute = (value: string): string =>
+    value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+const resolveHref = (href?: ParagraphHref): string => {
+    if (!href) return '#';
+    const base = href.url || href.path || '#';
+    return href.hash ? `${base}#${href.hash}` : base;
+};
+
+const parseLink = (item: ParagraphLink): string => {
+    const href = escapeAttribute(resolveHref(item.href));
+    const text = tag(item.text || resolveHref(item.href));
+    return `<a class="parser-link" href="${href}">${text}</a>`;
+};
+
+const parseInline = (item: ParagraphInline): string =>
+    `<span class="parser-inline">${item.entries
+        .map(entry => {
+            if (typeof entry === 'string' || typeof entry === 'number') return tag(entry);
+            if (entry?.type === 'link') return parseLink(entry);
+            return '';
+        })
+        .join('')}</span>`;
+
+const parseImage = (item: ParagraphImage): string => {
+    const src = escapeAttribute(resolveHref(item.href));
+    const title = item.title ? tag(item.title) : '';
+    const credit = item.credit ? tag(item.credit) : '';
+    const width = typeof item.width === 'number' ? ` width="${item.width}"` : '';
+    const height = typeof item.height === 'number' ? ` height="${item.height}"` : '';
+    const alt = escapeAttribute(item.title || item.credit || 'image');
+
+    let html = `<figure class="parser-image"><img class="parser-image-img" src="${src}" alt="${alt}"${width}${height}>`;
+    if (title || credit) {
+        html += '<figcaption class="parser-image-caption">';
+        if (title) html += `<span class="parser-image-title">${title}</span>`;
+        if (credit) html += `<span class="parser-image-credit">${credit}</span>`;
+        html += '</figcaption>';
+    }
+    html += '</figure>';
+    return html;
+};
+
+const parseStatblockInline = (item: ParagraphStatblockInline): string => {
+    const name = item.data?.ENG_name || item.data?.name || '';
+    const source = item.data?.source ? escapeAttribute(String(item.data.source)) : '';
+    const dataType = item.dataType ? escapeAttribute(item.dataType) : 'unknown';
+    const page =
+        typeof item.data?.page === 'number' ? ` data-page="${item.data.page}"` : '';
+    return `<div class="parser-statblock-inline" data-statblock-type="${dataType}"${
+        source ? ` data-source="${source}"` : ''
+    }${page}>${tag(name)}</div>`;
+};
+
+const parseInsetReadaloud = (item: ParagraphInsetReadaloud): string => {
+    let html = `<div class="parser-inset-readaloud">`;
+    if (item.name) {
+        html += `<div class="parser-inset-readaloud-name">${tag(item.name)}</div>`;
+    }
+    html += `<div class="parser-inset-readaloud-content">`;
+    for (const entry of item.entries) {
+        html += parseSingleParagraph(entry);
+    }
+    html += `</div>`;
+    html += `</div>`;
+    return html;
+};
+
 const parseSingleParagraph = (item: ParagraphContentTypes): string => {
     if (typeof item === 'string') {
         return tag(item);
+    } else if (item.type === 'inline') {
+        return parseInline(item);
+    } else if (item.type === 'image') {
+        return parseImage(item);
+    } else if (item.type === 'statblockInline') {
+        return parseStatblockInline(item);
     } else if (item.type === 'table') {
         return parseTable(item);
     } else if (item.type === 'inset') {
         return parseInset(item);
+    } else if (item.type === 'insetReadaloud') {
+        return parseInsetReadaloud(item);
     } else if (item.type === 'entries') {
         return parseEntries(item);
     } else if (item.type === 'list') {
