@@ -48,6 +48,7 @@ import {
     SpellFluffFile,
     WikiSpellData,
 } from './types/spells';
+
 import {
     MonsterFile,
     MonsterFileEntry,
@@ -88,6 +89,214 @@ async function generateCollectionNameList(type: string, items: any[], outputDir:
         console.log(`已生成 ${type}namelist.json 文件：${outputPath}`);
     } catch (error) {
         console.error(`生成 ${type}namelist.json 文件失败:`, error);
+    }
+}
+
+/**
+ * 从 parser.js 中提取过时源数据列表
+ * @param parserJsPath parser.js 文件路径
+ * @returns 过时源数据的 Set
+ */
+async function getLegacySources(parserJsPath: string): Promise<Set<string>> {
+    // 默认的过时源数据列表（当无法从 parser.js 获取时使用）
+    const legacySources = new Set<string>([
+        'PHB',    // 玩家手册 (2014)
+        'MM',     // 怪物手册 (2014)
+        'DMG',    // 城主指南 (2014)
+        'VGM',    // 瓦罗怪物指南
+        'MTF',    // 魔邓肯的众敌卷册
+    ]);
+    
+    try {
+        const content = await fs.readFile(parserJsPath, 'utf-8');
+        
+        // 1. 匹配 Parser.SOURCES_LEGACY_WOTC = new Set([...])，支持多行
+        const match = content.match(/Parser\.SOURCES_LEGACY_WOTC\s*=\s*new\s+Set\s*\(\s*\[([\s\S]*?)\]\s*\)/);
+        if (match && match[1]) {
+            // 清空默认列表
+            legacySources.clear();
+            
+            // 2. 提取 Set 中的变量名（如 Parser.SRC_PHB）
+            const varRegex = /Parser\.SRC_\w+/g;
+            let varMatch;
+            const legacyVars: string[] = [];
+            while ((varMatch = varRegex.exec(match[1])) !== null) {
+                legacyVars.push(varMatch[0]);
+            }
+            
+            // 3. 构建变量名到书籍ID的映射
+            const srcVarRegex = /(Parser\.SRC_\w+)\s*=\s*['"]([^'"]+)['"]/g;
+            const varToId: Record<string, string> = {};
+            let srcMatch;
+            while ((srcMatch = srcVarRegex.exec(content)) !== null) {
+                varToId[srcMatch[1]] = srcMatch[2];
+            }
+            
+            // 4. 根据变量名获取书籍ID
+            for (const legacyVar of legacyVars) {
+                const bookId = varToId[legacyVar];
+                if (bookId) {
+                    legacySources.add(bookId);
+                }
+            }
+            
+            console.log(`从 parser.js 获取到 ${legacySources.size} 个过时源数据: ${Array.from(legacySources).join(', ')}`);
+        } else {
+            console.log(`parser.js 中未找到 SOURCES_LEGACY_WOTC，使用默认列表`);
+        }
+    } catch (error) {
+        console.warn(`无法读取 parser.js 获取过时源数据列表，使用默认列表:`, error);
+    }
+    return legacySources;
+}
+
+/**
+ * 生成 Sources.json 文件
+ * @param bookMgr BookMgr 实例
+ * @param featMgr FeatMgr 实例
+ * @param spellMgr SpellMgr 实例
+ * @param baseItemMgr BaseItemMgr 实例
+ * @param itemMgr ItemMgr 实例
+ * @param magicVariantMgr MagicVariantMgr 实例
+ * @param bestiaryMgr BestiaryMgr 实例
+ * @param outputDir 输出目录
+ */
+async function generateSourcesJson(
+    bookMgr: BookMgr,
+    featMgr: FeatMgr,
+    spellMgr: SpellMgr,
+    baseItemMgr: BaseItemMgr,
+    itemMgr: ItemMgr,
+    magicVariantMgr: MagicVariantMgr,
+    bestiaryMgr: BestiaryMgr,
+    outputDir: string
+) {
+    try {
+        const enBooks = bookMgr.raw.en?.book || [];
+        const zhBooks = bookMgr.raw.zh?.book || [];
+
+        // 加载 adventures.json
+        const adventureFilePath = path.join(config.DATA_ZH_DIR, 'adventures.json');
+        let enAdventures: any[] = [];
+        try {
+            const content = await fs.readFile(adventureFilePath, 'utf-8');
+            const adventureData = JSON.parse(content);
+            enAdventures = adventureData.adventure || [];
+        } catch (error) {
+            // adventures.json 可能不存在，使用空数组
+        }
+
+        // 从 parser.js 中获取过时源数据列表
+        // parser.js 在 DATA_EN_DIR 的同级目录 js/ 下
+        const dataEnDir = path.dirname(config.DATA_EN_DIR);
+        const parserJsPath = path.join(dataEnDir, 'js/parser.js');
+        const legacySources = await getLegacySources(parserJsPath);
+
+        // 收集每个来源包含的类别
+        const sourceTypes: Record<string, Set<string>> = {};
+
+        // 初始化每个书籍来源
+        for (const enBook of enBooks) {
+            sourceTypes[enBook.id] = new Set();
+        }
+
+        // 初始化每个冒险来源
+        for (const adv of enAdventures) {
+            sourceTypes[adv.id] = new Set();
+        }
+
+        // 收集专长来源
+        for (const item of featMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('feat');
+            }
+        }
+
+        // 收集法术来源
+        for (const item of spellMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('spell');
+            }
+        }
+
+        // 收集基础物品来源
+        for (const item of baseItemMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集物品来源
+        for (const item of itemMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集魔法变体来源
+        for (const item of magicVariantMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('item');
+            }
+        }
+
+        // 收集怪物来源
+        for (const item of bestiaryMgr.db.values()) {
+            const sourceId = item.mainSource?.source;
+            if (sourceId && sourceTypes[sourceId]) {
+                sourceTypes[sourceId].add('bestiary');
+            }
+        }
+
+        const data: Record<string, any> = {};
+
+        // 生成书籍来源数据
+        for (const enBook of enBooks) {
+            const id = enBook.id;
+            const zhBook = zhBooks.find(b => b.id === id);
+
+            data[id] = {
+                id: id,
+                src: id,
+                type: 'book',
+                name_en: enBook.name,
+                source_published: enBook.published || '',
+                name_zh: zhBook ? zhBook.name : enBook.name,
+                newest: !legacySources.has(id),
+                have: Array.from(sourceTypes[id] || [])
+            };
+        }
+
+        // 生成冒险来源数据
+        for (const adv of enAdventures) {
+            const id = adv.id;
+
+            data[id] = {
+                id: id,
+                type: 'adventure',
+                name_en: adv.name,
+                source_published: adv.published || '',
+                name_zh: adv.name,
+                newest: !legacySources.has(id),
+                have: Array.from(sourceTypes[id] || [])
+            };
+        }
+
+        const output = {
+            type: 'sources',
+            data: data
+        };
+
+        const outputPath = path.join(outputDir, 'Sources.json');
+        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+        console.log(`已生成 Sources.json 文件：${outputPath}`);
+    } catch (error) {
+        console.error(`生成 Sources.json 文件失败:`, error);
     }
 }
 
@@ -307,33 +516,48 @@ const processBonusReplacements = (itemData: any): any => {
     return itemData;
 };
 
-export const createOutputFolders = async () => {
-    for (const targetDir of ['./output', './output_page']) {
+export const createOutputFolders = async (generatePages: boolean) => {
+    console.log(`createOutputFolders 被调用，generatePages: ${generatePages}`);
+    if (!generatePages) {
+        // npm run start: 只创建 output 目录
+        console.log('创建 output 目录...');
         try {
-            await fs.access(targetDir);
-            await fs.rm(targetDir, { recursive: true, force: true });
+            await fs.access('./output');
+            await fs.rm('./output', { recursive: true, force: true });
         } catch (error) {
             // do nothing, folder does not exist
         }
-    }
-    const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary'];
-    for (const dir of dirs) {
-        const dirPath = path.join('./output', dir);
+        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist'];
+        for (const dir of dirs) {
+            const dirPath = path.join('./output', dir);
+            try {
+                await fs.access(dirPath);
+            } catch (error) {
+                await fs.mkdir(dirPath, { recursive: true });
+                console.log(`  已创建目录: ${dirPath}`);
+            }
+        }
+    } else {
+        // npm run page: 只创建 output_page 目录
+        console.log('创建 output_page 目录...');
         try {
-            await fs.access(dirPath);
+            await fs.access('./output_page');
+            await fs.rm('./output_page', { recursive: true, force: true });
         } catch (error) {
-            await fs.mkdir(dirPath, { recursive: true });
+            // do nothing, folder does not exist
+        }
+        const pageDirs = ['spells', 'items', 'bestiary'];
+        for (const dir of pageDirs) {
+            const dirPath = path.join('./output_page', dir);
+            try {
+                await fs.access(dirPath);
+            } catch (error) {
+                await fs.mkdir(dirPath, { recursive: true });
+                console.log(`  已创建目录: ${dirPath}`);
+            }
         }
     }
-    const pageDirs = ['spells', 'items'];
-    for (const dir of pageDirs) {
-        const dirPath = path.join('./output_page', dir);
-        try {
-            await fs.access(dirPath);
-        } catch (error) {
-            await fs.mkdir(dirPath, { recursive: true });
-        }
-    }
+    console.log('createOutputFolders 完成');
     return true;
 };
 
@@ -1738,33 +1962,68 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const simpletype = this.getSimpleType(itemData.type);
-            itemData.simpletype = simpletype;
+            const simpletype = this.getSimpleType(reorderedData.type);
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
     }
@@ -2222,19 +2481,54 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const typeAbbr = itemData.type.split('|')[0];
+            const typeAbbr = reorderedData.type.split('|')[0];
             let simpletype = '其他';
             
             // 【装备】
@@ -2280,20 +2574,20 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 simpletype = '奇物';
             }
             
-            itemData.simpletype = simpletype;
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
         }
     }
 
@@ -3063,19 +3357,54 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
                 itemData.type = 'WI|XDMG';
             }
 
+            // 添加 navpills 和 isnavpill
+            const navpills = (itemData as any).navpills;
+            const isnavpill = isnavpillIds.has(id);
+
+            // 创建处理过的数据对象
+            const processedData: any = { ...itemData };
+            
+            // 删除 navpills（如果存在），后面会重新添加到正确位置
+            delete processedData.navpills;
+            
+            // 重新构建对象，调整顺序
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+            let insertedFullFields = false;
+            
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 full 字段前插入 navpills 和 isnavpill
+                if (key === 'full' && !insertedFullFields) {
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+            
+            // 如果没有触发 full 字段的判断，则在最后添加
+            if (!insertedFullFields) {
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
             // 添加 itemtype 字段（type 去掉 | 后面的部分）
-            itemData.itemtype = itemData.type.split('|')[0];
+            reorderedData.itemtype = reorderedData.type.split('|')[0];
 
             // 添加 simpletype 字段（简略分类）
-            const typeAbbr = itemData.type.split('|')[0];
+            const typeAbbr = reorderedData.type.split('|')[0];
             let simpletype = '其他';
             
             // 【装备】
@@ -3121,20 +3450,20 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 simpletype = '奇物';
             }
             
-            itemData.simpletype = simpletype;
+            reorderedData.simpletype = simpletype;
 
             // 添加 MItype 字段（当 rarity 为指定值时）
             const validRarities = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
-            if (itemData.rarity && validRarities.includes(itemData.rarity)) {
-                itemData.MItype = simpletype;
+            if (reorderedData.rarity && validRarities.includes(reorderedData.rarity)) {
+                reorderedData.MItype = simpletype;
                 // 添加 MagicItem 字段
-                itemData.MagicItem = true;
+                reorderedData.MagicItem = true;
             }
 
             // 替换 {=bonusWeapon} 和 {=bonusWeaponDamage} 为 {@bonusweapon +数值}
-            const processedItemData = processBonusReplacements(itemData);
+            const finalProcessedData = processBonusReplacements(reorderedData);
 
-            await fs.writeFile(filePath, JSON.stringify(processedItemData, null, 2), 'utf-8');
+            await fs.writeFile(filePath, JSON.stringify(finalProcessedData, null, 2), 'utf-8');
         }
     }
 
@@ -3475,14 +3804,17 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 
     async generateFiles() {
         const outputDir = './output/spell';
-        await fs.mkdir(outputDir, { recursive: true });
 
         for (const [id, spellData] of this.db) {
+            const sourceId = spellData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
             );
-            const fileName = `Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `Spell_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }
     }
@@ -3518,6 +3850,77 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         for (const item of zh?.monsterFluff || []) {
             this.fluff.zh.set(this.getId(item as MonsterFileEntry), item);
         }
+    }
+
+    // 构建怪物的层级关系
+    private buildMonsterHierarchy() {
+        const hierarchyMap = new Map<string, { fork: number; superior: string; origin: string }>();
+        const childrenMap = new Map<string, string[]>(); // 记录每个上级怪物的直接下级
+        
+        // 递归计算层级关系
+        const calculateHierarchy = (id: string, visited = new Set<string>()): { fork: number; superior: string; origin: string } => {
+            // 避免循环引用
+            if (visited.has(id)) {
+                return { fork: 0, superior: id, origin: id };
+            }
+            
+            // 检查是否已经计算过
+            if (hierarchyMap.has(id)) {
+                return hierarchyMap.get(id)!;
+            }
+            
+            // 获取怪物的 fluff 数据
+            const fluffEn = this.fluff.en.get(id);
+            const fluffZh = this.fluff.zh.get(id);
+            const fluff = fluffEn || fluffZh;
+            
+            // 检查是否有上级文件
+            if (fluff?._copy && (fluff._copy.ENG_name || fluff._copy.name) && fluff._copy.source) {
+                // 构建上级文件的 ID
+                const parentName = fluff._copy.ENG_name || fluff._copy.name;
+                const parentId = `${parentName.trim()}|${fluff._copy.source}`;
+                
+                // 递归计算上级文件的层级关系
+                visited.add(id);
+                const parentHierarchy = calculateHierarchy(parentId, visited);
+                visited.delete(id);
+                
+                // 计算当前文件的层级关系
+                const currentHierarchy = {
+                    fork: parentHierarchy.fork + 1,
+                    superior: parentHierarchy.superior,
+                    origin: parentId
+                };
+                
+                // 记录当前怪物作为上级的直接下级
+                if (!childrenMap.has(parentId)) {
+                    childrenMap.set(parentId, []);
+                }
+                childrenMap.get(parentId)!.push(id);
+                
+                // 缓存结果
+                hierarchyMap.set(id, currentHierarchy);
+                return currentHierarchy;
+            } else {
+                // 没有上级文件，层级为 0（顶层）
+                const currentHierarchy = {
+                    fork: 0,
+                    superior: id,
+                    origin: id
+                };
+                
+                // 缓存结果
+                hierarchyMap.set(id, currentHierarchy);
+                return currentHierarchy;
+            }
+        };
+        
+        // 为所有怪物计算层级关系
+        for (const id of this.db.keys()) {
+            calculateHierarchy(id);
+        }
+        
+        return { hierarchyMap, childrenMap };
     }
 
     loadData(zh: MonsterFile | null, en: MonsterFile | null) {
@@ -3628,8 +4031,8 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             const zhOut = { ...split.zh };
             const translator = extractTranslator(common, enOut, zhOut, zhMonster, enMonster);
             const referenceSources = normalizeMonsterReferenceSources(enMonster);
-            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en);
-            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh);
+            const fullEn = resolveMonsterFluffContent(fluffEn, this.fluff.en, new Set(), false); // 英文不使用_copy追踪
+            const fullZh = resolveMonsterFluffContent(fluffZh, this.fluff.zh); // 中文保持原有的_copy追踪
 
             const bestiaryData: WikiBestiaryData = {
                 dataType: 'bestiary',
@@ -3719,21 +4122,454 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 },
                 zh: Object.keys(zhOut).length > 0 ? zhOut : null,
                 en: enOut,
+                onlyfull: true,
             };
             this.db.set(id, bestiaryData);
         }
+
+        // 构建怪物的层级关系并添加 superiorfork 字段
+        const { hierarchyMap, childrenMap } = this.buildMonsterHierarchy();
+        for (const [id, bestiaryData] of this.db) {
+            const hierarchy = hierarchyMap.get(id);
+            if (hierarchy) {
+                bestiaryData.superiorfork = {
+                    fork: hierarchy.fork,
+                    ...(hierarchy.fork > 0 ? { superior: hierarchy.superior, origin: hierarchy.origin } : {})
+                };
+            }
+            
+            // 添加 bestiaries 字段，记录直接下级
+            const children = childrenMap.get(id);
+            if (children && children.length > 0) {
+                // 按照年龄阶段排序：Wyrmling -> Young -> Adult -> Ancient
+                const sortedChildren = [...children].sort((a, b) => {
+                    // 定义年龄阶段的优先级
+                    const getAgePriority = (id: string) => {
+                        if (id.includes('Wyrmling')) return 0;
+                        if (id.includes('Young')) return 1;
+                        if (id.includes('Adult')) return 2;
+                        if (id.includes('Ancient')) return 3;
+                        return 99; // 其他情况放在最后
+                    };
+                    
+                    // 比较年龄优先级
+                    const priorityA = getAgePriority(a);
+                    const priorityB = getAgePriority(b);
+                    
+                    if (priorityA !== priorityB) {
+                        return priorityA - priorityB;
+                    }
+                    
+                    // 年龄阶段相同则按字母顺序排序
+                    return a.localeCompare(b);
+                });
+                
+                bestiaryData.bestiaries = sortedChildren;
+            }
+        }
+    }
+
+    // 处理怪物 fluff 数据中的特定格式文本
+    private processFluffSections(data: any) {
+        if (!data || !data.full) return data;
+
+        // 处理英文和中文的 fluff 数据
+        const languages = ['en', 'zh'];
+        for (const lang of languages) {
+            const fluff = data.full[lang];
+            if (!fluff || !Array.isArray(fluff.entries)) continue;
+
+            for (const section of fluff.entries) {
+                if (section.type === 'section' && Array.isArray(section.entries) && section.entries.length >= 2) {
+                    // 检查第一句是否是 {@i ...} 格式
+                    const firstEntry = section.entries[0];
+                    if (typeof firstEntry === 'string' && firstEntry.match(/^\{@i (.+)\}$/)) {
+                        const sumMatch = firstEntry.match(/^\{@i (.+)\}$/);
+                        if (sumMatch) {
+                            const sum = sumMatch[1];
+
+                            // 检查第二句是否是列表格式
+                            const secondEntry = section.entries[1];
+                            if (
+                                secondEntry.type === 'list' &&
+                                secondEntry.style === 'list-hang-notitle' &&
+                                Array.isArray(secondEntry.items) &&
+                                secondEntry.items.length >= 2
+                            ) {
+                                // 检查是否有栖息地和宝藏项
+                                let habitat: string | undefined;
+                                let treasure: string | undefined;
+
+                                for (const item of secondEntry.items) {
+                                    if (item.type === 'item') {
+                                        // 检查栖息地项
+                                        if (
+                                            (item.name === 'Habitat:' || item.name === '栖息地') &&
+                                            item.entry
+                                        ) {
+                                            habitat = item.entry;
+                                        }
+                                        // 检查宝藏项
+                                        if (
+                                            (item.name === 'Treasure:' || item.name === '宝藏：') &&
+                                            item.entry
+                                        ) {
+                                            treasure = item.entry;
+                                        }
+                                    }
+                                }
+
+                                // 如果找到所有必要的字段，进行转换
+                                if (sum && habitat && treasure) {
+                                    section.sum = sum;
+                                    section.habitat = habitat;
+                                    section.treasure = treasure;
+                                    
+                                    // 从 entries 中移除前两个元素
+                                    section.entries = section.entries.slice(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return data;
+    }
+
+    // 处理 alignment 文本生成（参考Lua函数）
+    private processAlignmentText(alignmentData: any, language: string = 'zh'): string {
+        const alignment_Type: Record<string, string> = {
+            'L': '守序',
+            'C': '混乱',
+            'G': '善良',
+            'N': '中立',
+            'E': '邪恶',
+            'U': '无阵营',
+            'A': '任意阵营'
+        };
+
+        const alignment_Type_en: Record<string, string> = {
+            'L': 'lawful',
+            'C': 'chaotic',
+            'G': 'good',
+            'N': 'neutral',
+            'E': 'evil',
+            'U': 'Unaligned',
+            'A': 'Any Alignment'
+        };
+
+        const OrTitle: Record<string, string> = {
+            'zh': '或',
+            'en': ' or '
+        };
+
+        if (!alignmentData) {
+            return '';
+        }
+
+        // 提取alignment数组和prefix
+        const alignmenttags = Array.isArray(alignmentData) 
+            ? alignmentData 
+            : (alignmentData?.alignment || []);
+        const alignmentPrefix = alignmentData?.alignmentPrefix || '';
+
+        let result = '';
+        const ataglist: string[] = [];
+
+        for (const atag of alignmenttags) {
+            if (typeof atag === 'string') {
+                // 直接映射单个字符（alignment已经是数组，每个元素是单个字符如"N"或"G"）
+                if (language === 'zh') {
+                    result += alignment_Type[atag] || atag;
+                } else {
+                    result += alignment_Type_en[atag] || atag;
+                }
+            } else if (typeof atag === 'object' && atag !== null) {
+                const atagalignment = atag.alignment || '';
+                const chance = atag.chance || 0;
+                const atagalignmentPrefix = atag.alignmentPrefix || alignmentPrefix || '';
+
+                // 处理子alignment（可能是字符串或数组）
+                let subAlignmentText = '';
+                if (typeof atagalignment === 'string') {
+                    const tags = atagalignment.split(',');
+                    for (const tag of tags) {
+                        if (language === 'zh') {
+                            subAlignmentText += alignment_Type[tag] || tag;
+                        } else {
+                            subAlignmentText += alignment_Type_en[tag] || tag;
+                        }
+                    }
+                } else if (Array.isArray(atagalignment)) {
+                    for (const tag of atagalignment) {
+                        if (typeof tag === 'string') {
+                            if (language === 'zh') {
+                                subAlignmentText += alignment_Type[tag] || tag;
+                            } else {
+                                subAlignmentText += alignment_Type_en[tag] || tag;
+                            }
+                        }
+                    }
+                }
+
+                let atagalignment_text = atagalignmentPrefix + subAlignmentText;
+
+                if (chance > 0) {
+                    atagalignment_text += '（' + chance + '%）';
+                }
+                ataglist.push(atagalignment_text);
+            }
+        }
+
+        if (ataglist.length > 0) {
+            result = ataglist.join(OrTitle[language]);
+        }
+
+        return result;
+    }
+
+    private transformSpellcastingSpells(data: Record<string, any>) {
+        try {
+            if (data.zh && data.zh.spellcasting && Array.isArray(data.zh.spellcasting)) {
+                for (const sc of data.zh.spellcasting) {
+                    if (sc.spells && typeof sc.spells === 'object' && !Array.isArray(sc.spells)) {
+                        sc.spells = this.convertSpellsToSortedArray(sc.spells);
+                    }
+                    if (sc.daily && typeof sc.daily === 'object' && !Array.isArray(sc.daily)) {
+                        sc.daily = this.convertDailyToSortedArray(sc.daily);
+                    }
+                }
+            }
+            if (data.en && data.en.spellcasting && Array.isArray(data.en.spellcasting)) {
+                for (const sc of data.en.spellcasting) {
+                    if (sc.spells && typeof sc.spells === 'object' && !Array.isArray(sc.spells)) {
+                        sc.spells = this.convertSpellsToSortedArray(sc.spells);
+                    }
+                    if (sc.daily && typeof sc.daily === 'object' && !Array.isArray(sc.daily)) {
+                        sc.daily = this.convertDailyToSortedArray(sc.daily);
+                    }
+                }
+            }
+        } catch (e) {
+            // 忽略错误，继续处理下一个怪物
+        }
+    }
+
+    private convertSpellsToSortedArray(spellsObj: Record<string, any>): any[] {
+        const transformed: any[] = [];
+        for (const [key, value] of Object.entries(spellsObj)) {
+            if (typeof value === 'object') {
+                const item = { ...value };
+                const level = parseInt(key, 10);
+                if (!isNaN(level)) {
+                    item.level = level;
+                }
+                transformed.push(item);
+            }
+        }
+        transformed.sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+        return transformed;
+    }
+
+    private convertDailyToSortedArray(dailyObj: Record<string, any[]>): any[] {
+        const transformed: any[] = [];
+        for (const [key, spells] of Object.entries(dailyObj)) {
+            if (Array.isArray(spells)) {
+                transformed.push({ times: key, spells });
+            }
+        }
+        transformed.sort((a, b) => {
+            const aHasE = typeof a.times === 'string' && a.times.endsWith('e');
+            const bHasE = typeof b.times === 'string' && b.times.endsWith('e');
+            if (aHasE && !bHasE) return -1;
+            if (!aHasE && bHasE) return 1;
+            const aNum = typeof a.times === 'string' ? parseInt(a.times.replace('e', ''), 10) : 0;
+            const bNum = typeof b.times === 'string' ? parseInt(b.times.replace('e', ''), 10) : 0;
+            return bNum - aNum;
+        });
+        return transformed;
     }
 
     async generateFiles() {
         const outputDir = './output/bestiary';
-        await fs.mkdir(outputDir, { recursive: true });
         const writtenFileNames = new Set<string>();
 
         for (const [id, bestiaryData] of this.db) {
+            // 处理 fluff 数据中的特定格式文本
+            const processedData = this.processFluffSections({ ...bestiaryData });
+
+            // 处理 spellcasting 字段中的 spells 和 daily
+            // this.transformSpellcastingViaStringify(processedData);
+
+            // 处理 alignment 字段
+            if (processedData.alignment) {
+                // 构建 alignment 块
+                const alignmentBlock: any = {
+                    alignment: processedData.alignment
+                };
+
+                // 生成 alignmenttext
+                alignmentBlock.alignmenttext = this.processAlignmentText(processedData.alignment);
+
+                // 处理 alignmentPrefix
+                if (processedData.en?.alignmentPrefix) {
+                    alignmentBlock.alignmentPrefix = processedData.en.alignmentPrefix;
+                    delete processedData.en.alignmentPrefix;
+                }
+                if (processedData.zh?.alignmentPrefix) {
+                    delete processedData.zh.alignmentPrefix;
+                }
+
+                // 替换原有的 alignment 字段
+                processedData.alignment = alignmentBlock;
+            }
+
+            // 处理 initiative 字段（参考render.js的getInitiativeBonusNumber和_getInitiativePassive逻辑）
+            if (processedData.initiative !== undefined) {
+                // 检查dex是否存在且没有special属性
+                const dex = processedData.dex;
+                
+                if (typeof processedData.initiative === 'number') {
+                    // 如果原始数据中initiative是数字，保持原样输出（如人工生命仆从）
+                    // 不做任何处理
+                } else if (typeof processedData.initiative === 'object') {
+                    // 如果原始数据中initiative是对象
+                    if (processedData.initiative.initiative !== undefined) {
+                        // 如果initiative.initiative已有值，使用它计算average
+                        if (dex !== undefined && !dex.special) {
+                            const dexMod = Math.floor((dex - 10) / 2);
+                            processedData.initiative.average = 10 + processedData.initiative.initiative;
+                            // 如果有advantageMode，需要调整
+                            if (processedData.initiative.advantageMode === 'adv') {
+                                processedData.initiative.average += 5;
+                            } else if (processedData.initiative.advantageMode === 'dis') {
+                                processedData.initiative.average -= 5;
+                            }
+                        }
+                    } else if (dex !== undefined && !dex.special) {
+                        // 如果没有initiative.initiative，需要计算
+                        // 计算熟练加值（使用正确的crToPb逻辑）
+                        const getProficiencyBonus = (cr: number) => {
+                            if (cr < 0) return null;
+                            if (cr < 5) return 2;
+                            return Math.ceil(cr / 4) + 1;
+                        };
+                        
+                        const cr = processedData.cr || 0;
+                        const proficiencyBonus = getProficiencyBonus(cr);
+                        const dexMod = Math.floor((dex - 10) / 2);
+                        
+                        // 计算先攻加值
+                        let initiativeMod = dexMod;
+                        if (processedData.initiative.proficiency && cr < 100 && proficiencyBonus !== null) {
+                            initiativeMod += processedData.initiative.proficiency * proficiencyBonus;
+                        }
+                        
+                        // 计算先攻定值
+                        let initiativeAverage = 10 + initiativeMod;
+                        if (processedData.initiative.advantageMode === 'adv') {
+                            initiativeAverage += 5;
+                        } else if (processedData.initiative.advantageMode === 'dis') {
+                            initiativeAverage -= 5;
+                        }
+                        
+                        processedData.initiative.initiative = initiativeMod;
+                        processedData.initiative.average = initiativeAverage;
+                    }
+                }
+            } else {
+                // 如果initiative未定义，且dex存在且没有special属性，生成initiative
+                const dex = processedData.dex;
+                if (dex !== undefined && !dex.special) {
+                    const dexMod = Math.floor((dex - 10) / 2);
+                    processedData.initiative = {
+                        initiative: dexMod,
+                        average: 10 + dexMod
+                    };
+                }
+            }
+
+            // 检查 navpills（已在数据加载后添加）
+            const navpills = processedData.navpills;
+            // 检查 isnavpill（从收集到的 ids 中检查）
+            const isnavpill = isnavpillIds.has(id);
+            // 提取 onlyfull 和 superiorfork
+            const onlyfull = processedData.onlyfull;
+            const superiorfork = processedData.superiorfork;
+
+            // 调整字段顺序
+            const displayName = processedData.displayName;
+            const mainSource = processedData.mainSource;
+            const allSources = processedData.allSources;
+            const translator = processedData.translator;
+            const full = processedData.full;
+
+            delete processedData.displayName;
+            delete processedData.mainSource;
+            delete processedData.allSources;
+            delete processedData.translator;
+            delete processedData.full;
+            delete processedData.onlyfull;
+            delete processedData.superiorfork;
+            delete processedData.navpills;
+
+            // 重新构建对象，按新顺序放置字段
+            const reorderedData: Record<string, any> = {};
+            const keys = Object.keys(processedData);
+
+            // 记录是否已经插入了需要移动的字段
+            let insertedMovedFields = false;
+            let insertedFullFields = false;
+
+            for (const key of keys) {
+                reorderedData[key] = processedData[key];
+                // 在 page 字段后插入 displayName 等字段（仅插入一次）
+                if (key === 'page' && !insertedMovedFields) {
+                    if (displayName) reorderedData.displayName = displayName;
+                    if (mainSource) reorderedData.mainSource = mainSource;
+                    if (allSources) reorderedData.allSources = allSources;
+                    if (translator !== undefined) reorderedData.translator = translator;
+                    insertedMovedFields = true;
+                }
+                // 在 full 字段前插入 onlyfull、superiorfork、navpills、isnavpill
+                if (key.startsWith('full') && !insertedFullFields) {
+                    if (onlyfull) reorderedData.onlyfull = onlyfull;
+                    if (superiorfork !== undefined) reorderedData.superiorfork = superiorfork;
+                    if (navpills) reorderedData.navpills = true;
+                    if (isnavpill) reorderedData.isnavpill = true;
+                    insertedFullFields = true;
+                }
+            }
+
+            // 如果没有 page 字段，则在最后插入 displayName 等字段
+            if (!insertedMovedFields) {
+                if (displayName) reorderedData.displayName = displayName;
+                if (mainSource) reorderedData.mainSource = mainSource;
+                if (allSources) reorderedData.allSources = allSources;
+                if (translator !== undefined) reorderedData.translator = translator;
+            }
+
+            // 如果没有触发 full 字段的判断，则在最后插入 full 前的字段
+            if (!insertedFullFields) {
+                if (onlyfull) reorderedData.onlyfull = onlyfull;
+                if (superiorfork !== undefined) reorderedData.superiorfork = superiorfork;
+                if (navpills) reorderedData.navpills = true;
+                if (isnavpill) reorderedData.isnavpill = true;
+            }
+
+            // 添加 full 字段
+            if (full) reorderedData.full = full;
+
             const baseName = mwUtil.getMwTitle(
-                bestiaryData.displayName.en || bestiaryData.displayName.zh || id
+                reorderedData.displayName?.en || reorderedData.displayName?.zh || id
             );
-            const preferredFileName = `bestiary_1_${bestiaryData.mainSource.source}_1_${baseName}.json`;
+            const sourceId = reorderedData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
+            const preferredFileName = `bestiary_1_${sourceId}_1_${baseName}.json`;
             const fileName = resolveCaseInsensitiveOutputFileName(
                 writtenFileNames,
                 preferredFileName,
@@ -3742,8 +4578,9 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             if (fileName !== preferredFileName) {
                 logger.log('BestiaryMgr', `怪物导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${id})`);
             }
-            const filePath = path.join(outputDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(bestiaryData, null, 2), 'utf-8');
+            this.transformSpellcastingSpells(reorderedData);
+            const filePath = path.join(sourceDir, fileName);
+            await fs.writeFile(filePath, JSON.stringify(reorderedData, null, 2), 'utf-8');
         }
     }
 }
@@ -3868,12 +4705,34 @@ const printProgress = (message: string) => {
     console.log(chalk.cyan(`[prepareData] ${message}`));
 };
 
+// tbui-nav-pills 配置
+interface TbuiNavPillsConfig {
+    uids?: string[];
+}
+
+let tbuiNavPillsConfig: TbuiNavPillsConfig = {};
+let isnavpillIds = new Set<string>();
+
 (async () => {
     try {
+        console.log('程序开始执行...');
+        // 解析命令行参数
+        const args = process.argv.slice(2);
+        const generatePages = args.includes('--page');
+        console.log(`命令行参数: ${args}, generatePages: ${generatePages}`);
+        
         const startedAt = Date.now();
         printProgress('开始准备数据');
-        await createOutputFolders();
+        await createOutputFolders(generatePages);
         printProgress('输出目录已重建');
+
+        // 加载 tbui-nav-pills 配置
+        try {
+            tbuiNavPillsConfig = await readJson(path.join('config', 'tbui-nav-pills.json'));
+            printProgress('tbui-nav-pills 配置已加载');
+        } catch (error) {
+            printProgress('未找到 tbui-nav-pills.json，将跳过 navpills 功能');
+        }
 
         const [bookFiles, featFiles, itemBaseFiles, itemFiles, magicVariantFiles, itemFluffFiles] =
             await Promise.all([
@@ -3900,83 +4759,173 @@ const printProgress = (message: string) => {
         itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
 
         bookMgr.loadData(bookFiles.zh, bookFiles.en);
-        await bookMgr.generateFiles();
-        printProgress(`book 完成 (${bookMgr.db.size})`);
 
         featMgr.loadData(featFiles.zh, featFiles.en);
-        await featMgr.generateFiles();
-        printProgress(`feat 完成 (${featMgr.db.size})`);
 
         itemPropertyMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemPropertyMgr.generateFiles();
-        printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
         itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
         // 注意：itemTypeCollection.json 将在 baseItemMgr 加载完成后生成
 
         itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await itemMasteryMgr.generateFiles();
-        printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
 
         baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        await baseItemMgr.generateFiles();
-        printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
 
         // 在 baseItemMgr 加载完成后，收集基础物品列表并生成 itemTypeCollection.json
         itemTypeMgr.collectBaseItems(baseItemMgr);
-        await itemTypeMgr.generateFiles();
-        printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
         itemMgr.loadData(itemFiles.zh, itemFiles.en);
-        await itemMgr.generateFiles();
-        printProgress(`item 完成 (${itemMgr.db.size})`);
 
         magicVariantMgr.loadData(magicVariantFiles.zh, magicVariantFiles.en);
-        await magicVariantMgr.generateFiles();
-        printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
-
-        // 生成物品名称列表
-        const collectionDir = path.join('./output', 'collection');
-        await fs.mkdir(collectionDir, { recursive: true });
-        
-        // 合并所有物品数据（基础物品、普通物品、变体物品）
-        const allItems = [
-            ...Array.from(baseItemMgr.db.values()),
-            ...Array.from(itemMgr.db.values()),
-            ...Array.from(magicVariantMgr.db.values())
-        ];
-        await generateCollectionNameList('item', allItems, collectionDir);
 
         spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
         spellMgr.loadData(spellFiles.zh, spellFiles.en);
-        await spellMgr.generateFiles();
-        printProgress(`spell 完成 (${spellMgr.db.size})`);
 
         bestiaryMgr.loadFluff(bestiaryFluffFiles.zh, bestiaryFluffFiles.en);
         bestiaryMgr.loadData(bestiaryFiles.zh, bestiaryFiles.en);
-        await bestiaryMgr.generateFiles();
-        printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
+        
+        // 统一收集所有需要添加 navpills 和 isnavpill 的 id
+        const navpillsUids = new Set(tbuiNavPillsConfig.uids || []);
+        
+        // 收集怪物相关
+        for (const [id, data] of bestiaryMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                (data as any).isnavpill = true;
+                
+                if ((data as any).bestiaries) {
+                    for (const bid of (data as any).bestiaries) {
+                        isnavpillIds.add(bid);
+                        const childData = bestiaryMgr.db.get(bid);
+                        if (childData) {
+                            (childData as any).isnavpill = true;
+                        }
+                    }
+                }
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集基础物品相关
+        for (const [id, data] of baseItemMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集物品相关
+        for (const [id, data] of itemMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        // 收集魔法变体相关
+        for (const [id, data] of magicVariantMgr.db) {
+            if (navpillsUids.has(data.uid)) {
+                (data as any).navpills = true;
+                if ((data as any).items) {
+                    for (const iid of (data as any).items) {
+                        isnavpillIds.add(iid);
+                    }
+                }
+            }
+        }
+        
+        if (!generatePages) {
+            // npm run start: 只生成基础数据到 output 目录
+            await bookMgr.generateFiles();
+            printProgress(`book 完成 (${bookMgr.db.size})`);
 
-        // 生成法术名称列表
-        await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), collectionDir);
+            await featMgr.generateFiles();
+            printProgress(`feat 完成 (${featMgr.db.size})`);
 
-        const wikiPageGenerator = new WikiPageGenerator({
-            books: bookFiles,
-            spells: spellMgr.db,
-            baseItems: baseItemMgr.db,
-            items: itemMgr.db,
-            magicVariants: magicVariantMgr.db,
-            logger: message => printProgress(`wikiPage: ${message}`),
-        });
-        const wikiPageResult = await wikiPageGenerator.generateAll();
-        printProgress(
-            `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
-        );
+            await itemPropertyMgr.generateFiles();
+            printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
 
-        await idMgr.generateFiles();
-        await tagParser.generateFiles();
-        await logger.generateFile();
-        await processGeneratedFiles();
+            await itemMasteryMgr.generateFiles();
+            printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
+
+            await baseItemMgr.generateFiles();
+            printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
+
+            await itemTypeMgr.generateFiles();
+            printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
+
+            await itemMgr.generateFiles();
+            printProgress(`item 完成 (${itemMgr.db.size})`);
+
+            await magicVariantMgr.generateFiles();
+            printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
+
+            await spellMgr.generateFiles();
+            printProgress(`spell 完成 (${spellMgr.db.size})`);
+
+            await bestiaryMgr.generateFiles();
+            printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
+
+            const namelistDir = path.join('./output', 'namelist');
+            await fs.mkdir(namelistDir, { recursive: true });
+
+            await generateSourcesJson(
+                bookMgr,
+                featMgr,
+                spellMgr,
+                baseItemMgr,
+                itemMgr,
+                magicVariantMgr,
+                bestiaryMgr,
+                namelistDir
+            );
+
+            // 合并所有物品数据（基础物品、普通物品、变体物品）
+            const allItems = [
+                ...Array.from(baseItemMgr.db.values()),
+                ...Array.from(itemMgr.db.values()),
+                ...Array.from(magicVariantMgr.db.values())
+            ];
+            await generateCollectionNameList('item', allItems, namelistDir);
+
+            // 生成法术名称列表
+            await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), namelistDir);
+
+            // 生成怪物名称列表
+            await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), namelistDir);
+
+            await idMgr.generateFiles();
+            await tagParser.generateFiles();
+            await logger.generateFile();
+            await processGeneratedFiles();
+        } else {
+            // npm run page: 只生成 wiki 页面到 output_page 目录
+            const wikiPageGenerator = new WikiPageGenerator({
+                books: bookFiles,
+                spells: spellMgr.db,
+                baseItems: baseItemMgr.db,
+                items: itemMgr.db,
+                magicVariants: magicVariantMgr.db,
+                bestiary: bestiaryMgr.db,
+                logger: message => printProgress(`wikiPage: ${message}`),
+            });
+            const wikiPageResult = await wikiPageGenerator.generateAll();
+            printProgress(
+                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+            );
+        }
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         console.log(

@@ -3,7 +3,8 @@
 项目简介
 - 用途：把 5etools 的中英文数据整理为适合 MediaWiki/灰机Wiki 导入的结构化 JSON 与 HTML 片段。
 - 入口脚本：`src/prepareData.ts`（`npm run start`）。
-- 辅助脚本：`src/getGitRepo.ts`（`npm run getCnRepo`，按需拉取源数据）。
+- 辅助脚本：`src/getGitRepo.ts`（`npm run getCnRepo`，按需拉取源数据）。  
+`src/wikiPageGenerator.ts`（`npm run page`，输出 wiki 内容页面）
 
 运行逻辑概览
 1. `createOutputFolders` 清空并重建 `./output` 目录结构。
@@ -29,12 +30,22 @@
 - `output/collection/featCollection.json`
 - `output/collection/itemPropertyCollection.json`
 - `output/collection/itemTypeCollection.json`
-- `output/item/*.json`（基础物品与物品）
-- `output/spell/*.json`
-- `output/bestiary/*.json`
+- `output/adventure/`（模组）
+  - `模组id/*.json`（模组章节文件）
+- `output/bestiary/来源id/*.json`（怪物）
+- `output/book/来源idid/`（出版物）
+  - `来源id/*.json`（出版物章节文件）
+- `output/contents/`（目录）’
+  - `adventure/*.json`（模组目录）
+  - `book/*.json`（出版物目录）
+- `output/item/来源id/*.json`（基础物品与物品）
+- `output/spell/来源id/*.json`（法术）
+- `output/namelist/*.json`（名字列表）
 - `output/logs.json`（缺失或异常记录）
 - `output/idMgr.json` / `output/idMgr.xlsx`（中英 ID 对照）
 - `output/tags.json`（解析到的 @tag 列表）
+
+大多数json结构：**类别_1_来源id_1_英文名（章节文件为章节id）.json**
 
 使用说明
 1. 准备 Node.js 与 git；按需执行 `npm install`（请手动执行）。
@@ -44,6 +55,7 @@
 3. 修改 `src/config.ts` 的 `DATA_EN_DIR` / `DATA_ZH_DIR`。
 4. 运行 `npm run start` 生成 `./output`。
 5. 查看 `output/logs.json` 与 `output/idMgr.xlsx` 定位缺失翻译或 ID 不匹配。
+6. 确认没有错误后，运行 `npm run page` 生成 `./output_page`。
 
 备注
 - `src/getGitRepo.ts` 通过 `git clone` + `sparse-checkout` 仅下载 `data/` 与 `data-bak` 目录。

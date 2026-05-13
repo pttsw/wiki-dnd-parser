@@ -54,10 +54,104 @@ export const splitBestiaryRecord = (
     const zhOut: Record<string, any> = {};
     const keys = new Set([...Object.keys(en || {}), ...Object.keys(zh || {})]);
 
-    for (const key of keys) {
-        if (skipKeys.has(key)) continue;
+    // 翻译表
+    const translationMap: Record<string, string> = {
+        'Aartuk': '蔬菜人语',
+        'darkvision': '黑暗视觉',
+    };
+
+    // 翻译函数
+    const translateValue = (value: string): string => {
+        return translationMap[value] || value;
+    };
+
+    // 处理senses和languages字段，确保它们有zh和en版本
+    const processLocalizedField = (key: string) => {
         const enValue = en?.[key];
         const zhValue = zh?.[key];
+
+        if (enValue !== undefined) {
+            enOut[key] = enValue;
+        }
+
+        // 如果有英文数据但没有中文，或者中文数据与英文数据相同，则翻译
+        const needTranslate = zhValue === undefined || JSON.stringify(zhValue) === JSON.stringify(enValue);
+
+        if (needTranslate && enValue !== undefined) {
+            // 需要翻译
+            if (Array.isArray(enValue)) {
+                zhOut[key] = enValue.map(item => {
+                    if (typeof item === 'string') {
+                        // 尝试精确匹配翻译
+                        if (translationMap[item]) {
+                            return translationMap[item];
+                        }
+                        // 尝试部分匹配（处理包含额外信息的字符串）
+                        for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                            if (item.includes(enWord)) {
+                                return item.replace(enWord, zhWord);
+                            }
+                        }
+                        return item;
+                    }
+                    return item;
+                });
+            } else if (typeof enValue === 'string') {
+                // 尝试精确匹配翻译
+                if (translationMap[enValue]) {
+                    zhOut[key] = translationMap[enValue];
+                } else {
+                    // 尝试部分匹配
+                    let result = enValue;
+                    for (const [enWord, zhWord] of Object.entries(translationMap)) {
+                        if (result.includes(enWord)) {
+                            result = result.replace(enWord, zhWord);
+                        }
+                    }
+                    zhOut[key] = result;
+                }
+            } else {
+                zhOut[key] = enValue;
+            }
+        } else if (zhValue !== undefined) {
+            // 使用已有中文数据
+            zhOut[key] = zhValue;
+        }
+    };
+
+    for (const key of keys) {
+        if (skipKeys.has(key)) continue;
+
+        // 特殊处理senses、languages、hp、ac、speed、skill字段
+        if (key === 'senses' || key === 'languages' || key === 'hp' || key === 'ac' || key === 'speed' || key === 'skill') {
+            processLocalizedField(key);
+            continue;
+        }
+
+        const enValue = en?.[key];
+        const zhValue = zh?.[key];
+        
+        // 特殊处理某些字段，总是使用英文数据
+        const englishOnlyKeys = new Set([
+            'type',
+            'environment',
+            'treasure',
+            'dragonAge',
+            'traitTags',
+            'actionTags',
+            'conditionInflictSpell',
+            'savingThrowForced',
+            'savingThrowForcedLegendary',
+            'savingThrowForcedSpell',
+			'group',
+			'initiative'
+        ]);
+        
+        if (englishOnlyKeys.has(key) && enValue !== undefined) {
+            common[key] = enValue;
+            continue;
+        }
+        
         if (hasLocalizedDifference(enValue, zhValue)) {
             if (enValue !== undefined) enOut[key] = enValue;
             if (zhValue !== undefined) zhOut[key] = zhValue;
@@ -105,16 +199,25 @@ const applyArrayCopyMod = (
 export const resolveMonsterFluffContent = (
     item: MonsterFluffEntry | undefined,
     fluffMap: Map<string, MonsterFluffEntry>,
-    visited = new Set<string>()
+    visited = new Set<string>(),
+    useCopy = true // 新增参数控制是否使用_copy追踪
 ): MonsterFluffContent | undefined => {
     if (!item) return undefined;
+    
+    // 如果不使用_copy追踪，直接返回当前item的内容
+    if (!useCopy) {
+        const { entries, images } = item;
+        if (!entries && !images) return undefined;
+        return { entries, images };
+    }
+    
     const copy = item._copy;
     let inherited: MonsterFluffContent | undefined;
     if (copy?.name && copy?.source) {
         const copyId = `${copy.name}|${copy.source}`;
         if (!visited.has(copyId)) {
             visited.add(copyId);
-            inherited = resolveMonsterFluffContent(fluffMap.get(copyId), fluffMap, visited);
+            inherited = resolveMonsterFluffContent(fluffMap.get(copyId), fluffMap, visited, useCopy);
         }
     }
 

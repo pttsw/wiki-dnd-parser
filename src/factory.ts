@@ -1181,11 +1181,15 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
         // for each item in the db, write a file.
         for (const [id, itemData] of this.db) {
+            const sourceId = itemData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
             //     console.log(`已生成物品文件：${ filePath } `);
         }
@@ -1440,11 +1444,15 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         const outputDir = './output/item';
 
         for (const [id, itemData] of this.db) {
+            const sourceId = itemData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
         }
     }
@@ -1699,11 +1707,15 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         const outputDir = './output/item';
 
         for (const [id, itemData] of this.db) {
+            const sourceId = itemData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
             );
-            const fileName = `item_1_${itemData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(itemData, null, 2), 'utf-8');
         }
     }
@@ -1951,14 +1963,17 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 
     async generateFiles() {
         const outputDir = './output/spell';
-        await fs.mkdir(outputDir, { recursive: true });
 
         for (const [id, spellData] of this.db) {
+            const sourceId = spellData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
             );
-            const fileName = `Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `Spell_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }
     }
