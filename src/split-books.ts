@@ -120,6 +120,35 @@ interface ProcessedSection {
     enEntries: any[];
 }
 
+const replaceSectionsWithSubpages = (
+    entries: any[],
+    headerSubpageMap: Map<string, string>
+): any[] => {
+    const result: any[] = [];
+
+    for (const ent of entries) {
+        if (ent && typeof ent === 'object') {
+            if (ent.id && headerSubpageMap.has(ent.id)) {
+                result.push({
+                    type: 'subpage',
+                    id: headerSubpageMap.get(ent.id)
+                });
+            } else if (Array.isArray(ent.entries)) {
+                result.push({
+                    ...ent,
+                    entries: replaceSectionsWithSubpages(ent.entries, headerSubpageMap)
+                });
+            } else {
+                result.push(ent);
+            }
+        } else {
+            result.push(ent);
+        }
+    }
+
+    return result;
+};
+
 const processContentEntry = async (
     entry: any,
     bookId: string,
@@ -157,6 +186,8 @@ const processContentEntry = async (
         let enContent = sectionEn ? { entries: [...sectionEn.entries] } : null;
         let zhContent = sectionZh ? { entries: [...sectionZh.entries] } : null;
 
+        const headerSubpageMap = new Map<string, string>();
+
         if (entry.headers && Array.isArray(entry.headers)) {
             for (const header of entry.headers) {
                 if (header.alonepage) {
@@ -170,22 +201,18 @@ const processContentEntry = async (
                         zhData
                     );
 
-                    if (headerProcessed?.subpageId) {
-                        if (zhContent) {
-                            zhContent.entries.push({
-                                type: 'subpage',
-                                id: headerProcessed.subpageId
-                            });
-                        }
-                        if (enContent) {
-                            enContent.entries.push({
-                                type: 'subpage',
-                                id: headerProcessed.subpageId
-                            });
-                        }
+                    if (headerProcessed?.subpageId && header.id) {
+                        headerSubpageMap.set(header.id, headerProcessed.subpageId);
                     }
                 }
             }
+        }
+
+        if (zhContent && headerSubpageMap.size > 0) {
+            zhContent.entries = replaceSectionsWithSubpages(zhContent.entries, headerSubpageMap);
+        }
+        if (enContent && headerSubpageMap.size > 0) {
+            enContent.entries = replaceSectionsWithSubpages(enContent.entries, headerSubpageMap);
         }
 
         const fileData = {
@@ -228,6 +255,9 @@ const processContentEntry = async (
             enEntries = [...sectionEn.entries];
         }
 
+        const headerSubpageMap = new Map<string, string>();
+        const nonAlonePageHeaders: Array<{ id: string; zhEntries: any[]; enEntries: any[] }> = [];
+
         if (entry.headers && Array.isArray(entry.headers)) {
             for (const header of entry.headers) {
                 const processedHeader = await processContentEntry(
@@ -241,21 +271,22 @@ const processContentEntry = async (
                 );
 
                 if (processedHeader) {
-                    if (processedHeader.subpageId) {
-                        zhEntries.push({
-                            type: 'subpage',
-                            id: processedHeader.subpageId
+                    if (processedHeader.subpageId && header.id) {
+                        headerSubpageMap.set(header.id, processedHeader.subpageId);
+                    } else if (header.id) {
+                        nonAlonePageHeaders.push({
+                            id: header.id,
+                            zhEntries: processedHeader.zhEntries,
+                            enEntries: processedHeader.enEntries
                         });
-                        enEntries.push({
-                            type: 'subpage',
-                            id: processedHeader.subpageId
-                        });
-                    } else {
-                        zhEntries.push(...processedHeader.zhEntries);
-                        enEntries.push(...processedHeader.enEntries);
                     }
                 }
             }
+        }
+
+        if (headerSubpageMap.size > 0) {
+            zhEntries = replaceSectionsWithSubpages(zhEntries, headerSubpageMap);
+            enEntries = replaceSectionsWithSubpages(enEntries, headerSubpageMap);
         }
 
         return {

@@ -1963,8 +1963,11 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 itemData.displayName.en || itemData.displayName.zh || id
             );
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
             const fileName = `item_1_${sourceId}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
@@ -2479,8 +2482,11 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 itemData.displayName.en || itemData.displayName.zh || id
             );
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
             const fileName = `item_1_${sourceId}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
@@ -3352,8 +3358,11 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
                 itemData.displayName.en || itemData.displayName.zh || id
             );
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+            
             const fileName = `item_1_${sourceId}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
             if (!itemData.type) {
@@ -3795,14 +3804,17 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 
     async generateFiles() {
         const outputDir = './output/spell';
-        await fs.mkdir(outputDir, { recursive: true });
 
         for (const [id, spellData] of this.db) {
+            const sourceId = spellData.mainSource.source;
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const baseName = mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
             );
-            const fileName = `Spell_1_${spellData.mainSource.source}_1_${baseName}.json`;
-            const filePath = path.join(outputDir, fileName);
+            const fileName = `Spell_1_${sourceId}_1_${baseName}.json`;
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }
     }
@@ -4382,7 +4394,6 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
 
     async generateFiles() {
         const outputDir = './output/bestiary';
-        await fs.mkdir(outputDir, { recursive: true });
         const writtenFileNames = new Set<string>();
 
         for (const [id, bestiaryData] of this.db) {
@@ -4555,6 +4566,9 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 reorderedData.displayName?.en || reorderedData.displayName?.zh || id
             );
             const sourceId = reorderedData.mainSource?.source || 'UNKNOWN';
+            const sourceDir = path.join(outputDir, sourceId);
+            await fs.mkdir(sourceDir, { recursive: true });
+
             const preferredFileName = `bestiary_1_${sourceId}_1_${baseName}.json`;
             const fileName = resolveCaseInsensitiveOutputFileName(
                 writtenFileNames,
@@ -4565,7 +4579,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 logger.log('BestiaryMgr', `怪物导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${id})`);
             }
             this.transformSpellcastingSpells(reorderedData);
-            const filePath = path.join(outputDir, fileName);
+            const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(reorderedData, null, 2), 'utf-8');
         }
     }
