@@ -1,0 +1,10 @@
+{
+  "核心": ["XPHB", "XDMG", "XMM", "PHB", "DMG", "MM"],
+  "扩展&资源": ["SCAG", "VGM", "XGE", "WGE", "MTF", "GGR", "AI", "ERLW", "EGW", "MOT", "TCE", "VRGR", "FTD", "SCC", "MPMM", "AAG", "BAM", "BGG", "SatO", "MPP", "BMT", "DMTCRG", "FRHoF"],
+  "电子资源": ["MFF", "MCV1SC", "MCV2DC", "MCV3MC", "MCV4EC", "HAT-TG", "MPMV1", "AATM"],
+  "其他资源": ["PSZ", "PSI", "PSK", "PSA", "OGA", "PSX", "PSD", "AWN", "RMR", "MGELFT", "DoD", "MaBJoV", "FM!", "TD", "BoET", "HWT", "ToB1-2023", "WEL", "ILLR"],
+  "合作第三方": ["HWCS", "TDCSR", "GH:PP", "TGS2", "TLOTRR"],
+  "帷幕": ["Screen", "ScreenDungeonKit", "ScreenWildernessKit", "ScreenSpelljammer", "XScreen"],
+  "贤者谏言&杂项出版物": ["HF", "HFFotM", "PaF", "AL", "SAC"],
+  "模组": ["LMoP", "HotDQ", "RoT", "PotA", "OotA", "CoS", "SKT", "TftYP-TSC", "TftYP-TFoF", "TftYP-THSoT", "TftYP-WPM", "TftYP-DiT", "TftYP-AtG", "TftYP-ToH", "ToA", "TTP", "TLK", "XMtS", "WDH", "LLK", "WDMM", "KKW", "AZfyT", "GoS", "HftT", "OoW", "DIP", "SLW", "SDW", "DC", "BGDIA", "LR", "IMR", "EFR", "RMBRE", "ToR", "DD", "FS", "US", "MOT-NSS", "IDRotF", "CM", "HoL", "RtG", "AitFR-ISF", "AitFR-THP", "AitFR-AVT", "AitFR-DN", "AitFR-FCD", "NRH-TCMC", "NRH-AVitW", "NRH-ASS", "NRH-CoI", "NRH-TLT", "NRH-AWoL", "NRH-AT", "WBtW", "SCC-CK", "SCC-HfMT", "SCC-TMM", "SCC-ARiR", "CRCotN", "JttRC", "DoSI", "SjA", "LoX", "DSotDQ", "KftGV", "GotSF", "PaBTSO", "LK", "ToFW", "CoA", "PiP", "HFStCM", "GHLoE", "DoDk", "DitLCoT", "LRDT", "VNotEE", "VEoR", "QftIS", "UtHftLH", "ScoEE", "HBTD"]
+}
