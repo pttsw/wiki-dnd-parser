@@ -10,9 +10,20 @@
 1. `createOutputFolders` 清空并重建 `./output` 目录结构。
 2. 从 `src/config.ts` 的 `DATA_EN_DIR` / `DATA_ZH_DIR` 读取 JSON。
 3. 依次处理：书籍、专长、物品基础数据、物品、法术、怪物。
-4. 各 *Mgr 做中英合并、ID 对齐、缺失记录。
-5. `parseContent` 将 entries 解析为 HTML，并把 `{@tag ...}` 转成 `{{@tag|...}}`。
-6. 输出产物到 `./output`，最后生成日志、ID 对照与标签统计。
+4. 新增 `src/exporters/*` 共享导出层后，剩余 wiki JSON 类型由 profile 驱动导出，`class/subclass` 走独立 special-case exporter。
+5. 各 *Mgr / exporter 做中英合并、ID 对齐、缺失记录。
+6. `parseContent` 将 entries 解析为 HTML，并把 `{@tag ...}` 转成 `{{@tag|...}}`。
+7. 输出产物到 `./output`，最后生成日志、ID 对照与标签统计。
+
+导出架构
+- 旧路径保留：`item` / `spell` / `bestiary` 仍由原有 manager 负责。
+- 通用 profile exporter：`src/exporters/genericProfileExporter.ts`
+  - 负责 `race`、`background`、`trap`、`hazard` 等文件型输出。
+  - 负责 `deity`、`vehicleUpgrade`、`condition`、`disease`、`language` 等 collection 型输出。
+- `class/subclass` 特例 exporter：`src/exporters/classProfileExporter.ts`
+  - 单独处理职业索引文件、子职业去重、`superiorfork` 关系和子职业列表回填。
+- 共享 helper：`src/exporters/shared.ts` / `src/exporters/fluff.ts`
+  - 负责 ID、重印版本聚合、fluff `_copy/_mod` 继承、双语拆分与文件名去重。
 
 输入数据与配置
 - `src/config.ts` 定义：
@@ -30,17 +41,19 @@
 - `output/collection/featCollection.json`
 - `output/collection/itemPropertyCollection.json`
 - `output/collection/itemTypeCollection.json`
-- `output/adventure/`（模组）
-  - `模组id/*.json`（模组章节文件）
-- `output/bestiary/来源id/*.json`（怪物）
-- `output/book/来源idid/`（出版物）
-  - `来源id/*.json`（出版物章节文件）
-- `output/contents/`（目录）’
-  - `adventure/*.json`（模组目录）
-  - `book/*.json`（出版物目录）
-- `output/item/来源id/*.json`（基础物品与物品）
-- `output/spell/来源id/*.json`（法术）
+- `output/collection/*Collection.json`
+  - 现已覆盖 `deity`、`vehicle`、`vehicleUpgrade`、`variantrule`、`monsterfeature`、`optionalfeature`、`condition`、`disease`、`language`、`skill`、`sense`、`charoption`、`bastion`、`deck`、`cult`、`boon`、`recipe`、`reward`、`object`、`psionic`
+- `output/item/*.json`（基础物品与物品）
+- `output/spell/*.json`
+- `output/bestiary/*.json`
+- `output/race/*.json`
+- `output/background/*.json`
+- `output/trap/*.json`
+- `output/hazard/*.json`
+- `output/class/*.json`
+- `output/subclass/*.json`
 - `output/namelist/*.json`（名字列表）
+- `output/contents/book/*.json` / `output/contents/adventure/*.json`（目录）
 - `output/logs.json`（缺失或异常记录）
 - `output/idMgr.json` / `output/idMgr.xlsx`（中英 ID 对照）
 - `output/tags.json`（解析到的 @tag 列表）
