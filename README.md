@@ -32,20 +32,20 @@
 - `output/collection/itemTypeCollection.json`
 - `output/adventure/`（模组）
   - `模组id/*.json`（模组章节文件）
-- `output/bestiary/*.json`（怪物）
-- `output/book/书籍id/*.json`（出版物）
-  - `出版物id/*.json`（出版物章节文件）
+- `output/bestiary/来源id/*.json`（怪物）
+- `output/book/来源idid/`（出版物）
+  - `来源id/*.json`（出版物章节文件）
 - `output/contents/`（目录）’
   - `adventure/*.json`（模组目录）
   - `book/*.json`（出版物目录）
-- `output/item/*.json`（基础物品与物品）
-- `output/spell/*.json`（法术）
+- `output/item/来源id/*.json`（基础物品与物品）
+- `output/spell/来源id/*.json`（法术）
 - `output/namelist/*.json`（名字列表）
 - `output/logs.json`（缺失或异常记录）
 - `output/idMgr.json` / `output/idMgr.xlsx`（中英 ID 对照）
 - `output/tags.json`（解析到的 @tag 列表）
 
-大多数json结构：**类别_1_书籍id_1_英文名（章节文件为章节id）.json**
+大多数json结构：**类别_1_来源id_1_英文名（章节文件为章节id）.json**
 
 使用说明
 1. 准备 Node.js 与 git；按需执行 `npm install`（请手动执行）。
