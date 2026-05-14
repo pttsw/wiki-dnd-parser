@@ -65,7 +65,15 @@ import {
 import { WikiPageGenerator } from './wikiPageGenerator.js';
 import { genericProfiles } from './exporters/profiles.js';
 import { runGenericProfiles } from './exporters/genericProfileExporter.js';
-import { runClassProfileExporters } from './exporters/classProfileExporter.js';
+import { runAdventureExporter } from './exporters/adventureExporter.js';
+import { runRaceExporter } from './exporters/raceExporter.js';
+import { runBackgroundExporter } from './exporters/backgroundExporter.js';
+import { runHazardExporter } from './exporters/hazardExporter.js';
+import { runTrapExporter } from './exporters/trapExporter.js';
+import { runClassExporter } from './exporters/classExporter.js';
+import { runSpellExporter } from './exporters/spellExporter.js';
+import { runBestiaryExporter } from './exporters/bestiaryExporter.js';
+import { runItemExporter } from './exporters/itemExporter.js';
 
 /**
  * 生成图鉴名称列表文件
@@ -4756,7 +4764,7 @@ let isnavpillIds = new Set<string>();
         ]);
         await spellMgr.loadSources(path.join(config.DATA_EN_DIR, 'spells/sources.json'));
         printProgress(
-            `法术与怪物索引已加载 (spell=${spellFiles.en.spell.length}, bestiary=${bestiaryFiles.en.monster.length})`
+            `json 索引已加载`
         );
 
         itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
@@ -4855,7 +4863,7 @@ let isnavpillIds = new Set<string>();
         if (!generatePages) {
             // npm run start: 只生成基础数据到 output 目录
             await bookMgr.generateFiles();
-            printProgress(`book 完成 (${bookMgr.db.size})`);
+            // printProgress(`book 完成 (${bookMgr.db.size})`);
 
             await featMgr.generateFiles();
             printProgress(`feat 完成 (${featMgr.db.size})`);
@@ -4866,27 +4874,35 @@ let isnavpillIds = new Set<string>();
             await itemMasteryMgr.generateFiles();
             printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
 
-            await baseItemMgr.generateFiles();
-            printProgress(`baseItem 完成 (${baseItemMgr.db.size})`);
-
             await itemTypeMgr.generateFiles();
             printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
 
-            await itemMgr.generateFiles();
-            printProgress(`item 完成 (${itemMgr.db.size})`);
+            // 并行执行独立导出器
+            const [
+                spellResult,
+                bestiaryResult,
+                itemResult,
+                adventureResult,
+                raceResult,
+                backgroundResult,
+                hazardResult,
+                trapResult,
+                classResult
+            ] = await Promise.all([
+                runSpellExporter(spellMgr),
+                runBestiaryExporter(bestiaryMgr),
+                runItemExporter(baseItemMgr, itemMgr, magicVariantMgr),
+                runAdventureExporter(),
+                runRaceExporter(),
+                runBackgroundExporter(),
+                runHazardExporter(),
+                runTrapExporter(),
+                runClassExporter(),
+            ]);
 
-            await magicVariantMgr.generateFiles();
-            printProgress(`magicVariant 完成 (${magicVariantMgr.db.size})`);
-
-            await spellMgr.generateFiles();
-            printProgress(`spell 完成 (${spellMgr.db.size})`);
-
-            await bestiaryMgr.generateFiles();
-            printProgress(`bestiary 完成 (${bestiaryMgr.db.size})`);
-
+            // 生成 Sources.json
             const namelistDir = path.join('./output', 'namelist');
             await fs.mkdir(namelistDir, { recursive: true });
-
             await generateSourcesJson(
                 bookMgr,
                 featMgr,
@@ -4898,37 +4914,32 @@ let isnavpillIds = new Set<string>();
                 namelistDir
             );
 
-            // 合并所有物品数据（基础物品、普通物品、变体物品）
-            const allItems = [
-                ...Array.from(baseItemMgr.db.values()),
-                ...Array.from(itemMgr.db.values()),
-                ...Array.from(magicVariantMgr.db.values())
-            ];
-            await generateCollectionNameList('item', allItems, namelistDir);
+            printProgress(`[prepareData] spell 完成 (${spellResult.count})`);
+            printProgress(`[prepareData] bestiary 完成 (${bestiaryResult.count})`);
+            printProgress(`[prepareData] item 完成 (${itemResult.count})`);
+            printProgress(`[prepareData] adventure 完成 (${adventureResult.count})`);
+            printProgress(`[prepareData] race 完成 (${raceResult.count})`);
+            printProgress(`[prepareData] background 完成 (${backgroundResult.count})`);
+            printProgress(`[prepareData] hazard 完成 (${hazardResult.count})`);
+            printProgress(`[prepareData] trap 完成 (${trapResult.count})`);
+            printProgress(`[prepareData] class 完成 (${classResult.classCount})`);
+            printProgress(`[prepareData] subclass 完成 (${classResult.subclassCount})`);
 
-            // 生成法术名称列表
-            await generateCollectionNameList('spell', Array.from(spellMgr.db.values()), namelistDir);
+            classProfileCounts = { class: classResult.classCount, subclass: classResult.subclassCount };
 
-            // 生成怪物名称列表
-            await generateCollectionNameList('bestiary', Array.from(bestiaryMgr.db.values()), namelistDir);
-
-            genericProfileCounts = await runGenericProfiles(genericProfiles, {
-                idMgr,
-                logger,
-            });
-            printProgress(
-                `genericProfile 完成 (${Object.entries(genericProfileCounts)
-                    .map(([dataType, count]) => `${dataType}=${count}`)
-                    .join(', ')})`
+            // 处理其他 genericProfiles
+            const otherGenericProfiles = genericProfiles.filter(p => 
+                !['race', 'background', 'trap', 'hazard'].includes(p.dataType)
             );
-
-            classProfileCounts = await runClassProfileExporters({
-                idMgr,
-                logger,
-            });
-            printProgress(
-                `classProfile 完成 (class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass})`
-            );
+            if (otherGenericProfiles.length > 0) {
+                genericProfileCounts = await runGenericProfiles(otherGenericProfiles, {
+                    idMgr,
+                    logger,
+                });
+                for (const [dataType, count] of Object.entries(genericProfileCounts)) {
+                    printProgress(`[prepareData] ${dataType} 完成 (${count})`);
+                }
+            }
 
             await idMgr.generateFiles();
             await tagParser.generateFiles();

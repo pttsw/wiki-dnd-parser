@@ -10,18 +10,26 @@
 1. `createOutputFolders` 清空并重建 `./output` 目录结构。
 2. 从 `src/config.ts` 的 `DATA_EN_DIR` / `DATA_ZH_DIR` 读取 JSON。
 3. 依次处理：书籍、专长、物品基础数据、物品、法术、怪物。
-4. 新增 `src/exporters/*` 共享导出层后，剩余 wiki JSON 类型由 profile 驱动导出，`class/subclass` 走独立 special-case exporter。
-5. 各 *Mgr / exporter 做中英合并、ID 对齐、缺失记录。
-6. `parseContent` 将 entries 解析为 HTML，并把 `{@tag ...}` 转成 `{{@tag|...}}`。
-7. 输出产物到 `./output`，最后生成日志、ID 对照与标签统计。
+4. 各 *Mgr / exporter 做中英合并、ID 对齐、缺失记录。
+5. `parseContent` 将 entries 解析为 HTML，并把 `{@tag ...}` 转成 `{{@tag|...}}`。
+6. 输出产物到 `./output`，最后生成日志、ID 对照与标签统计。
 
 导出架构
-- 旧路径保留：`item` / `spell` / `bestiary` 仍由原有 manager 负责。
-- 通用 profile exporter：`src/exporters/genericProfileExporter.ts`
-  - 负责 `race`、`background`、`trap`、`hazard` 等文件型输出。
-  - 负责 `deity`、`vehicleUpgrade`、`condition`、`disease`、`language` 等 collection 型输出。
-- `class/subclass` 特例 exporter：`src/exporters/classProfileExporter.ts`
-  - 单独处理职业索引文件、子职业去重、`superiorfork` 关系和子职业列表回填。
+所有类型使用独立导出器（`src/exporters/*`），通过 `Promise.all` 并行处理提升性能：
+
+| 导出器文件 | 负责类型 |
+|-----------|---------|
+| `spellExporter.ts` | spell |
+| `bestiaryExporter.ts` | bestiary |
+| `itemExporter.ts` | item（baseItem + item + magicVariant） |
+| `raceExporter.ts` | race |
+| `backgroundExporter.ts` | background |
+| `hazardExporter.ts` | hazard |
+| `trapExporter.ts` | trap |
+| `classExporter.ts` | class / subclass |
+| `adventureExporter.ts` | adventure（生成 namelist） |
+| `genericProfileExporter.ts` | 其他通用类型（deity、vehicleUpgrade、condition 等 collection 型输出） |
+
 - 共享 helper：`src/exporters/shared.ts` / `src/exporters/fluff.ts`
   - 负责 ID、重印版本聚合、fluff `_copy/_mod` 继承、双语拆分与文件名去重。
 
@@ -43,15 +51,16 @@
 - `output/collection/itemTypeCollection.json`
 - `output/collection/*Collection.json`
   - 现已覆盖 `deity`、`vehicle`、`vehicleUpgrade`、`variantrule`、`monsterfeature`、`optionalfeature`、`condition`、`disease`、`language`、`skill`、`sense`、`charoption`、`bastion`、`deck`、`cult`、`boon`、`recipe`、`reward`、`object`、`psionic`
-- `output/item/*.json`（基础物品与物品）
-- `output/spell/*.json`
-- `output/bestiary/*.json`
-- `output/race/*.json`
-- `output/background/*.json`
-- `output/trap/*.json`
-- `output/hazard/*.json`
-- `output/class/*.json`
-- `output/subclass/*.json`
+- `output/item/{来源}/*.json`（基础物品与物品，按来源分文件夹）
+- `output/spell/{来源}/*.json`
+- `output/bestiary/{来源}/*.json`
+- `output/race/{来源}/*.json`
+- `output/background/{来源}/*.json`
+- `output/trap/{来源}/*.json`
+- `output/hazard/{来源}/*.json`
+- `output/class/{来源}/*.json`
+- `output/subclass/{来源}/*.json`
+- `output/adventure/{来源}/*.json`
 - `output/namelist/*.json`（名字列表）
 - `output/contents/book/*.json` / `output/contents/adventure/*.json`（目录）
 - `output/logs.json`（缺失或异常记录）
@@ -69,6 +78,10 @@
 4. 运行 `npm run start` 生成 `./output`。
 5. 查看 `output/logs.json` 与 `output/idMgr.xlsx` 定位缺失翻译或 ID 不匹配。
 6. 确认没有错误后，运行 `npm run page` 生成 `./output_page`。
+
+运行日志格式
+各类型完成时输出统一格式日志：`[prepareData] {类型} 完成 ({数量})`
+- spell、bestiary、item、race、background、hazard、trap、class、subclass、adventure
 
 备注
 - `src/getGitRepo.ts` 通过 `git clone` + `sparse-checkout` 仅下载 `data/` 与 `data-bak` 目录。

@@ -527,6 +527,9 @@ const main = async () => {
             }
         }
 
+        // 生成 adventure namelist
+        await generateAdventureNameList(outputDir);
+
         console.log('[splitBooks] 完成');
     } catch (e) {
         console.error('[splitBooks] 致命错误:', e);
@@ -534,6 +537,90 @@ const main = async () => {
             console.error('[splitBooks] 错误堆栈:', e.stack);
         }
         process.exit(1);
+    }
+};
+
+const generateAdventureNameList = async (outputDir: string) => {
+    try {
+        const adventureDir = path.join(outputDir, 'adventure');
+        const namelistDir = path.join(outputDir, 'namelist');
+        await fs.mkdir(namelistDir, { recursive: true });
+
+        const adventureDataList: Array<{
+            id: string;
+            src: string;
+            name_en: string;
+            name_zh: string;
+        }> = [];
+
+        let sourceDirs;
+        try {
+            sourceDirs = await fs.readdir(adventureDir);
+        } catch {
+            console.log('[splitBooks] 未找到 adventure 目录，跳过生成 namelist');
+            return;
+        }
+
+        for (const sourceId of sourceDirs) {
+            const sourcePath = path.join(adventureDir, sourceId);
+            let stats;
+            try {
+                stats = await fs.stat(sourcePath);
+            } catch {
+                continue;
+            }
+            if (!stats.isDirectory()) continue;
+
+            let files;
+            try {
+                files = await fs.readdir(sourcePath);
+            } catch {
+                continue;
+            }
+
+            for (const file of files) {
+                if (!file.endsWith('.json')) continue;
+                
+                const filePath = path.join(sourcePath, file);
+                let content;
+                try {
+                    content = await fs.readFile(filePath, 'utf-8');
+                } catch {
+                    continue;
+                }
+
+                try {
+                    const data = JSON.parse(content);
+                    if (data.id && data.mainSource?.source) {
+                        adventureDataList.push({
+                            id: data.id,
+                            src: data.mainSource.source,
+                            name_en: data.displayName?.en || '',
+                            name_zh: data.displayName?.zh || data.displayName?.en || ''
+                        });
+                    }
+                } catch {
+                    continue;
+                }
+            }
+        }
+
+        if (adventureDataList.length > 0) {
+            const output = {
+                type: 'adventure',
+                data: adventureDataList
+            };
+            
+            const outputPath = path.join(namelistDir, 'adventurelist.json');
+            await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+            console.log(`已生成 adventurelist.json 文件：${outputPath}`);
+            console.log(`[prepareData] adventure 完成 (${adventureDataList.length})`);
+        }
+    } catch (e) {
+        console.error('[splitBooks] 生成 adventure namelist 失败:', e);
+        if (e instanceof Error) {
+            console.error('[splitBooks] 错误堆栈:', e.stack);
+        }
     }
 };
 

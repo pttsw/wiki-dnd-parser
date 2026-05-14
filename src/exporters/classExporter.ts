@@ -16,27 +16,6 @@ import {
     splitStructuredRecordByDiff,
 } from './shared.js';
 
-type LoggerLike = {
-    log: (source: string, message: string) => void;
-};
-
-type IdMgrLike = {
-    compare: <T>(
-        dataType: string,
-        data: { en: T[]; zh: T[] },
-        fn: {
-            getId: (item?: T | null) => string;
-            getZhTitle: (item: T) => string | null;
-            getEnTitle: (item: T) => string | null;
-        }
-    ) => void;
-};
-
-type ExporterDeps = {
-    idMgr: IdMgrLike;
-    logger: LoggerLike;
-};
-
 const readJson = async <T>(filePath: string): Promise<T> => {
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content) as T;
@@ -106,7 +85,6 @@ const loadIndexedClassFluffData = async () => {
 
 const applyEntriesHtml = (
     block: Record<string, any>,
-    logger: LoggerLike,
     id: string,
     locale: 'en' | 'zh'
 ) => {
@@ -118,7 +96,7 @@ const applyEntriesHtml = (
             block.html = '';
         }
     } catch {
-        logger.log('ClassProfileExporter', `${id}:${locale} 生成 html 失败，保留原始 entries`);
+        console.log(`[ClassExporter] ${id}:${locale} 生成 html 失败`);
     }
 };
 
@@ -134,13 +112,11 @@ const getDisplayName = (
 });
 
 const buildEntityBase = (
-    dataType: 'class' | 'subclass',
     enItem: Record<string, any>,
     zhItem: Record<string, any> | null | undefined,
     entryMap: Map<string, Record<string, any>>,
     reprintMap: Map<string, string[]>,
     full: { en?: any; zh?: any } | undefined,
-    logger: LoggerLike
 ) => {
     const id = getDefaultId(enItem);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
@@ -150,8 +126,8 @@ const buildEntityBase = (
     const enOut = { ...split.en };
     const zhOut = { ...split.zh };
 
-    applyEntriesHtml(enOut, logger, id, 'en');
-    applyEntriesHtml(zhOut, logger, id, 'zh');
+    applyEntriesHtml(enOut, id, 'en');
+    applyEntriesHtml(zhOut, id, 'zh');
 
     const translator = extractTranslator(common, enOut, zhOut, zhItem, enItem);
     appendEnglishShadowFields(zhOut, enOut);
@@ -161,8 +137,8 @@ const buildEntityBase = (
     reprintMap.get(id)?.forEach(sourceId => relatedVersions.add(sourceId));
 
     return {
-        dataType,
-        uid: `${dataType}_${id}`,
+        dataType: 'class',
+        uid: `class_${id}`,
         id,
         ...common,
         source: enItem.source,
@@ -204,102 +180,12 @@ const resolveSubclassCopy = (
     return merged;
 };
 
-const dedupeById = (
-    entries: Record<string, any>[],
-    logger: LoggerLike,
-    logSource: string
-) => {
-    const sourceMap = new Map<string, Record<string, any>>();
-    for (const entry of entries) {
-        sourceMap.set(getSubclassCompositeKey(entry), entry);
-    }
+export interface ClassExporterResult {
+    classCount: number;
+    subclassCount: number;
+}
 
-    const byId = new Map<string, Record<string, any>>();
-    for (const entry of entries) {
-        const resolved = resolveSubclassCopy(entry, sourceMap);
-        const id = getDefaultId(resolved);
-        const previous = byId.get(id);
-        if (!previous) {
-            byId.set(id, resolved);
-            continue;
-        }
-        if (previous._copy && !entry._copy) {
-            byId.set(id, resolved);
-            continue;
-        }
-        logger.log(logSource, `重复 subclass ID，保留首条记录：${id}`);
-    }
-
-    return {
-        entries: [...byId.values()],
-        map: byId,
-    };
-};
-
-const writeFileOutput = async (
-    dataType: 'class' | 'subclass',
-    data: Record<string, any>[],
-    logger: LoggerLike
-) => {
-    const outputDir = path.join('./output', dataType);
-    await fs.mkdir(outputDir, { recursive: true });
-    const writtenFileNames = new Map<string, Set<string>>();
-
-    for (const item of data) {
-        const sourceId = item.mainSource.source;
-        const sourceDir = path.join(outputDir, sourceId);
-        await fs.mkdir(sourceDir, { recursive: true });
-
-        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
-        const preferredFileName = `${dataType}_1_${sourceId}_1_${baseName}.json`;
-
-        if (!writtenFileNames.has(sourceId)) {
-            writtenFileNames.set(sourceId, new Set<string>());
-        }
-        const usedNames = writtenFileNames.get(sourceId)!;
-
-        const fileName = resolveCaseInsensitiveOutputFileName(
-            usedNames,
-            preferredFileName,
-            item.id
-        );
-        if (fileName !== preferredFileName) {
-            logger.log(
-                'ClassProfileExporter',
-                `导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${item.id})`
-            );
-        }
-        await fs.writeFile(path.join(sourceDir, fileName), JSON.stringify(item, null, 2), 'utf-8');
-    }
-
-    await writeNameListOutput(dataType, data);
-};
-
-const writeNameListOutput = async (
-    dataType: 'class' | 'subclass',
-    data: Record<string, any>[]
-) => {
-    const namelistDir = path.join('./output', 'namelist');
-    await fs.mkdir(namelistDir, { recursive: true });
-    
-    const namelistData = data.map(item => ({
-        id: item.id || '',
-        src: item.mainSource?.source || '',
-        name_en: item.displayName?.en || '',
-        name_zh: item.displayName?.zh || item.displayName?.en || ''
-    }));
-    
-    const output = {
-        type: dataType,
-        data: namelistData
-    };
-    
-    const outputPath = path.join(namelistDir, `${dataType}namelist.json`);
-    await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-    console.log(`已生成 ${dataType}namelist.json 文件：${outputPath}`);
-};
-
-export const runClassProfileExporters = async (deps: ExporterDeps) => {
+export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const [classData, fluffData] = await Promise.all([
         loadIndexedClassData(),
         loadIndexedClassFluffData(),
@@ -312,37 +198,65 @@ export const runClassProfileExporters = async (deps: ExporterDeps) => {
     const classZhMap = new Map(classData.zh.class.map(item => [getDefaultId(item), item]));
     const classReprintMap = buildReprintMap(classData.en.class, getDefaultId);
 
-    deps.idMgr.compare('class', { en: classData.en.class, zh: classData.zh.class }, {
-        getId: item => getDefaultId(item as Record<string, any>),
-        getEnTitle: item => (item as Record<string, any>).name || null,
-        getZhTitle: item => (item as Record<string, any>).name || null,
-    });
+    const { entries: subclassEnEntries, map: subclassEnMap } = (() => {
+        const sourceMap = new Map<string, Record<string, any>>();
+        for (const entry of classData.en.subclass) {
+            sourceMap.set(getSubclassCompositeKey(entry), entry);
+        }
 
-    const { entries: subclassEnEntries, map: subclassEnMap } = dedupeById(
-        classData.en.subclass,
-        deps.logger,
-        'subclass'
-    );
-    const { entries: subclassZhEntries, map: subclassZhMap } = dedupeById(
-        classData.zh.subclass,
-        deps.logger,
-        'subclass'
-    );
+        const byId = new Map<string, Record<string, any>>();
+        for (const entry of classData.en.subclass) {
+            const resolved = resolveSubclassCopy(entry, sourceMap);
+            const id = getDefaultId(resolved);
+            const previous = byId.get(id);
+            if (!previous) {
+                byId.set(id, resolved);
+                continue;
+            }
+            if (previous._copy && !entry._copy) {
+                byId.set(id, resolved);
+            }
+        }
+
+        return {
+            entries: [...byId.values()],
+            map: byId,
+        };
+    })();
+
+    const { entries: subclassZhEntries, map: subclassZhMap } = (() => {
+        const sourceMap = new Map<string, Record<string, any>>();
+        for (const entry of classData.zh.subclass) {
+            sourceMap.set(getSubclassCompositeKey(entry), entry);
+        }
+
+        const byId = new Map<string, Record<string, any>>();
+        for (const entry of classData.zh.subclass) {
+            const resolved = resolveSubclassCopy(entry, sourceMap);
+            const id = getDefaultId(resolved);
+            const previous = byId.get(id);
+            if (!previous) {
+                byId.set(id, resolved);
+                continue;
+            }
+            if (previous._copy && !entry._copy) {
+                byId.set(id, resolved);
+            }
+        }
+
+        return {
+            entries: [...byId.values()],
+            map: byId,
+        };
+    })();
+
     const subclassReprintMap = buildReprintMap(subclassEnEntries, getDefaultId);
 
-    deps.idMgr.compare('subclass', { en: subclassEnEntries, zh: subclassZhEntries }, {
-        getId: item => getDefaultId(item as Record<string, any>),
-        getEnTitle: item => (item as Record<string, any>).name || null,
-        getZhTitle: item => (item as Record<string, any>).name || null,
-    });
-
+    // 生成 class 数据
     const classOutput: Record<string, any>[] = [];
     for (const enClass of classData.en.class) {
         const id = getDefaultId(enClass);
         const zhClass = classZhMap.get(id);
-        if (!zhClass) {
-            deps.logger.log('class', `未找到中文版本职业：${enClass.name} (${id})`);
-        }
 
         const subclasses = subclassEnEntries
             .filter(
@@ -358,37 +272,31 @@ export const runClassProfileExporters = async (deps: ExporterDeps) => {
 
         classOutput.push({
             ...buildEntityBase(
-                'class',
                 enClass,
                 zhClass,
                 classEnMap,
                 classReprintMap,
-                classFluffStore.getFull(id),
-                deps.logger
+                classFluffStore.getFull(id)
             ),
             subclasses,
         });
     }
 
+    // 生成 subclass 数据
     const subclassOutput: Record<string, any>[] = [];
     for (const enSubclass of subclassEnEntries) {
         const id = getDefaultId(enSubclass);
         const zhSubclass = subclassZhMap.get(id);
-        if (!zhSubclass) {
-            deps.logger.log('subclass', `未找到中文版本子职业：${enSubclass.name} (${id})`);
-        }
 
         const superiorId = `${enSubclass.className}|${enSubclass.classSource}`;
 
         subclassOutput.push({
             ...buildEntityBase(
-                'subclass',
                 enSubclass,
                 zhSubclass,
                 subclassEnMap,
                 subclassReprintMap,
-                subclassFluffStore.getFull(id),
-                deps.logger
+                subclassFluffStore.getFull(id)
             ),
             superiorfork: buildSuperiorfork({
                 superior: superiorId,
@@ -397,14 +305,87 @@ export const runClassProfileExporters = async (deps: ExporterDeps) => {
         });
     }
 
-    await writeFileOutput('class', classOutput, deps.logger);
-    console.log(`[prepareData] class 完成 (${classOutput.length})`);
-    
-    await writeFileOutput('subclass', subclassOutput, deps.logger);
-    console.log(`[prepareData] subclass 完成 (${subclassOutput.length})`);
+    // 输出 class 文件
+    const classOutputDir = path.join('./output', 'class');
+    await fs.mkdir(classOutputDir, { recursive: true });
+    const classWrittenFileNames = new Map<string, Set<string>>();
 
-    return {
-        class: classOutput.length,
-        subclass: subclassOutput.length,
+    for (const item of classOutput) {
+        const sourceId = item.mainSource.source;
+        const sourceDir = path.join(classOutputDir, sourceId);
+        await fs.mkdir(sourceDir, { recursive: true });
+
+        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
+        const preferredFileName = `class_1_${sourceId}_1_${baseName}.json`;
+        
+        if (!classWrittenFileNames.has(sourceId)) {
+            classWrittenFileNames.set(sourceId, new Set<string>());
+        }
+        const usedNames = classWrittenFileNames.get(sourceId)!;
+        
+        const fileName = resolveCaseInsensitiveOutputFileName(usedNames, preferredFileName, item.id);
+        const filePath = path.join(sourceDir, fileName);
+        await fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf-8');
+    }
+
+    // 输出 subclass 文件
+    const subclassOutputDir = path.join('./output', 'subclass');
+    await fs.mkdir(subclassOutputDir, { recursive: true });
+    const subclassWrittenFileNames = new Map<string, Set<string>>();
+
+    for (const item of subclassOutput) {
+        const sourceId = item.mainSource.source;
+        const sourceDir = path.join(subclassOutputDir, sourceId);
+        await fs.mkdir(sourceDir, { recursive: true });
+
+        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
+        const preferredFileName = `subclass_1_${sourceId}_1_${baseName}.json`;
+        
+        if (!subclassWrittenFileNames.has(sourceId)) {
+            subclassWrittenFileNames.set(sourceId, new Set<string>());
+        }
+        const usedNames = subclassWrittenFileNames.get(sourceId)!;
+        
+        const fileName = resolveCaseInsensitiveOutputFileName(usedNames, preferredFileName, item.id);
+        const filePath = path.join(sourceDir, fileName);
+        await fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf-8');
+    }
+
+    // 生成 namelist
+    const namelistDir = path.join('./output', 'namelist');
+    await fs.mkdir(namelistDir, { recursive: true });
+    
+    const classNamelistData = classOutput.map(item => ({
+        id: item.id || '',
+        src: item.mainSource?.source || '',
+        name_en: item.displayName?.en || '',
+        name_zh: item.displayName?.zh || item.displayName?.en || ''
+    }));
+    
+    const classOutputNamelist = {
+        type: 'class',
+        data: classNamelistData
     };
+    
+    const classOutputPath = path.join(namelistDir, 'classnamelist.json');
+    await fs.writeFile(classOutputPath, JSON.stringify(classOutputNamelist, null, 2), 'utf-8');
+    console.log(`已生成 classnamelist.json 文件：${classOutputPath}`);
+
+    const subclassNamelistData = subclassOutput.map(item => ({
+        id: item.id || '',
+        src: item.mainSource?.source || '',
+        name_en: item.displayName?.en || '',
+        name_zh: item.displayName?.zh || item.displayName?.en || ''
+    }));
+    
+    const subclassOutputNamelist = {
+        type: 'subclass',
+        data: subclassNamelistData
+    };
+    
+    const subclassOutputPath = path.join(namelistDir, 'subclassnamelist.json');
+    await fs.writeFile(subclassOutputPath, JSON.stringify(subclassOutputNamelist, null, 2), 'utf-8');
+    console.log(`已生成 subclassnamelist.json 文件：${subclassOutputPath}`);
+
+    return { classCount: classOutput.length, subclassCount: subclassOutput.length };
 };

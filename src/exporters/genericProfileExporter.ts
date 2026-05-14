@@ -124,23 +124,34 @@ const writeFileOutput = async (
 ) => {
     const outputDir = path.join('./output', profile.dataType);
     await fs.mkdir(outputDir, { recursive: true });
-    const writtenFileNames = new Set<string>();
+    const writtenFileNames = new Map<string, Set<string>>();
 
     for (const item of data) {
+        const sourceId = item.mainSource.source;
+        const sourceDir = path.join(outputDir, sourceId);
+        await fs.mkdir(sourceDir, { recursive: true });
+
         const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
-        const preferredFileName = `${profile.dataType}_1_${item.mainSource.source}_1_${baseName}.json`;
+        const preferredFileName = `${profile.dataType}_1_${sourceId}_1_${baseName}.json`;
+        
+        if (!writtenFileNames.has(sourceId)) {
+            writtenFileNames.set(sourceId, new Set<string>());
+        }
+        const usedNames = writtenFileNames.get(sourceId)!;
+        
         const fileName = resolveCaseInsensitiveOutputFileName(
-            writtenFileNames,
+            usedNames,
             preferredFileName,
             item.id
         );
+        
         if (fileName !== preferredFileName) {
             logger.log(
                 'GenericProfileExporter',
                 `导出文件名冲突，改用去重文件名：${preferredFileName} -> ${fileName} (${item.id})`
             );
         }
-        const filePath = path.join(outputDir, fileName);
+        const filePath = path.join(sourceDir, fileName);
         await fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf-8');
     }
 };
@@ -159,6 +170,27 @@ const writeCollectionOutput = async (profile: ExportProfile, data: Record<string
         ),
         'utf-8'
     );
+};
+
+const writeNameListOutput = async (profile: ExportProfile, data: Record<string, any>[]) => {
+    const namelistDir = path.join('./output', 'namelist');
+    await fs.mkdir(namelistDir, { recursive: true });
+    
+    const namelistData = data.map(item => ({
+        id: item.id || '',
+        src: item.mainSource?.source || '',
+        name_en: item.displayName?.en || '',
+        name_zh: item.displayName?.zh || item.displayName?.en || ''
+    }));
+    
+    const output = {
+        type: profile.dataType,
+        data: namelistData
+    };
+    
+    const outputPath = path.join(namelistDir, `${profile.dataType}namelist.json`);
+    await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+    console.log(`已生成 ${profile.dataType}namelist.json 文件：${outputPath}`);
 };
 
 const buildEntity = (
@@ -267,6 +299,8 @@ const runSingleProfile = async (
 
     if (profile.outputMode === 'file') {
         await writeFileOutput(profile, outputData, deps.logger);
+        await writeNameListOutput(profile, outputData);
+        console.log(`[prepareData] ${profile.dataType} 完成 (${outputData.length})`);
     } else {
         await writeCollectionOutput(profile, outputData);
     }
