@@ -94,6 +94,34 @@ const extractZhNameFromEntry = (entry: any): string => {
     return '';
 };
 
+const numberToChinese = (num: number): string => {
+    const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十'];
+    if (num >= 1 && num <= 20) {
+        return chineseNumbers[num];
+    }
+    return num.toString();
+};
+
+const getDisplayNameWithPrefix = (enName: string, zhName: string, ordinal: any): { en: string, zh: string } => {
+    let displayEn = enName;
+    let displayZh = zhName;
+
+    if (ordinal?.type === 'chapter' && ordinal.identifier !== undefined) {
+        const identifier = ordinal.identifier;
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            displayEn = `Chapter ${identifier}: ${enName}`;
+            displayZh = `第${chineseNum}章：${zhName}`;
+        }
+    } else if (ordinal?.type === 'appendix' && ordinal.identifier !== undefined) {
+        const identifier = ordinal.identifier;
+        displayEn = `Appendix ${identifier}: ${enName}`;
+        displayZh = `附录${identifier}：${zhName}`;
+    }
+
+    return { en: displayEn, zh: displayZh };
+};
+
 const findSectionById = (data: any[], targetId: string): any | null => {
     const findById = (entries: any[]): any | null => {
         for (const entry of entries) {
@@ -215,6 +243,8 @@ const processContentEntry = async (
             enContent.entries = replaceSectionsWithSubpages(enContent.entries, headerSubpageMap);
         }
 
+        const displayNameWithPrefix = getDisplayNameWithPrefix(enName, zhName, entry.ordinal);
+
         const fileData = {
             dataType,
             uid,
@@ -223,8 +253,8 @@ const processContentEntry = async (
             page,
             type,
             displayName: {
-                zh: zhName || null,
-                en: enName || null,
+                zh: displayNameWithPrefix.zh || null,
+                en: displayNameWithPrefix.en || null,
             },
             zh: zhContent,
             en: enContent,
@@ -303,6 +333,7 @@ const writeSectionFile = async (
     enEntries: any[],
     enName: string,
     zhName: string,
+    ordinal: any,
     bookId: string,
     bookType: 'book' | 'adventure',
     outputDir: string,
@@ -321,6 +352,8 @@ const writeSectionFile = async (
     const enContent = { entries: enEntries };
     const zhContent = { entries: zhEntries };
 
+    const displayNameWithPrefix = getDisplayNameWithPrefix(enName, zhName, ordinal);
+
     const fileData = {
         dataType,
         uid,
@@ -329,8 +362,8 @@ const writeSectionFile = async (
         page,
         type,
         displayName: {
-            zh: zhName || null,
-            en: enName || null,
+            zh: displayNameWithPrefix.zh || null,
+            en: displayNameWithPrefix.en || null,
         },
         zh: zhContent,
         en: enContent,
@@ -409,6 +442,7 @@ const processSingleBook = async (
                     processed.enEntries,
                     enName,
                     zhName,
+                    entry.ordinal,
                     bookId,
                     bookType,
                     outputDir,
@@ -457,6 +491,7 @@ const processSingleBook = async (
                                 processed.enEntries,
                                 headerEnName,
                                 headerZhName,
+                                header.ordinal,
                                 bookId,
                                 bookType,
                                 outputDir,
