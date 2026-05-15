@@ -243,8 +243,6 @@ const processContentEntry = async (
             enContent.entries = replaceSectionsWithSubpages(enContent.entries, headerSubpageMap);
         }
 
-        const displayNameWithPrefix = getDisplayNameWithPrefix(enName, zhName, entry.ordinal);
-
         const fileData = {
             dataType,
             uid,
@@ -252,10 +250,11 @@ const processContentEntry = async (
             textid: sectionId,
             source: bookId,
             page,
-            type,
+            type: entry.ordinal?.type || type,
+            identifier: entry.ordinal?.identifier,
             displayName: {
-                zh: displayNameWithPrefix.zh || null,
-                en: displayNameWithPrefix.en || null,
+                zh: zhName || null,
+                en: enName || null,
             },
             zh: zhContent,
             en: enContent,
@@ -353,18 +352,18 @@ const writeSectionFile = async (
     const enContent = { entries: enEntries };
     const zhContent = { entries: zhEntries };
 
-    const displayNameWithPrefix = getDisplayNameWithPrefix(enName, zhName, ordinal);
-
     const fileData = {
         dataType,
         uid,
         id: finalId,
+        textid: sectionId,
         source: bookId,
         page,
-        type,
+        type: ordinal?.type || type,
+        identifier: ordinal?.identifier,
         displayName: {
-            zh: displayNameWithPrefix.zh || null,
-            en: displayNameWithPrefix.en || null,
+            zh: zhName || null,
+            en: enName || null,
         },
         zh: zhContent,
         en: enContent,
