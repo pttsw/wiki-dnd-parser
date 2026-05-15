@@ -249,6 +249,7 @@ const processContentEntry = async (
             dataType,
             uid,
             id: finalId,
+            textid: sectionId,
             source: bookId,
             page,
             type,
