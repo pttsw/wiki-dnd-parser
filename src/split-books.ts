@@ -206,7 +206,7 @@ const processContentEntry = async (
     const finalId = `${sectionId}|${bookId}`;
 
     if (entry.alonepage) {
-        const dataType = bookType;
+        const dataType = "text";
         const uid = `${bookType}_${sectionId}|${bookId}`;
         const page = sectionEn?.page || sectionZh?.page || 0;
         const type = sectionEn?.type || sectionZh?.type || 'section';
