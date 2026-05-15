@@ -1,0 +1,89 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const processFiles = async () => {
+    const { default: XLSX } = await import('xlsx');
+    
+    const projectRoot = path.resolve(__dirname, '..');
+    const outputDir = path.join(projectRoot, 'output');
+    const outputPageDir = path.join(projectRoot, 'output_page');
+    const wikiResults: string[] = [];
+    const jsonResults: string[] = [];
+    const seenWiki = new Set<string>();
+    const seenJson = new Set<string>();
+
+    const processDirectory = async (dir: string) => {
+        if (!fs.existsSync(dir)) {
+            return;
+        }
+
+        const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                await processDirectory(path.join(dir, entry.name));
+            } else if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                
+                if (ext === '.wiki') {
+                    let displayName = path.basename(entry.name, '.wiki');
+                    displayName = displayName.replace(/_1_/g, '/');
+                    
+                    if (!seenWiki.has(displayName)) {
+                        seenWiki.add(displayName);
+                        wikiResults.push(displayName);
+                    }
+                } else if (ext === '.json') {
+                    let displayName = `Data:${entry.name}`;
+                    displayName = displayName.replace(/_1_/g, '/');
+                    
+                    if (!seenJson.has(displayName)) {
+                        seenJson.add(displayName);
+                        jsonResults.push(displayName);
+                    }
+                }
+            }
+        }
+    };
+
+    await processDirectory(outputDir);
+    await processDirectory(outputPageDir);
+
+    wikiResults.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    jsonResults.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+
+    const wikiSheet = XLSX.utils.aoa_to_sheet([['一般页面名'], ...wikiResults.map(name => [name])]);
+    const jsonSheet = XLSX.utils.aoa_to_sheet([['JSON页面名'], ...jsonResults.map(name => [name])]);
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, wikiSheet, '一般页面');
+    XLSX.utils.book_append_sheet(workbook, jsonSheet, 'JSON页面');
+    
+    let outputPath = path.join(projectRoot, 'output', 'file_list.xlsx');
+    let counter = 1;
+    
+    while (true) {
+        try {
+            await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+            XLSX.writeFile(workbook, outputPath);
+            break;
+        } catch (error: any) {
+            if (error.code === 'EBUSY') {
+                outputPath = path.join(projectRoot, 'output', `file_list_${counter}.xlsx`);
+                counter++;
+            } else {
+                throw error;
+            }
+        }
+    }
+    
+    console.log(`文件列表已输出到：${outputPath}`);
+    console.log(`一般页面: ${wikiResults.length} 个`);
+    console.log(`JSON页面: ${jsonResults.length} 个`);
+};
+
+processFiles().catch(console.error);

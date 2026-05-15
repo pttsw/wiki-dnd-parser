@@ -10,7 +10,8 @@
     "page": "node --import ./loader.js src/prepareData.ts --page",
     "processGenerated": "node --import ./loader.js src/processGenerated.ts",
     "generateContents": "node --import ./loader.js src/generate-contents.ts",
-    "splitBooks": "node --import ./loader.js src/split-books.ts"
+    "splitBooks": "node --import ./loader.js src/split-books.ts",
+    "listFiles": "node --import ./loader.js src/list-files.ts"
   },
   "author": "",
   "license": "ISC",

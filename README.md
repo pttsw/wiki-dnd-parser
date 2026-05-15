@@ -33,6 +33,13 @@
 - 共享 helper：`src/exporters/shared.ts` / `src/exporters/fluff.ts`
   - 负责 ID、重印版本聚合、fluff `_copy/_mod` 继承、双语拆分与文件名去重。
 
+文件名非法字符转义表
+文件名中的非法字符会被转义为安全的字符序列（Windows 和 Linux 通用）：
+
+| 符号 | \\ | / | : | * | " | < | > | \| | ? |
+|------|----|---|----|----|----|----|----|----|---|
+| 转义 | _0_ | _1_ | _2_ | _3_ | _4_ | _5_ | _6_ | _7_ | _8_ |
+
 输入数据与配置
 - `src/config.ts` 定义：
   - `DATA_EN_DIR` 英文数据根目录（应包含 `books.json`、`items.json`、`spells/` 等）。
@@ -67,7 +74,14 @@
 - `output/idMgr.json` / `output/idMgr.xlsx`（中英 ID 对照）
 - `output/tags.json`（解析到的 @tag 列表）
 
-大多数json结构：**类别_1_来源id_1_英文名（章节文件为章节id）.json**
+输出文件名格式：**英文名.json**（按来源分文件夹存放）
+
+Wiki 页面输出产物（`npm run page`）：
+- `output_page/法术/{来源}/*.wiki`
+- `output_page/物品/{来源}/*.wiki`
+- `output_page/怪物/{来源}/*.wiki`
+
+Wiki 文件名格式：**中文名.wiki**（按来源分文件夹存放）
 
 使用说明
 1. 准备 Node.js 与 git；按需执行 `npm install`（请手动执行）。

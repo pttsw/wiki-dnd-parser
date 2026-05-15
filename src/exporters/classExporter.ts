@@ -9,6 +9,7 @@ import {
     buildReprintMap,
     buildSuperiorfork,
     collectRelatedIds,
+    escapeFileName,
     extractTranslator,
     getDefaultId,
     normalizeReprintedAs,
@@ -315,8 +316,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const sourceDir = path.join(classOutputDir, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
 
-        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
-        const preferredFileName = `class_1_${sourceId}_1_${baseName}.json`;
+        const baseName = escapeFileName(mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id));
+        const preferredFileName = `${baseName}.json`;
         
         if (!classWrittenFileNames.has(sourceId)) {
             classWrittenFileNames.set(sourceId, new Set<string>());
@@ -338,8 +339,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const sourceDir = path.join(subclassOutputDir, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
 
-        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
-        const preferredFileName = `subclass_1_${sourceId}_1_${baseName}.json`;
+        const baseName = escapeFileName(mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id));
+        const preferredFileName = `${baseName}.json`;
         
         if (!subclassWrittenFileNames.has(sourceId)) {
             subclassWrittenFileNames.set(sourceId, new Set<string>());

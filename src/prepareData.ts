@@ -74,6 +74,7 @@ import { runClassExporter } from './exporters/classExporter.js';
 import { runSpellExporter } from './exporters/spellExporter.js';
 import { runBestiaryExporter } from './exporters/bestiaryExporter.js';
 import { runItemExporter } from './exporters/itemExporter.js';
+import { escapeFileName } from './exporters/shared.js';
 
 /**
  * 生成图鉴名称列表文件
@@ -557,7 +558,7 @@ export const createOutputFolders = async (generatePages: boolean) => {
         } catch (error) {
             // do nothing, folder does not exist
         }
-        const pageDirs = ['spells', 'items', 'bestiary'];
+        const pageDirs = ['法术', '物品', '怪物'];
         for (const dir of pageDirs) {
             const dirPath = path.join('./output_page', dir);
             try {
@@ -1970,14 +1971,14 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
         // for each item in the db, write a file.
         for (const [id, itemData] of this.db) {
-            const baseName = mwUtil.getMwTitle(
+            const baseName = escapeFileName(mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
-            );
+            ));
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
             const sourceDir = path.join(outputDir, sourceId);
             await fs.mkdir(sourceDir, { recursive: true });
             
-            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const fileName = `${baseName}.json`;
             const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -2489,14 +2490,14 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         const outputDir = './output/item';
 
         for (const [id, itemData] of this.db) {
-            const baseName = mwUtil.getMwTitle(
+            const baseName = escapeFileName(mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
-            );
+            ));
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
             const sourceDir = path.join(outputDir, sourceId);
             await fs.mkdir(sourceDir, { recursive: true });
             
-            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const fileName = `${baseName}.json`;
             const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -3365,14 +3366,14 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         const outputDir = './output/item';
 
         for (const [id, itemData] of this.db) {
-            const baseName = mwUtil.getMwTitle(
+            const baseName = escapeFileName(mwUtil.getMwTitle(
                 itemData.displayName.en || itemData.displayName.zh || id
-            );
+            ));
             const sourceId = itemData.mainSource?.source || 'UNKNOWN';
             const sourceDir = path.join(outputDir, sourceId);
             await fs.mkdir(sourceDir, { recursive: true });
             
-            const fileName = `item_1_${sourceId}_1_${baseName}.json`;
+            const fileName = `${baseName}.json`;
             const filePath = path.join(sourceDir, fileName);
 
             // 如果物品没有 type 字段，添加默认值 WI|XDMG
@@ -3821,10 +3822,10 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             const sourceDir = path.join(outputDir, sourceId);
             await fs.mkdir(sourceDir, { recursive: true });
 
-            const baseName = mwUtil.getMwTitle(
+            const baseName = escapeFileName(mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
-            );
-            const fileName = `Spell_1_${sourceId}_1_${baseName}.json`;
+            ));
+            const fileName = `${baseName}.json`;
             const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
         }
@@ -4573,14 +4574,14 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
             // 添加 full 字段
             if (full) reorderedData.full = full;
 
-            const baseName = mwUtil.getMwTitle(
+            const baseName = escapeFileName(mwUtil.getMwTitle(
                 reorderedData.displayName?.en || reorderedData.displayName?.zh || id
-            );
+            ));
             const sourceId = reorderedData.mainSource?.source || 'UNKNOWN';
             const sourceDir = path.join(outputDir, sourceId);
             await fs.mkdir(sourceDir, { recursive: true });
 
-            const preferredFileName = `bestiary_1_${sourceId}_1_${baseName}.json`;
+            const preferredFileName = `${baseName}.json`;
             const fileName = resolveCaseInsensitiveOutputFileName(
                 writtenFileNames,
                 preferredFileName,

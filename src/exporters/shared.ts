@@ -2,6 +2,19 @@ import { createHash } from 'crypto';
 import path from 'path';
 import { i18nKeyRules } from '../i18n.js';
 
+export const escapeFileName = (name: string): string => {
+    return name
+        .replace(/\\/g, '_0_')
+        .replace(/\//g, '_1_')
+        .replace(/:/g, '_2_')
+        .replace(/\*/g, '_3_')
+        .replace(/"/g, '_4_')
+        .replace(/</g, '_5_')
+        .replace(/>/g, '_6_')
+        .replace(/\|/g, '_7_')
+        .replace(/\?/g, '_8_');
+};
+
 export const getCanonicalName = (item?: { ENG_name?: string; name?: string } | null): string => {
     const name = item?.ENG_name || item?.name || '';
     return name.trim();

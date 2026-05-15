@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
+import { escapeFileName } from './exporters/shared.js';
 
 const removeBOM = (content: string): string => {
     if (content.startsWith('\uFEFF')) {
@@ -260,7 +261,7 @@ const processContentEntry = async (
             en: enContent,
         };
 
-        const preferredFileName = `${bookType}_1_${bookId}_1_${sectionId}.json`;
+        const preferredFileName = `${escapeFileName(sectionId)}.json`;
         const bookOutputDir = path.join(outputDir, bookType, bookId);
         await fs.mkdir(bookOutputDir, { recursive: true });
         const filePath = path.join(bookOutputDir, preferredFileName);
@@ -369,7 +370,7 @@ const writeSectionFile = async (
         en: enContent,
     };
 
-    const preferredFileName = `${bookType}_1_${bookId}_1_${sectionId}.json`;
+    const preferredFileName = `${escapeFileName(sectionId)}.json`;
     const bookOutputDir = path.join(outputDir, bookType, bookId);
     await fs.mkdir(bookOutputDir, { recursive: true });
     const filePath = path.join(bookOutputDir, preferredFileName);

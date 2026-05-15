@@ -9,6 +9,7 @@ import {
     buildReprintMap,
     buildSuperiorfork,
     collectRelatedIds,
+    escapeFileName,
     extractTranslator,
     getDefaultId,
     normalizeReprintedAs,
@@ -250,8 +251,8 @@ const writeFileOutput = async (
         const sourceDir = path.join(outputDir, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
 
-        const baseName = mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id);
-        const preferredFileName = `${dataType}_1_${sourceId}_1_${baseName}.json`;
+        const baseName = escapeFileName(mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id));
+        const preferredFileName = `${baseName}.json`;
 
         if (!writtenFileNames.has(sourceId)) {
             writtenFileNames.set(sourceId, new Set<string>());

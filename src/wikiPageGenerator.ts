@@ -56,9 +56,9 @@ export class WikiPageGenerator {
 
     constructor(options: WikiPageGeneratorOptions) {
         this.outputRoot = options.outputRoot || './output_page';
-        this.spellsDir = path.join(this.outputRoot, 'spells');
-        this.itemsDir = path.join(this.outputRoot, 'items');
-        this.bestiaryDir = path.join(this.outputRoot, 'bestiary');
+        this.spellsDir = path.join(this.outputRoot, '法术');
+        this.itemsDir = path.join(this.outputRoot, '物品');
+        this.bestiaryDir = path.join(this.outputRoot, '怪物');
         this.spells = options.spells;
         this.logger = options.logger || (() => {});
 
@@ -177,15 +177,15 @@ export class WikiPageGenerator {
     }
 
     private buildSpellTitle(sourcePart: string, namePart: string): string {
-        return `法术_1_${this.sanitizeFileSegment(sourcePart)}_1_${this.sanitizeFileSegment(namePart)}`;
+        return `${this.sanitizeFileSegment(namePart)}`;
     }
 
     private buildItemTitle(sourcePart: string, namePart: string): string {
-        return `物品_1_${this.sanitizeFileSegment(sourcePart)}_1_${this.sanitizeFileSegment(namePart)}`;
+        return `${this.sanitizeFileSegment(namePart)}`;
     }
 
     private buildMonsterTitle(sourcePart: string, namePart: string): string {
-        return `怪物_1_${this.sanitizeFileSegment(sourcePart)}_1_${this.sanitizeFileSegment(namePart)}`;
+        return `${this.sanitizeFileSegment(namePart)}`;
     }
 
     private toWikiTitle(fileTitle: string): string {
@@ -229,8 +229,13 @@ export class WikiPageGenerator {
         return this.itemIndex.get(hierarchy.originId) || item;
     }
 
-    private async writePage(dir: string, title: string, content: string): Promise<boolean> {
-        const filePath = path.join(dir, `${title}.wiki`);
+    private async writePage(dir: string, title: string, content: string, sourceId?: string): Promise<boolean> {
+        let targetDir = dir;
+        if (sourceId) {
+            targetDir = path.join(dir, sourceId);
+            await fs.mkdir(targetDir, { recursive: true });
+        }
+        const filePath = path.join(targetDir, `${title}.wiki`);
         const normalizedContent = `${content}\n`;
         const existing = this.writtenFiles.get(filePath);
 
@@ -250,13 +255,14 @@ export class WikiPageGenerator {
     private async writeRedirectPage(
         dir: string,
         title: string,
-        targetTitle: string
+        targetTitle: string,
+        sourceId?: string
     ): Promise<boolean> {
         if (title === targetTitle) {
             this.skippedSelfRedirects += 1;
             return false;
         }
-        return this.writePage(dir, title, `#重定向 [[${this.toWikiTitle(targetTitle)}]]`);
+        return this.writePage(dir, title, `#重定向 [[${targetTitle}]]`, sourceId);
     }
 
     private async generateSpellPages(): Promise<number> {
@@ -273,19 +279,20 @@ export class WikiPageGenerator {
                 await this.writePage(
                     this.spellsDir,
                     mainTitle,
-                    `{{法术卡|${nameZh}|${sourceId}}}`
+                    `{{法术卡|${nameZh}|${sourceId}}}`,
+                    sourceId
                 )
             ) {
                 written += 1;
             }
 
             const zhRedirectTitle = this.buildSpellTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.spellsDir, zhRedirectTitle, mainTitle)) {
+            if (await this.writeRedirectPage(this.spellsDir, zhRedirectTitle, mainTitle, sourceId)) {
                 written += 1;
             }
 
             const enRedirectTitle = this.buildSpellTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.spellsDir, enRedirectTitle, mainTitle)) {
+            if (await this.writeRedirectPage(this.spellsDir, enRedirectTitle, mainTitle, sourceId)) {
                 written += 1;
             }
         }
@@ -323,7 +330,7 @@ export class WikiPageGenerator {
                 }
             }
 
-            if (await this.writePage(this.itemsDir, mainTitle, mainContent)) {
+            if (await this.writePage(this.itemsDir, mainTitle, mainContent, sourceId)) {
                 written += 1;
             }
 
@@ -338,12 +345,12 @@ export class WikiPageGenerator {
             }
 
             const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, redirectTarget)) {
+            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, redirectTarget, sourceId)) {
                 written += 1;
             }
 
             const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, redirectTarget)) {
+            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, redirectTarget, sourceId)) {
                 written += 1;
             }
         }
@@ -443,7 +450,7 @@ export class WikiPageGenerator {
                 }
             }
 
-            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent)) {
+            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent, sourceId)) {
                 written += 1;
             }
 
@@ -458,12 +465,12 @@ export class WikiPageGenerator {
             }
 
             const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, redirectTarget)) {
+            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, redirectTarget, sourceId)) {
                 written += 1;
             }
 
             const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, redirectTarget)) {
+            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, redirectTarget, sourceId)) {
                 written += 1;
             }
         }
