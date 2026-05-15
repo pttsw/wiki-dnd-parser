@@ -9,7 +9,10 @@ import {
 import { promises as fs } from 'fs';
 import { createHash } from 'crypto';
 import path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import chalk from 'chalk';
+const execFileAsync = promisify(execFile);
 import { FeatFile, FeatFileEntry, WikiFeatData } from './types/feat';
 import {
     ItemBaseFile,
@@ -531,15 +534,25 @@ const processBonusReplacements = (itemData: any): any => {
 export const createOutputFolders = async (generatePages: boolean) => {
     console.log(`createOutputFolders 被调用，generatePages: ${generatePages}`);
     if (!generatePages) {
-        // npm run start: 只创建 output 目录
+        // npm run start: 创建/清空 output 目录，保留 contents、book、adventure 文件夹
         console.log('创建 output 目录...');
         try {
             await fs.access('./output');
-            await fs.rm('./output', { recursive: true, force: true });
+            // 只删除需要重新生成的文件夹，保留 contents、book、adventure
+            const dirsToClear = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist'];
+            for (const dir of dirsToClear) {
+                const dirPath = path.join('./output', dir);
+                try {
+                    await fs.access(dirPath);
+                    await fs.rm(dirPath, { recursive: true, force: true });
+                } catch (error) {
+                    // 目录不存在，跳过
+                }
+            }
         } catch (error) {
-            // do nothing, folder does not exist
+            // output 目录不存在，跳过
         }
-        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist'];
+        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'contents', 'book', 'adventure'];
         for (const dir of dirs) {
             const dirPath = path.join('./output', dir);
             try {
@@ -4738,6 +4751,35 @@ let isnavpillIds = new Set<string>();
         await createOutputFolders(generatePages);
         printProgress('输出目录已重建');
 
+        // 生成出版物目录和分割书籍（仅在非page模式下）
+        let contentsResult = { success: true, output: '' };
+        let splitResult = { success: true, output: '' };
+        if (!generatePages) {
+            // 调用 generate-contents.ts
+            try {
+                console.log('[prepareData] 开始生成出版物目录...');
+                const result = await execFileAsync('node', ['--import', './loader.js', './src/generate-contents.ts']);
+                console.log(result.stdout);
+                if (result.stderr) console.error(result.stderr);
+                contentsResult = { success: true, output: result.stdout };
+            } catch (error) {
+                console.error('[prepareData] 生成出版物目录失败:', error);
+                contentsResult = { success: false, output: String(error) };
+            }
+            
+            // 调用 split-books.ts
+            try {
+                console.log('[prepareData] 开始分割书籍和冒险...');
+                const result = await execFileAsync('node', ['--import', './loader.js', './src/split-books.ts']);
+                console.log(result.stdout);
+                if (result.stderr) console.error(result.stderr);
+                splitResult = { success: true, output: result.stdout };
+            } catch (error) {
+                console.error('[prepareData] 分割书籍和冒险失败:', error);
+                splitResult = { success: false, output: String(error) };
+            }
+        }
+
         // 加载 tbui-nav-pills 配置
         try {
             tbuiNavPillsConfig = await readJson(path.join('config', 'tbui-nav-pills.json'));
@@ -4964,11 +5006,21 @@ let isnavpillIds = new Set<string>();
         }
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
-        console.log(
-            chalk.green(
-                `[prepareData] 完成，用时 ${elapsedSec}s，输出: book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}, genericProfiles=${Object.values(genericProfileCounts).reduce((sum, count) => sum + count, 0)}, class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass}`
-            )
-        );
+        const baseOutput = `book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}, genericProfiles=${Object.values(genericProfileCounts).reduce((sum, count) => sum + count, 0)}, class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass}`;
+        
+        if (generatePages) {
+            console.log(
+                chalk.green(
+                    `[prepareData] 完成，用时 ${elapsedSec}s，输出: ${baseOutput}`
+                )
+            );
+        } else {
+            console.log(
+                chalk.green(
+                    `[prepareData] 完成，用时 ${elapsedSec}s，输出: ${baseOutput}`
+                )
+            );
+        }
     } catch (error) {
         console.error(chalk.red('[prepareData] 执行失败'), error);
         process.exitCode = 1;
