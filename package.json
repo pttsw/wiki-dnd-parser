@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "getCnRepo": "node --import ./loader.js src/getGitRepo.ts",
-    "start": "node --import ./loader.js src/prepareData.ts",
+    "start": "npm run generateContents && npm run splitBooks && node --import ./loader.js src/prepareData.ts",
     "page": "node --import ./loader.js src/prepareData.ts --page",
     "processGenerated": "node --import ./loader.js src/processGenerated.ts",
     "generateContents": "node --import ./loader.js src/generate-contents.ts",

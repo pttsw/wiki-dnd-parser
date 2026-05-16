@@ -5,6 +5,7 @@
 - 入口脚本：`src/prepareData.ts`（`npm run start`）。
 - 辅助脚本：`src/getGitRepo.ts`（`npm run getCnRepo`，按需拉取源数据）。  
 `src/wikiPageGenerator.ts`（`npm run page`，输出 wiki 内容页面）
+`src/list-files.ts`（`npm run listFiles`，输出output跟page文件对应页面名的收集表格）
 
 运行逻辑概览
 1. `createOutputFolders` 清空并重建 `./output` 目录结构。

@@ -56,34 +56,22 @@ const processFiles = async () => {
     wikiResults.sort((a, b) => a.localeCompare(b, 'zh-CN'));
     jsonResults.sort((a, b) => a.localeCompare(b, 'zh-CN'));
 
-    const wikiSheet = XLSX.utils.aoa_to_sheet([['一般页面名'], ...wikiResults.map(name => [name])]);
-    const jsonSheet = XLSX.utils.aoa_to_sheet([['JSON页面名'], ...jsonResults.map(name => [name])]);
+    await fs.promises.mkdir(outputDir, { recursive: true });
+
+    const wikiSheet = XLSX.utils.aoa_to_sheet([['页面名'], ...wikiResults.map(name => [name])]);
+    const wikiWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wikiWorkbook, wikiSheet, '页面');
+    XLSX.writeFile(wikiWorkbook, path.join(outputDir, 'file_list_page.xlsx'));
+
+    const jsonSheet = XLSX.utils.aoa_to_sheet([['JSON名'], ...jsonResults.map(name => [name])]);
+    const jsonWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(jsonWorkbook, jsonSheet, 'JSON');
+    XLSX.writeFile(jsonWorkbook, path.join(outputDir, 'file_list_json.xlsx'));
     
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, wikiSheet, '一般页面');
-    XLSX.utils.book_append_sheet(workbook, jsonSheet, 'JSON页面');
-    
-    let outputPath = path.join(projectRoot, 'output', 'file_list.xlsx');
-    let counter = 1;
-    
-    while (true) {
-        try {
-            await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
-            XLSX.writeFile(workbook, outputPath);
-            break;
-        } catch (error: any) {
-            if (error.code === 'EBUSY') {
-                outputPath = path.join(projectRoot, 'output', `file_list_${counter}.xlsx`);
-                counter++;
-            } else {
-                throw error;
-            }
-        }
-    }
-    
-    console.log(`文件列表已输出到：${outputPath}`);
-    console.log(`一般页面: ${wikiResults.length} 个`);
-    console.log(`JSON页面: ${jsonResults.length} 个`);
+    console.log(`页面列表已输出到：${path.join(outputDir, 'file_list_page.xlsx')}`);
+    console.log(`JSON列表已输出到：${path.join(outputDir, 'file_list_json.xlsx')}`);
+    console.log(`页面: ${wikiResults.length} 个`);
+    console.log(`JSON: ${jsonResults.length} 个`);
 };
 
 processFiles().catch(console.error);

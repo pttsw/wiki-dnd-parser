@@ -299,52 +299,135 @@ export class WikiPageGenerator {
         return written;
     }
 
+    private async buildItemRedirectMap(): Promise<Map<string, string>> {
+        const redirectMap = new Map<string, string>();
+        const pathToIdMap = new Map<string, string>(); // path -> id，用于快速查找
+        
+        // 先建立 path -> id 的映射
+        for (const [id, item] of this.itemIndex) {
+            const itemSource = this.resolveSourceName(item.mainSource.source);
+            const itemTitle = this.buildItemTitle(itemSource, this.getRawNameZh(item));
+            const itemPath = `物品/${itemSource}/${itemTitle}`;
+            pathToIdMap.set(itemPath, id);
+        }
+        
+        // 第一次扫描：建立基础重定向关系
+        for (const [id, item] of this.itemIndex) {
+            const hierarchy = this.normalizeItemHierarchy(item);
+            
+            if (hierarchy.fork !== 0 && hierarchy.superiorId) {
+                const topItem = this.resolveTopItem(item);
+                const topSourceId = topItem.mainSource.source;
+                const topSourceTranslated = this.resolveSourceName(topSourceId);
+                const topNameZh = this.getRawNameZh(topItem);
+                const topTitle = this.buildItemTitle(topSourceTranslated, topNameZh);
+                
+                let finalTarget: string;
+                if (hierarchy.inheritsreq) {
+                    const originItem = this.resolveOriginItem(item);
+                    const originNameZh = this.getRawNameZh(originItem);
+                    finalTarget = `物品/${topSourceTranslated}/${topTitle}#${originNameZh}`;
+                } else {
+                    finalTarget = `物品/${topSourceTranslated}/${topTitle}#${this.getRawNameZh(item)}`;
+                }
+                
+                redirectMap.set(id, finalTarget);
+            }
+        }
+        
+        // 第二次扫描：解析连锁重定向（优化版，使用 pathToIdMap 快速查找）
+        for (const [id, target] of redirectMap) {
+            const targetPath = target.split('#')[0];
+            const anchor = target.split('#')[1];
+            
+            let currentPath = targetPath;
+            let currentAnchor = anchor;
+            let visited = new Set<string>();
+            
+            // 递归解析直到找到非重定向目标
+            while (pathToIdMap.has(currentPath)) {
+                const targetId = pathToIdMap.get(currentPath)!;
+                if (!redirectMap.has(targetId)) {
+                    break; // 找到非重定向目标
+                }
+                if (visited.has(targetId)) {
+                    break; // 防止循环引用
+                }
+                visited.add(targetId);
+                
+                const nextTarget = redirectMap.get(targetId)!;
+                currentPath = nextTarget.split('#')[0];
+                const nextAnchor = nextTarget.split('#')[1];
+                if (!currentAnchor) {
+                    currentAnchor = nextAnchor; // 只在没有锚点时才继承，原有的锚点优先
+                }
+            }
+            
+            // 更新为最终目标
+            const finalPath = currentPath;
+            const newTarget = currentAnchor ? `${finalPath}#${currentAnchor}` : finalPath;
+            if (newTarget !== target) {
+                redirectMap.set(id, newTarget);
+            }
+        }
+        
+        return redirectMap;
+    }
+
     private async generateItemPages(): Promise<number> {
         let written = 0;
+        const redirectMap = await this.buildItemRedirectMap();
 
-        for (const [, item] of this.itemIndex) {
+        for (const [id, item] of this.itemIndex) {
             const sourceId = item.mainSource.source;
             const sourceTranslated = this.resolveSourceName(sourceId);
             const nameZh = this.getRawNameZh(item);
             const nameEn = this.getRawNameEn(item);
-            const mainTitle = this.buildItemTitle(sourceTranslated, nameZh);
             const hierarchy = this.normalizeItemHierarchy(item);
 
-            let mainContent: string;
-            if (hierarchy.fork === 0 || !hierarchy.superiorId) {
-                mainContent = `{{物品卡|${nameZh}|${sourceId}}}`;
-            } else {
-                const topItem = this.resolveTopItem(item);
-                const topSourceTranslated = this.resolveSourceName(topItem.mainSource.source);
-                const topTitle = this.buildItemTitle(
-                    topSourceTranslated,
-                    this.getRawNameZh(topItem)
-                );
-
-                if (hierarchy.inheritsreq) {
-                    const originItem = this.resolveOriginItem(item);
-                    const originNameZh = this.getRawNameZh(originItem);
-                    mainContent = `#重定向 [[物品/${topSourceTranslated}/${topTitle}#${originNameZh}]]`;
-                } else {
-                    mainContent = `#重定向 [[物品/${topSourceTranslated}/${topTitle}#${nameZh}]]`;
-                }
-            }
-
-            // 在中文来源文件夹写主文件
-            if (await this.writePage(this.itemsDir, mainTitle, mainContent, sourceTranslated)) {
-                written += 1;
-            }
-
-            // 在id来源文件夹写重定向
-            const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
-            const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
-            const targetWikiTitle = `物品/${sourceTranslated}/${mainTitle}`;
+            // 判断是否是真正的顶级条目（不重定向到其他页面）
+            const isTrueTopLevel = hierarchy.fork === 0 || !hierarchy.superiorId;
             
-            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
-                written += 1;
-            }
-            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, targetWikiTitle, sourceId)) {
-                written += 1;
+            if (isTrueTopLevel) {
+                // 真正的顶级条目：在中文来源文件夹写模板内容
+                const mainTitle = this.buildItemTitle(sourceTranslated, nameZh);
+                const mainContent = `{{物品卡|${nameZh}|${sourceId}}}`;
+                
+                if (await this.writePage(this.itemsDir, mainTitle, mainContent, sourceTranslated)) {
+                    written += 1;
+                }
+                
+                // 同时在 id 来源文件夹也写重定向到中文来源的模板页面
+                const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
+                const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
+                const targetWikiTitle = `物品/${sourceTranslated}/${mainTitle}`;
+                
+                if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
+                    written += 1;
+                }
+                if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, targetWikiTitle, sourceId)) {
+                    written += 1;
+                }
+            } else {
+                // 非顶级条目：直接使用最终重定向目标
+                const finalTarget = redirectMap.get(id) || '';
+                
+                // 在中文来源文件夹直接写重定向到最终模板
+                const mainTitle = this.buildItemTitle(sourceTranslated, nameZh);
+                if (await this.writeRedirectPage(this.itemsDir, mainTitle, finalTarget, sourceTranslated)) {
+                    written += 1;
+                }
+                
+                // 在 id 来源文件夹也直接写重定向到最终模板
+                const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
+                const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
+                
+                if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, finalTarget, sourceId)) {
+                    written += 1;
+                }
+                if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, finalTarget, sourceId)) {
+                    written += 1;
+                }
             }
         }
 
@@ -403,62 +486,142 @@ export class WikiPageGenerator {
         return this.bestiaryIndex.get(hierarchy.originId) || monster;
     }
 
+    private async buildBestiaryRedirectMap(): Promise<Map<string, string>> {
+        const redirectMap = new Map<string, string>();
+        const pathToIdMap = new Map<string, string>(); // path -> id，用于快速查找
+        
+        // 先建立 path -> id 的映射
+        for (const [id, monster] of this.bestiaryIndex) {
+            const monsterSource = this.resolveSourceName(monster.mainSource.source);
+            const monsterTitle = this.buildMonsterTitle(monsterSource, this.getRawNameZh(monster));
+            const monsterPath = `怪物/${monsterSource}/${monsterTitle}`;
+            pathToIdMap.set(monsterPath, id);
+        }
+        
+        // 第一次扫描：建立基础重定向关系
+        for (const [id, monster] of this.bestiaryIndex) {
+            const hierarchy = this.normalizeMonsterHierarchy(monster);
+            const anyMonster = monster as any;
+            const nameZh = this.getRawNameZh(monster);
+            
+            // 先处理特殊的强制重定向逻辑
+            if (nameZh.includes('红龙') && nameZh !== '红龙' && !anyMonster.isnavpill) {
+                // 强制重定向到红龙！
+                redirectMap.set(id, `怪物/怪物手册（2014）/红龙#${nameZh}`);
+            } 
+            // 正常逻辑：判断是否需要重定向
+            else if (!anyMonster.isnavpill && hierarchy.fork !== 0 && hierarchy.superiorId) {
+                const topMonster = this.resolveTopMonster(monster);
+                const topSourceId = topMonster.mainSource.source;
+                const topSourceTranslated = this.resolveSourceName(topSourceId);
+                const topNameZh = this.getRawNameZh(topMonster);
+                const topTitle = this.buildMonsterTitle(topSourceTranslated, topNameZh);
+                
+                // 构建最终的重定向目标（直接指向顶级模板页面）
+                if (hierarchy.inheritsreq) {
+                    const originMonster = this.resolveOriginMonster(monster);
+                    const originNameZh = this.getRawNameZh(originMonster);
+                    redirectMap.set(id, `怪物/${topSourceTranslated}/${topTitle}#${originNameZh}`);
+                } else {
+                    redirectMap.set(id, `怪物/${topSourceTranslated}/${topTitle}#${nameZh}`);
+                }
+            }
+        }
+        
+        // 第二次扫描：解析连锁重定向（优化版，使用 pathToIdMap 快速查找）
+        for (const [id, target] of redirectMap) {
+            const targetPath = target.split('#')[0];
+            const anchor = target.split('#')[1];
+            
+            let currentPath = targetPath;
+            let currentAnchor = anchor;
+            let visited = new Set<string>();
+            
+            // 递归解析直到找到非重定向目标
+            while (pathToIdMap.has(currentPath)) {
+                const targetId = pathToIdMap.get(currentPath)!;
+                if (!redirectMap.has(targetId)) {
+                    break; // 找到非重定向目标
+                }
+                if (visited.has(targetId)) {
+                    break; // 防止循环引用
+                }
+                visited.add(targetId);
+                
+                const nextTarget = redirectMap.get(targetId)!;
+                currentPath = nextTarget.split('#')[0];
+                const nextAnchor = nextTarget.split('#')[1];
+                if (!currentAnchor) {
+                    currentAnchor = nextAnchor; // 只在没有锚点时才继承，原有的锚点优先
+                }
+            }
+            
+            // 更新为最终目标
+            const finalPath = currentPath;
+            const newTarget = currentAnchor ? `${finalPath}#${currentAnchor}` : finalPath;
+            if (newTarget !== target) {
+                redirectMap.set(id, newTarget);
+            }
+        }
+        
+        return redirectMap;
+    }
+
     private async generateBestiaryPages(): Promise<number> {
         let written = 0;
+        const redirectMap = await this.buildBestiaryRedirectMap();
 
-        for (const [, monster] of this.bestiaryIndex) {
+        for (const [id, monster] of this.bestiaryIndex) {
             const sourceId = monster.mainSource.source;
             const sourceTranslated = this.resolveSourceName(sourceId);
             const nameZh = this.getRawNameZh(monster);
             const nameEn = this.getRawNameEn(monster);
-            const mainTitle = this.buildMonsterTitle(sourceTranslated, nameZh);
             const hierarchy = this.normalizeMonsterHierarchy(monster);
-
-            let mainContent: string;
             const anyMonster = monster as any;
-            
-            // ================================
-            // 强制逻辑：专门处理红龙相关！
-            // ================================
-            if (nameZh.includes('红龙') && nameZh !== '红龙' && !anyMonster.isnavpill) {
-                // 强制重定向到红龙！
-                mainContent = `#重定向 [[怪物/怪物手册（2014）/红龙#${nameZh}]]`;
-            } 
-            // 正常逻辑
-            else if (anyMonster.isnavpill || (hierarchy.fork === 0 || !hierarchy.superiorId)) {
-                mainContent = `{{怪物卡|${nameZh}|${sourceId}}}`;
-            } else {
-                const topMonster = this.resolveTopMonster(monster);
-                const topSourceTranslated = this.resolveSourceName(topMonster.mainSource.source);
-                const topTitle = this.buildMonsterTitle(
-                    topSourceTranslated,
-                    this.getRawNameZh(topMonster)
-                );
 
-                if (hierarchy.inheritsreq) {
-                    const originMonster = this.resolveOriginMonster(monster);
-                    const originNameZh = this.getRawNameZh(originMonster);
-                    mainContent = `#重定向 [[怪物/${topSourceTranslated}/${topTitle}#${originNameZh}]]`;
-                } else {
-                    mainContent = `#重定向 [[怪物/${topSourceTranslated}/${topTitle}#${nameZh}]]`;
+            // 判断是否是真正的顶级条目（不在重定向表中）
+            const isTrueTopLevel = !redirectMap.has(id);
+            
+            if (isTrueTopLevel) {
+                // 真正的顶级条目：在中文来源文件夹写模板内容
+                const mainTitle = this.buildMonsterTitle(sourceTranslated, nameZh);
+                const mainContent = `{{怪物卡|${nameZh}|${sourceId}}}`;
+                
+                if (await this.writePage(this.bestiaryDir, mainTitle, mainContent, sourceTranslated)) {
+                    written += 1;
                 }
-            }
-
-            // 在中文来源文件夹写主文件
-            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent, sourceTranslated)) {
-                written += 1;
-            }
-
-            // 在id来源文件夹写重定向
-            const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
-            const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
-            const targetWikiTitle = `怪物/${sourceTranslated}/${mainTitle}`;
-            
-            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
-                written += 1;
-            }
-            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, targetWikiTitle, sourceId)) {
-                written += 1;
+                
+                // 同时在 id 来源文件夹也写重定向到中文来源的模板页面
+                const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
+                const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
+                const targetWikiTitle = `怪物/${sourceTranslated}/${mainTitle}`;
+                
+                if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
+                    written += 1;
+                }
+                if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, targetWikiTitle, sourceId)) {
+                    written += 1;
+                }
+            } else {
+                // 非顶级条目：直接使用重定向表中的最终目标
+                const finalTarget = redirectMap.get(id) || '';
+                
+                // 在中文来源文件夹直接写重定向到最终模板
+                const mainTitle = this.buildMonsterTitle(sourceTranslated, nameZh);
+                if (await this.writeRedirectPage(this.bestiaryDir, mainTitle, finalTarget, sourceTranslated)) {
+                    written += 1;
+                }
+                
+                // 在 id 来源文件夹也直接写重定向到最终模板
+                const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
+                const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
+                
+                if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, finalTarget, sourceId)) {
+                    written += 1;
+                }
+                if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, finalTarget, sourceId)) {
+                    written += 1;
+                }
             }
         }
 
