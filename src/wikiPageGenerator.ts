@@ -4,6 +4,7 @@ import { BookFile } from './types/books.js';
 import { WikiItemData } from './types/items.js';
 import { WikiSpellData } from './types/spells.js';
 import { WikiBestiaryData } from './types/bestiary.js';
+import { escapeFileName } from './exporters/shared.js';
 
 type SourceNameEntry = {
     zh?: string;
@@ -229,10 +230,11 @@ export class WikiPageGenerator {
         return this.itemIndex.get(hierarchy.originId) || item;
     }
 
-    private async writePage(dir: string, title: string, content: string, sourceId?: string): Promise<boolean> {
+    private async writePage(dir: string, title: string, content: string, sourceDir?: string): Promise<boolean> {
         let targetDir = dir;
-        if (sourceId) {
-            targetDir = path.join(dir, sourceId);
+        if (sourceDir) {
+            const escapedSourceDir = escapeFileName(sourceDir);
+            targetDir = path.join(dir, escapedSourceDir);
             await fs.mkdir(targetDir, { recursive: true });
         }
         const filePath = path.join(targetDir, `${title}.wiki`);
@@ -256,13 +258,13 @@ export class WikiPageGenerator {
         dir: string,
         title: string,
         targetTitle: string,
-        sourceId?: string
+        sourceDir?: string
     ): Promise<boolean> {
         if (title === targetTitle) {
             this.skippedSelfRedirects += 1;
             return false;
         }
-        return this.writePage(dir, title, `#重定向 [[${targetTitle}]]`, sourceId);
+        return this.writePage(dir, title, `#重定向 [[${targetTitle}]]`, sourceDir);
     }
 
     private async generateSpellPages(): Promise<number> {
@@ -274,25 +276,22 @@ export class WikiPageGenerator {
             const nameZh = this.getRawNameZh(spell);
             const nameEn = this.getRawNameEn(spell);
             const mainTitle = this.buildSpellTitle(sourceTranslated, nameZh);
+            const mainContent = `{{法术卡|${nameZh}|${sourceId}}}`;
 
-            if (
-                await this.writePage(
-                    this.spellsDir,
-                    mainTitle,
-                    `{{法术卡|${nameZh}|${sourceId}}}`,
-                    sourceId
-                )
-            ) {
+            // 在中文来源文件夹写主文件
+            if (await this.writePage(this.spellsDir, mainTitle, mainContent, sourceTranslated)) {
                 written += 1;
             }
 
+            // 在id来源文件夹写重定向
             const zhRedirectTitle = this.buildSpellTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.spellsDir, zhRedirectTitle, mainTitle, sourceId)) {
+            const enRedirectTitle = this.buildSpellTitle(sourceId, nameEn);
+            const targetWikiTitle = `法术/${sourceTranslated}/${mainTitle}`;
+            
+            if (await this.writeRedirectPage(this.spellsDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
-
-            const enRedirectTitle = this.buildSpellTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.spellsDir, enRedirectTitle, mainTitle, sourceId)) {
+            if (await this.writeRedirectPage(this.spellsDir, enRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
         }
@@ -316,41 +315,35 @@ export class WikiPageGenerator {
                 mainContent = `{{物品卡|${nameZh}|${sourceId}}}`;
             } else {
                 const topItem = this.resolveTopItem(item);
+                const topSourceTranslated = this.resolveSourceName(topItem.mainSource.source);
                 const topTitle = this.buildItemTitle(
-                    this.resolveSourceName(topItem.mainSource.source),
+                    topSourceTranslated,
                     this.getRawNameZh(topItem)
                 );
 
                 if (hierarchy.inheritsreq) {
                     const originItem = this.resolveOriginItem(item);
                     const originNameZh = this.getRawNameZh(originItem);
-                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${originNameZh}]]`;
+                    mainContent = `#重定向 [[物品/${topSourceTranslated}/${topTitle}#${originNameZh}]]`;
                 } else {
-                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${nameZh}]]`;
+                    mainContent = `#重定向 [[物品/${topSourceTranslated}/${topTitle}#${nameZh}]]`;
                 }
             }
 
-            if (await this.writePage(this.itemsDir, mainTitle, mainContent, sourceId)) {
+            // 在中文来源文件夹写主文件
+            if (await this.writePage(this.itemsDir, mainTitle, mainContent, sourceTranslated)) {
                 written += 1;
             }
 
-            // 检查 mainContent 是否是重定向内容
-            let redirectTarget = mainTitle;
-            const redirectMatch = mainContent.match(/^#重定向 \[\[(.*?)\]\]$/);
-            if (redirectMatch) {
-                // 提取重定向目标的 wiki 标题
-                const wikiTarget = redirectMatch[1];
-                // 将 wiki 标题转换回文件标题格式
-                redirectTarget = wikiTarget.replace(/\//g, '_1_');
-            }
-
+            // 在id来源文件夹写重定向
             const zhRedirectTitle = this.buildItemTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, redirectTarget, sourceId)) {
+            const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
+            const targetWikiTitle = `物品/${sourceTranslated}/${mainTitle}`;
+            
+            if (await this.writeRedirectPage(this.itemsDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
-
-            const enRedirectTitle = this.buildItemTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, redirectTarget, sourceId)) {
+            if (await this.writeRedirectPage(this.itemsDir, enRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
         }
@@ -436,41 +429,35 @@ export class WikiPageGenerator {
                 mainContent = `{{怪物卡|${nameZh}|${sourceId}}}`;
             } else {
                 const topMonster = this.resolveTopMonster(monster);
+                const topSourceTranslated = this.resolveSourceName(topMonster.mainSource.source);
                 const topTitle = this.buildMonsterTitle(
-                    this.resolveSourceName(topMonster.mainSource.source),
+                    topSourceTranslated,
                     this.getRawNameZh(topMonster)
                 );
 
                 if (hierarchy.inheritsreq) {
                     const originMonster = this.resolveOriginMonster(monster);
                     const originNameZh = this.getRawNameZh(originMonster);
-                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${originNameZh}]]`;
+                    mainContent = `#重定向 [[怪物/${topSourceTranslated}/${topTitle}#${originNameZh}]]`;
                 } else {
-                    mainContent = `#重定向 [[${this.toWikiTitle(topTitle)}#${nameZh}]]`;
+                    mainContent = `#重定向 [[怪物/${topSourceTranslated}/${topTitle}#${nameZh}]]`;
                 }
             }
 
-            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent, sourceId)) {
+            // 在中文来源文件夹写主文件
+            if (await this.writePage(this.bestiaryDir, mainTitle, mainContent, sourceTranslated)) {
                 written += 1;
             }
 
-            // 检查 mainContent 是否是重定向内容
-            let redirectTarget = mainTitle;
-            const redirectMatch = mainContent.match(/^#重定向 \[\[(.*?)\]\]$/);
-            if (redirectMatch) {
-                // 提取重定向目标的 wiki 标题
-                const wikiTarget = redirectMatch[1];
-                // 将 wiki 标题转换回文件标题格式
-                redirectTarget = wikiTarget.replace(/\//g, '_1_');
-            }
-
+            // 在id来源文件夹写重定向
             const zhRedirectTitle = this.buildMonsterTitle(sourceId, nameZh);
-            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, redirectTarget, sourceId)) {
+            const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
+            const targetWikiTitle = `怪物/${sourceTranslated}/${mainTitle}`;
+            
+            if (await this.writeRedirectPage(this.bestiaryDir, zhRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
-
-            const enRedirectTitle = this.buildMonsterTitle(sourceId, nameEn);
-            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, redirectTarget, sourceId)) {
+            if (await this.writeRedirectPage(this.bestiaryDir, enRedirectTitle, targetWikiTitle, sourceId)) {
                 written += 1;
             }
         }

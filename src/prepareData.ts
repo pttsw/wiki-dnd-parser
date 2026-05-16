@@ -9,10 +9,7 @@ import {
 import { promises as fs } from 'fs';
 import { createHash } from 'crypto';
 import path from 'path';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import chalk from 'chalk';
-const execFileAsync = promisify(execFile);
 import { FeatFile, FeatFileEntry, WikiFeatData } from './types/feat';
 import {
     ItemBaseFile,
@@ -77,7 +74,9 @@ import { runClassExporter } from './exporters/classExporter.js';
 import { runSpellExporter } from './exporters/spellExporter.js';
 import { runBestiaryExporter } from './exporters/bestiaryExporter.js';
 import { runItemExporter } from './exporters/itemExporter.js';
-import { escapeFileName } from './exporters/shared.js';
+import { escapeFileName, sectionTextIdMap } from './exporters/shared.js';
+import { generateContents } from './generate-contents.js';
+import { splitBooks } from './split-books.js';
 
 /**
  * 生成图鉴名称列表文件
@@ -4752,31 +4751,23 @@ let isnavpillIds = new Set<string>();
         printProgress('输出目录已重建');
 
         // 生成出版物目录和分割书籍（仅在非page模式下）
-        let contentsResult = { success: true, output: '' };
-        let splitResult = { success: true, output: '' };
+        let contentsResult = { bookCount: 0, adventureCount: 0, copiedCount: 0 };
         if (!generatePages) {
             // 调用 generate-contents.ts
             try {
                 console.log('[prepareData] 开始生成出版物目录...');
-                const result = await execFileAsync('node', ['--import', './loader.js', './src/generate-contents.ts']);
-                console.log(result.stdout);
-                if (result.stderr) console.error(result.stderr);
-                contentsResult = { success: true, output: result.stdout };
+                contentsResult = await generateContents();
             } catch (error) {
                 console.error('[prepareData] 生成出版物目录失败:', error);
-                contentsResult = { success: false, output: String(error) };
             }
             
             // 调用 split-books.ts
             try {
                 console.log('[prepareData] 开始分割书籍和冒险...');
-                const result = await execFileAsync('node', ['--import', './loader.js', './src/split-books.ts']);
-                console.log(result.stdout);
-                if (result.stderr) console.error(result.stderr);
-                splitResult = { success: true, output: result.stdout };
+                await splitBooks();
+                sectionTextIdMap.printStats();
             } catch (error) {
                 console.error('[prepareData] 分割书籍和冒险失败:', error);
-                splitResult = { success: false, output: String(error) };
             }
         }
 
@@ -5007,6 +4998,7 @@ let isnavpillIds = new Set<string>();
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);
         const baseOutput = `book=${bookMgr.db.size}, feat=${featMgr.db.size}, item(base=${baseItemMgr.db.size}, normal=${itemMgr.db.size}, variant=${magicVariantMgr.db.size}), spell=${spellMgr.db.size}, bestiary=${bestiaryMgr.db.size}, genericProfiles=${Object.values(genericProfileCounts).reduce((sum, count) => sum + count, 0)}, class=${classProfileCounts.class}, subclass=${classProfileCounts.subclass}`;
+        const contentsOutput = `contents(book=${contentsResult.bookCount}, adventure=${contentsResult.adventureCount}, copied=${contentsResult.copiedCount})`;
         
         if (generatePages) {
             console.log(
@@ -5017,7 +5009,7 @@ let isnavpillIds = new Set<string>();
         } else {
             console.log(
                 chalk.green(
-                    `[prepareData] 完成，用时 ${elapsedSec}s，输出: ${baseOutput}`
+                    `[prepareData] 完成，用时 ${elapsedSec}s，输出: ${contentsOutput}, ${baseOutput}`
                 )
             );
         }
@@ -5042,7 +5034,7 @@ async function processGeneratedFiles() {
         return;
     }
     const jsonEnFiles = enFiles.filter(file => file.endsWith('.json'));
-
+    
     // 读取中文generated文件夹中的文件
     let zhFiles;
     try {
@@ -5052,6 +5044,10 @@ async function processGeneratedFiles() {
         return;
     }
     const jsonZhFiles = zhFiles.filter(file => file.endsWith('.json'));
+
+    // 收集中英文表格数据
+    let enTables: any[] = [];
+    let zhTables: any[] = [];
 
     // 处理英文JSON文件
     for (const file of jsonEnFiles) {
@@ -5063,7 +5059,7 @@ async function processGeneratedFiles() {
             
             // 特殊处理 gendata-tables.json 文件
             if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
-                await processTablesFile(parsedData.table, 'en');
+                enTables = parsedData.table;
             } else {
                 // 普通文件处理
                 const outputPath = path.join(outputDir, `${path.parse(file).name}-en.json`);
@@ -5085,7 +5081,7 @@ async function processGeneratedFiles() {
             
             // 特殊处理 gendata-tables.json 文件
             if (file === 'gendata-tables.json' && parsedData.table && Array.isArray(parsedData.table)) {
-                await processTablesFile(parsedData.table, 'zh');
+                zhTables = parsedData.table;
             } else {
                 // 普通文件处理
                 const outputPath = path.join(outputDir, file);
@@ -5097,41 +5093,94 @@ async function processGeneratedFiles() {
         }
     }
 
+    // 统一处理表格数据
+    if (enTables.length > 0 || zhTables.length > 0) {
+        await processTablesFile(enTables, zhTables);
+    }
+
     printProgress('generated 文件夹处理完成');
 }
 
 // 处理表格文件，将表格按照 source 和 name 分割输出
-async function processTablesFile(tables: any[], language: 'en' | 'zh') {
-    const tablesOutputDir = path.join('./output', 'generated', 'tables', language);
+async function processTablesFile(enTables: any[], zhTables: any[]) {
+    const tablesOutputDir = path.join('./output', 'tables');
     await fs.mkdir(tablesOutputDir, { recursive: true });
     
-    for (const table of tables) {
+    // console.log(`处理表格: 英文${enTables.length}个, 中文${zhTables.length}个`);
+    
+    // 处理英文表格
+    for (const table of enTables) {
         if (!table.source || !table.name) {
-            console.warn('表格缺少source或name字段，跳过:', table);
+            console.warn('英文表格缺少source或name字段，跳过:', table);
             continue;
         }
         
-        // 清理文件名中的非法字符
-        const sanitizeFileName = (name: string): string => {
-            // Windows非法字符: < > : " / \ | ? *
-            return name.replace(/[<>:"/\\|?*]/g, '_');
-        };
+        // 生成文件名：表格名.json
+        const safeName = escapeFileName(table.name);
+        const fileName = `${safeName}.json`;
         
-        // 生成文件名：tables_1_来源_1_表格名.json
-        const safeName = sanitizeFileName(table.name);
-        const fileName = `tables_1_${table.source}_1_${safeName}.json`;
-        const outputPath = path.join(tablesOutputDir, fileName);
+        // 创建来源文件夹
+        const sourceDir = path.join(tablesOutputDir, table.source);
+        await fs.mkdir(sourceDir, { recursive: true });
+        
+        const outputPath = path.join(sourceDir, fileName);
         
         try {
-            // 添加 dataType 字段
-            const tableWithDataType = {
+            // 创建新格式的数据
+            const newData = {
                 dataType: 'table',
+                displayName: {
+                    en: table.name,
+                    zh: ''
+                },
                 ...table
             };
-            const formattedData = JSON.stringify(tableWithDataType, null, 2);
+            // 删除原始 name 字段
+            delete newData.name;
+            
+            const formattedData = JSON.stringify(newData, null, 2);
             await fs.writeFile(outputPath, formattedData, 'utf-8');
         } catch (error) {
-            console.error(`处理表格失败: ${fileName}`, error);
+            console.error(`处理英文表格失败: ${fileName}`, error);
         }
     }
+    
+    // 处理中文表格
+    for (const table of zhTables) {
+        if (!table.source || !table.name) {
+            console.warn('中文表格缺少source或name字段，跳过:', table);
+            continue;
+        }
+        
+        // 生成文件名：表格名.json
+        const safeName = escapeFileName(table.name);
+        const fileName = `${safeName}.json`;
+        
+        // 创建来源文件夹
+        const sourceDir = path.join(tablesOutputDir, table.source);
+        await fs.mkdir(sourceDir, { recursive: true });
+        
+        const outputPath = path.join(sourceDir, fileName);
+        
+        try {
+            // 创建新格式的数据
+            const newData = {
+                dataType: 'table',
+                displayName: {
+                    en: '',
+                    zh: table.name
+                },
+                ...table
+            };
+            // 删除原始 name 字段
+            delete newData.name;
+            
+            const formattedData = JSON.stringify(newData, null, 2);
+            await fs.writeFile(outputPath, formattedData, 'utf-8');
+        } catch (error) {
+            console.error(`处理中文表格失败: ${fileName}`, error);
+        }
+    }
+    
+    // console.log(`表格处理完成`);
 }

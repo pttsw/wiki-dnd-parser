@@ -249,7 +249,7 @@ function convertToOutputFormat(
     };
 }
 
-(async () => {
+export const generateContents = async () => {
     try {
         console.log('[generateContents] 开始生成出版物目录');
         
@@ -368,11 +368,18 @@ function convertToOutputFormat(
         
         console.log(`[generateContents] 复制已有目录：${copiedCount} 个`);
         console.log(`[generateContents] 完成`);
+        
+        return { bookCount, adventureCount, copiedCount };
     } catch (e) {
         console.error('Fatal error:', e);
         if (e instanceof Error) {
             console.error('Error stack:', e.stack);
         }
-        process.exit(1);
+        throw e;
     }
-})();
+};
+
+// 直接运行时的入口
+if (import.meta.url === `file://${process.argv[1]}`) {
+    generateContents();
+}

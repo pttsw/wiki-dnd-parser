@@ -1,5 +1,6 @@
 import { parse } from 'path';
 import fs from 'fs/promises';
+import { sectionTextIdMap } from './exporters/shared.js';
 import type {
     ParaghaphInset,
     ParagraphCell,
@@ -64,23 +65,104 @@ class TagParser {
         return output.join('');
     }
     parseSingleTag(tag: TagEntry): string {
-        if (this.allTags.has(tag.tagName)) {
-            this.allTags.get(tag.tagName)!.add(tag.param || '');
-        } else {
-            this.allTags.set(tag.tagName, new Set([tag.param || '']));
-        }
-
         // 处理{@item}标签，为没有来源后缀的物品添加|DMG后缀
         if (tag.tagName === '@item' && tag.param) {
             const parts = tag.param.split('|');
             // 检查是否有来源后缀（parts[1]应该是来源，parts[2]应该是显示文本）
             if (parts.length >= 2 && !parts[1].trim()) {
                 // 格式为 {@item name||display}，没有来源后缀，添加|DMG
-                return `{{${tag.tagName}|${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}}}`;
+                const result = `{{${tag.tagName}|${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}}}`;
+                // 保存处理后的参数
+                if (this.allTags.has(tag.tagName)) {
+                    this.allTags.get(tag.tagName)!.add(`${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}`);
+                } else {
+                    this.allTags.set(tag.tagName, new Set([`${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}`]));
+                }
+                return result;
             } else if (parts.length === 1) {
                 // 格式为 {@item name}，没有来源后缀，添加|DMG
-                return `{{${tag.tagName}|${parts[0]}|DMG}}`;
+                const result = `{{${tag.tagName}|${parts[0]}|DMG}}`;
+                // 保存处理后的参数
+                if (this.allTags.has(tag.tagName)) {
+                    this.allTags.get(tag.tagName)!.add(`${parts[0]}|DMG`);
+                } else {
+                    this.allTags.set(tag.tagName, new Set([`${parts[0]}|DMG`]));
+                }
+                return result;
             }
+        }
+
+        // 处理{@book}标签，替换章节索引为textId
+        if (tag.tagName === '@book' && tag.param) {
+            const parts = tag.param.split('|');
+            const displayText = parts[0];
+            const bookId = parts[1] || '';
+            const chapterIndexStr = parts[2];
+            const sectionTitle = parts[3];
+            const number = parts[4];
+
+            let chapterIndex: number | undefined;
+            if (chapterIndexStr) {
+                const parsed = parseInt(chapterIndexStr, 10);
+                if (!isNaN(parsed)) {
+                    chapterIndex = parsed;
+                }
+            }
+
+            // 尝试获取textId
+            let textId: string | null = null;
+            if (bookId) {
+                // 策略1：有 bookId 和 chapterIndex 时，先尝试查找
+                if (chapterIndex !== undefined) {
+                    textId = sectionTextIdMap.getTextId(bookId, chapterIndex, sectionTitle);
+                }
+                
+                // 策略2：如果没找到，尝试只用 sectionTitle 查找
+                if (!textId && sectionTitle) {
+                    textId = sectionTextIdMap.getTextIdByTitleOnly(bookId, sectionTitle);
+                }
+                
+                // 策略3：如果还没找到，使用 chapterIndex 作为 textId（假设 chapterIndex 就是 textId）
+                if (!textId && chapterIndex !== undefined) {
+                    textId = String(chapterIndex);
+                }
+            }
+
+            // 构建新的标签参数
+            let newParam = displayText;
+            if (bookId) {
+                newParam += `|${bookId}`;
+                if (textId) {
+                    newParam += `|${textId}`;
+                    if (sectionTitle) {
+                        newParam += `|${sectionTitle}`;
+                    }
+                    if (number) {
+                        newParam += `|${number}`;
+                    }
+                } else {
+                    // 没有找到textId，保持原样
+                    if (chapterIndexStr) newParam += `|${chapterIndexStr}`;
+                    if (sectionTitle) newParam += `|${sectionTitle}`;
+                    if (number) newParam += `|${number}`;
+                }
+            }
+
+            // 保存处理后的参数
+            if (this.allTags.has(tag.tagName)) {
+                this.allTags.get(tag.tagName)!.add(newParam);
+            } else {
+                this.allTags.set(tag.tagName, new Set([newParam]));
+            }
+
+            return `{{${tag.tagName}|${newParam}}}`;
+        }
+
+        // 保存原始参数
+        if (this.allTags.has(tag.tagName)) {
+            this.allTags.get(tag.tagName)!.add(tag.param || '');
+        } else {
+            this.allTags.set(tag.tagName, new Set([tag.param || '']));
         }
 
         return `{{${tag.tagName}${tag.param ? `|${tag.param}` : ''}}}`;

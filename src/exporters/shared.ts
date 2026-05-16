@@ -330,3 +330,160 @@ export const buildAllSources = (
 
     return sources;
 };
+
+export class SectionTextIdMap {
+    private static instance: SectionTextIdMap;
+    private map: Map<string, string> = new Map(); // key: "bookId|chapterIndex|sectionTitle", value: textId
+    private bookIdMap: Map<string, Map<string, string>> = new Map(); // key: bookId, value: Map of sectionTitle to textId
+    private chapterIndexMap: Map<string, Map<number, Map<string, string>>> = new Map(); // key: bookId, value: Map of chapterIndex to Map of sectionTitle to textId
+    private bookIdToTextIdMap: Map<string, string> = new Map(); // key: "bookId|textId", value: textId (for quick lookup)
+    private chapterIndexToTextIdMap: Map<string, string> = new Map(); // key: "bookId|chapterIndex", value: textId (direct lookup)
+    private allMappings: Array<{ bookId: string; textId: string; chapterIndex?: number; sectionTitle?: string }> = [];
+
+    private constructor() {}
+
+    static getInstance(): SectionTextIdMap {
+        if (!SectionTextIdMap.instance) {
+            SectionTextIdMap.instance = new SectionTextIdMap();
+        }
+        return SectionTextIdMap.instance;
+    }
+
+    clear(): void {
+        this.map.clear();
+        this.bookIdMap.clear();
+        this.chapterIndexMap.clear();
+        this.bookIdToTextIdMap.clear();
+    }
+
+    addMapping(bookId: string, textId: string, chapterIndex?: number, sectionTitle?: string): void {
+        const normalizedBookId = bookId.toLowerCase();
+        
+        if (sectionTitle) {
+            const key = `${normalizedBookId}|${chapterIndex ?? 0}|${sectionTitle}`;
+            this.map.set(key, textId);
+            
+            if (!this.bookIdMap.has(normalizedBookId)) {
+                this.bookIdMap.set(normalizedBookId, new Map());
+            }
+            this.bookIdMap.get(normalizedBookId)!.set(sectionTitle, textId);
+            
+            if (chapterIndex !== undefined) {
+                if (!this.chapterIndexMap.has(normalizedBookId)) {
+                    this.chapterIndexMap.set(normalizedBookId, new Map());
+                }
+                if (!this.chapterIndexMap.get(normalizedBookId)!.has(chapterIndex)) {
+                    this.chapterIndexMap.get(normalizedBookId)!.set(chapterIndex, new Map());
+                }
+                this.chapterIndexMap.get(normalizedBookId)!.get(chapterIndex)!.set(sectionTitle, textId);
+            }
+        }
+        
+        // 添加快速映射：bookId|textId -> textId
+        this.bookIdToTextIdMap.set(`${normalizedBookId}|${textId}`, textId);
+        
+        // 添加快速映射：bookId|chapterIndex -> textId（直接映射）
+        if (chapterIndex !== undefined) {
+            const chapterKey = `${normalizedBookId}|${chapterIndex}`;
+            // 只在没有现有映射时设置，或者更新映射
+            if (!this.chapterIndexToTextIdMap.has(chapterKey)) {
+                this.chapterIndexToTextIdMap.set(chapterKey, textId);
+            }
+        }
+        
+        // 存储所有映射
+        this.allMappings.push({ bookId, textId, chapterIndex, sectionTitle });
+    }
+    
+    printStats(): void {
+        // 打印前5个映射
+        for (let i = 0; i < Math.min(5, this.allMappings.length); i++) {
+            const m = this.allMappings[i];
+            // console.log(`  ${i + 1}. bookId=${m.bookId}, textId=${m.textId}, chapterIndex=${m.chapterIndex}, sectionTitle=${m.sectionTitle}`);
+        }
+    }
+
+    getTextId(bookId: string, chapterIndex?: number, sectionTitle?: string): string | null {
+        const normalizedBookId = bookId.toLowerCase();
+        
+        // 策略1：使用bookId和chapterIndex直接查找（最重要的策略）
+        if (chapterIndex !== undefined) {
+            const chapterKey = `${normalizedBookId}|${chapterIndex}`;
+            if (this.chapterIndexToTextIdMap.has(chapterKey)) {
+                return this.chapterIndexToTextIdMap.get(chapterKey)!;
+            }
+        }
+
+        // 策略2：完整匹配（bookId + chapterIndex + sectionTitle）
+        if (sectionTitle && chapterIndex !== undefined) {
+            const key = `${normalizedBookId}|${chapterIndex}|${sectionTitle}`;
+            if (this.map.has(key)) {
+                return this.map.get(key)!;
+            }
+        }
+
+        // 策略3：只匹配bookId和sectionTitle
+        if (sectionTitle) {
+            if (this.bookIdMap.has(normalizedBookId)) {
+                const bookMap = this.bookIdMap.get(normalizedBookId)!;
+                if (bookMap.has(sectionTitle)) {
+                    return bookMap.get(sectionTitle)!;
+                }
+            }
+        }
+
+        // 策略4：匹配bookId、chapterIndex和sectionTitle（嵌套查找）
+        if (sectionTitle && chapterIndex !== undefined && this.chapterIndexMap.has(normalizedBookId)) {
+            const chapterMap = this.chapterIndexMap.get(normalizedBookId)!;
+            if (chapterMap.has(chapterIndex)) {
+                const sectionMap = chapterMap.get(chapterIndex)!;
+                if (sectionMap.has(sectionTitle)) {
+                    return sectionMap.get(sectionTitle)!;
+                }
+            }
+        }
+        
+        // 策略5：模糊匹配sectionTitle（忽略大小写、空格等）
+        if (sectionTitle) {
+            const normalizedTitle = sectionTitle.toLowerCase().trim();
+            if (this.bookIdMap.has(normalizedBookId)) {
+                const bookMap = this.bookIdMap.get(normalizedBookId)!;
+                for (const [title, id] of bookMap.entries()) {
+                    if (title.toLowerCase().trim() === normalizedTitle) {
+                        return id;
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    // 只用 sectionTitle 查找（不依赖 chapterIndex）
+    getTextIdByTitleOnly(bookId: string, sectionTitle: string): string | null {
+        if (!sectionTitle) return null;
+        
+        const normalizedBookId = bookId.toLowerCase();
+        
+        if (this.bookIdMap.has(normalizedBookId)) {
+            const bookMap = this.bookIdMap.get(normalizedBookId)!;
+            
+            // 精确匹配
+            if (bookMap.has(sectionTitle)) {
+                return bookMap.get(sectionTitle)!;
+            }
+            
+            // 模糊匹配（忽略大小写和空格）
+            const normalizedTitle = sectionTitle.toLowerCase().trim();
+            for (const [title, id] of bookMap.entries()) {
+                if (title.toLowerCase().trim() === normalizedTitle) {
+                    return id;
+                }
+            }
+        }
+        
+        return null;
+    }
+}
+
+export const sectionTextIdMap = SectionTextIdMap.getInstance();

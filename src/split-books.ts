@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
-import { escapeFileName } from './exporters/shared.js';
+import { escapeFileName, sectionTextIdMap } from './exporters/shared.js';
 
 const removeBOM = (content: string): string => {
     if (content.startsWith('\uFEFF')) {
@@ -67,17 +67,15 @@ const loadBookContentFile = async (bookId: string, type: 'book' | 'adventure'): 
     try {
         const enContent = await fs.readFile(enPath, 'utf-8');
         enData = JSON.parse(enContent).data || [];
-       // console.log(`  成功加载英文 ${type} 数据: ${enPath}`);
     } catch (e) {
-        console.log(`未找到英文 ${type} 数据: ${enPath}`);
+        // 英文数据不存在，跳过
     }
 
     try {
         const zhContent = await fs.readFile(zhPath, 'utf-8');
         zhData = JSON.parse(zhContent).data || [];
-       // console.log(`  成功加载中文 ${type} 数据: ${zhPath}`);
     } catch (e) {
-       // console.log(`未找到中文 ${type} 数据: ${zhPath}`);
+        // 中文数据不存在，跳过
     }
 
     return { zh: zhData, en: enData };
@@ -185,7 +183,8 @@ const processContentEntry = async (
     outputDir: string,
     nameToIdMap: Map<string, string>,
     enData: any[],
-    zhData: any[]
+    zhData: any[],
+    chapterIndex?: number
 ): Promise<ProcessedSection | null> => {
     const enName = extractEnNameFromEntry(entry);
     const zhName = extractZhNameFromEntry(entry);
@@ -268,6 +267,12 @@ const processContentEntry = async (
 
         await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
        // console.log(`  生成: ${filePath}`);
+        
+        // 添加到章节映射
+        sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
+        if (zhName && zhName !== enName) {
+            sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
+        }
 
         return {
             id: sectionId,
@@ -339,7 +344,8 @@ const writeSectionFile = async (
     bookType: 'book' | 'adventure',
     outputDir: string,
     enData: any[],
-    zhData: any[]
+    zhData: any[],
+    chapterIndex?: number
 ) => {
     const sectionEn = sectionId ? findSectionById(enData, sectionId) : null;
     const sectionZh = sectionId ? findSectionById(zhData, sectionId) : null;
@@ -376,7 +382,12 @@ const writeSectionFile = async (
     const filePath = path.join(bookOutputDir, preferredFileName);
 
     await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
-   // console.log(`  生成: ${filePath}`);
+    
+    // 添加到章节映射
+    sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
+    if (zhName && zhName !== enName) {
+        sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
+    }
 };
 
 const processSingleBook = async (
@@ -386,7 +397,6 @@ const processSingleBook = async (
     contentPath: string
 ) => {
     const bookId = bookData.id;
-   // console.log(`处理 ${bookType}: ${bookId}`);
 
     const bookContent = await loadBookContentFile(bookId, bookType);
     const nameToIdMap = buildNameToIdMap(bookContent.en || bookContent.zh || []);
@@ -396,16 +406,15 @@ const processSingleBook = async (
         const contentRaw = await fs.readFile(contentPath, 'utf-8');
         contentData = JSON.parse(removeBOM(contentRaw));
     } catch (e) {
-        console.log(`[splitBooks] 未找到内容文件: ${contentPath}`);
         return;
     }
 
     if (!contentData.contents) {
-        console.log(`[splitBooks] 内容文件缺少 contents: ${contentPath}`);
         return;
     }
 
-    for (const entry of contentData.contents) {
+    for (let chapterIndex = 0; chapterIndex < contentData.contents.length; chapterIndex++) {
+        const entry = contentData.contents[chapterIndex];
         const enName = extractEnNameFromEntry(entry);
         const zhName = extractZhNameFromEntry(entry);
         const nameForId = enName || zhName;
@@ -423,7 +432,8 @@ const processSingleBook = async (
                 outputDir,
                 nameToIdMap,
                 bookContent.en || [],
-                bookContent.zh || []
+                bookContent.zh || [],
+                chapterIndex
             );
         } else if (sectionId) {
             const processed = await processContentEntry(
@@ -433,7 +443,8 @@ const processSingleBook = async (
                 outputDir,
                 nameToIdMap,
                 bookContent.en || [],
-                bookContent.zh || []
+                bookContent.zh || [],
+                chapterIndex
             );
 
             if (processed) {
@@ -448,7 +459,8 @@ const processSingleBook = async (
                     bookType,
                     outputDir,
                     bookContent.en || [],
-                    bookContent.zh || []
+                    bookContent.zh || [],
+                    chapterIndex
                 );
             }
         } else {
@@ -472,7 +484,8 @@ const processSingleBook = async (
                             outputDir,
                             nameToIdMap,
                             bookContent.en || [],
-                            bookContent.zh || []
+                            bookContent.zh || [],
+                            chapterIndex
                         );
                     } else {
                         const processed = await processContentEntry(
@@ -482,7 +495,8 @@ const processSingleBook = async (
                             outputDir,
                             nameToIdMap,
                             bookContent.en || [],
-                            bookContent.zh || []
+                            bookContent.zh || [],
+                            chapterIndex
                         );
 
                         if (processed) {
@@ -497,7 +511,8 @@ const processSingleBook = async (
                                 bookType,
                                 outputDir,
                                 bookContent.en || [],
-                                bookContent.zh || []
+                                bookContent.zh || [],
+                                chapterIndex
                             );
                         }
                     }
@@ -507,15 +522,82 @@ const processSingleBook = async (
     }
 };
 
+const loadBooksJson = async (): Promise<{ en: any[]; zh: any[] }> => {
+    const enPath = path.join(config.DATA_EN_DIR, 'books.json');
+    const zhPath = path.join(config.DATA_ZH_DIR, 'books.json');
+    
+    let enData: any[] = [];
+    let zhData: any[] = [];
+    
+    try {
+        const enContent = await fs.readFile(enPath, 'utf-8');
+        enData = JSON.parse(enContent).book || [];
+    } catch (e) {
+        // 英文 books.json 不存在
+    }
+    
+    try {
+        const zhContent = await fs.readFile(zhPath, 'utf-8');
+        zhData = JSON.parse(zhContent).book || [];
+    } catch (e) {
+        // 中文 books.json 不存在
+    }
+    
+    return { en: enData, zh: zhData };
+};
+
+const loadAdventuresJson = async (): Promise<{ en: any[]; zh: any[] }> => {
+    const enPath = path.join(config.DATA_EN_DIR, 'adventures.json');
+    const zhPath = path.join(config.DATA_ZH_DIR, 'adventures.json');
+    
+    let enData: any[] = [];
+    let zhData: any[] = [];
+    
+    try {
+        const enContent = await fs.readFile(enPath, 'utf-8');
+        enData = JSON.parse(enContent).adventure || [];
+    } catch (e) {
+        // 英文 adventures.json 不存在
+    }
+    
+    try {
+        const zhContent = await fs.readFile(zhPath, 'utf-8');
+        zhData = JSON.parse(zhContent).adventure || [];
+    } catch (e) {
+        // 中文 adventures.json 不存在
+    }
+    
+    return { en: enData, zh: zhData };
+};
+
 const main = async () => {
     try {
         console.log('[splitBooks] 开始分割书籍和冒险');
 
         const outputDir = './output';
 
+        // 从原始 books.json 和 adventures.json 中读取书籍和冒险列表
+        const { en: enBooks, zh: zhBooks } = await loadBooksJson();
+        const { en: enAdventures, zh: zhAdventures } = await loadAdventuresJson();
+
         const bookIds = new Set<string>();
         const adventureIds = new Set<string>();
 
+        // 从原始数据中收集书籍ID
+        for (const book of [...enBooks, ...zhBooks]) {
+            if (book.id) {
+                bookIds.add(book.id);
+            }
+        }
+        
+        // 从原始数据中收集冒险ID
+        for (const adventure of [...enAdventures, ...zhAdventures]) {
+            if (adventure.id) {
+                adventureIds.add(adventure.id);
+            }
+        }
+
+        // 也检查生成的内容目录作为后备
         for (const dir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
             try {
                 const files = await fs.readdir(dir);
@@ -526,36 +608,6 @@ const main = async () => {
                         adventureIds.add(id);
                     } else {
                         bookIds.add(id);
-                    }
-                }
-            } catch (e) {
-                continue;
-            }
-        }
-
-        // 处理全部出版物
-        const testOnly = false;
-        
-        for (const contentDir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
-            try {
-                const files = await fs.readdir(contentDir);
-                for (const file of files) {
-                    if (!file.endsWith('.json')) continue;
-                    const id = file.replace('.json', '');
-                    
-                    if (testOnly && id !== 'XPHB') continue;
-                    
-                    const filePath = path.join(contentDir, file);
-
-                    try {
-                        const content = await fs.readFile(filePath, 'utf-8');
-                        const bookData = JSON.parse(removeBOM(content));
-
-                        const type = adventureIds.has(id) ? 'adventure' : 'book';
-                        await processSingleBook(bookData, type, outputDir, filePath);
-                    } catch (e) {
-                        console.log(`[splitBooks] 处理文件失败: ${filePath}`);
-                        console.error(e);
                     }
                 }
             } catch (e) {
@@ -593,7 +645,6 @@ const generateAdventureNameList = async (outputDir: string) => {
         try {
             sourceDirs = await fs.readdir(adventureDir);
         } catch {
-            console.log('[splitBooks] 未找到 adventure 目录，跳过生成 namelist');
             return;
         }
 
@@ -660,4 +711,121 @@ const generateAdventureNameList = async (outputDir: string) => {
     }
 };
 
-main();
+export const splitBooks = async () => {
+    try {
+        console.log('[splitBooks] 开始分割书籍和冒险');
+
+        const outputDir = './output';
+
+        // 从原始 books.json 和 adventures.json 中读取书籍和冒险列表
+        const { en: enBooks, zh: zhBooks } = await loadBooksJson();
+        const { en: enAdventures, zh: zhAdventures } = await loadAdventuresJson();
+
+        // 创建一个映射，从 bookId 映射到原始数据（包含 contents）
+        const bookContentsMap = new Map<string, any>();
+        
+        // 从原始 books.json 添加
+        for (const book of [...enBooks, ...zhBooks]) {
+            if (book.id && book.contents) {
+                bookContentsMap.set(book.id, book);
+            }
+        }
+        
+        // 从原始 adventures.json 添加
+        for (const adventure of [...enAdventures, ...zhAdventures]) {
+            if (adventure.id && adventure.contents) {
+                bookContentsMap.set(adventure.id, adventure);
+            }
+        }
+
+        const bookIds = new Set<string>();
+        const adventureIds = new Set<string>();
+
+        // 从原始数据中收集书籍ID
+        for (const book of [...enBooks, ...zhBooks]) {
+            if (book.id) {
+                bookIds.add(book.id);
+            }
+        }
+        
+        // 从原始数据中收集冒险ID
+        for (const adventure of [...enAdventures, ...zhAdventures]) {
+            if (adventure.id) {
+                adventureIds.add(adventure.id);
+            }
+        }
+
+        // 也检查生成的内容目录作为后备
+        for (const dir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
+            try {
+                const files = await fs.readdir(dir);
+                for (const file of files) {
+                    if (!file.endsWith('.json')) continue;
+                    const id = file.replace('.json', '');
+                    if (dir.includes('/adventure')) {
+                        adventureIds.add(id);
+                    } else {
+                        bookIds.add(id);
+                    }
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        // 处理全部出版物
+        const testOnly = false;
+        
+        for (const contentDir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
+            try {
+                const files = await fs.readdir(contentDir);
+                for (const file of files) {
+                    if (!file.endsWith('.json')) continue;
+                    const id = file.replace('.json', '');
+                    
+                    if (testOnly && id !== 'XPHB') continue;
+                    
+                    const filePath = path.join(contentDir, file);
+
+                    try {
+                        const content = await fs.readFile(filePath, 'utf-8');
+                        const bookData = JSON.parse(removeBOM(content));
+
+                        // 优先使用原始数据中的 contents
+                        const originalData = bookContentsMap.get(id);
+                        if (originalData && originalData.contents) {
+                            bookData.contents = originalData.contents;
+                        }
+
+                        const type = adventureIds.has(id) ? 'adventure' : 'book';
+                        await processSingleBook(bookData, type, outputDir, filePath);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        // 生成 adventure namelist
+        await generateAdventureNameList(outputDir);
+        
+        // 打印章节映射统计
+        // console.log('[splitBooks] 章节映射统计:');
+        sectionTextIdMap.printStats();
+
+        // console.log('[splitBooks] 完成');
+    } catch (e) {
+        console.error('[splitBooks] 致命错误:', e);
+        if (e instanceof Error) {
+            console.error('[splitBooks] 错误堆栈:', e.stack);
+        }
+        throw e;
+    }
+};
+
+// 直接运行时的入口
+if (import.meta.url === `file://${process.argv[1]}`) {
+    splitBooks();
+}
