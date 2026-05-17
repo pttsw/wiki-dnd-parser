@@ -10,6 +10,81 @@ const removeBOM = (content: string): string => {
     return content;
 };
 
+const ENTRIES_WITH_ENUMERATED_TITLES = [
+    {type: "section", key: "entries", depth: -1},
+    {type: "entries", key: "entries", depthIncrement: 1},
+    {type: "options", key: "entries"},
+    {type: "inset", key: "entries", depth: 2},
+    {type: "insetReadaloud", key: "entries", depth: 2},
+    {type: "variant", key: "entries", depth: 2},
+    {type: "variantInner", key: "entries", depth: 2},
+    {type: "actions", key: "entries", depth: 2},
+    {type: "flowBlock", key: "entries", depth: 2},
+    {type: "optfeature", key: "entries", depthIncrement: 1},
+    {type: "patron", key: "entries"},
+];
+
+const ENTRIES_WITH_ENUMERATED_TITLES_LOOKUP = Object.fromEntries(
+    ENTRIES_WITH_ENUMERATED_TITLES.map(it => [it.type, it])
+);
+
+const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentType?: string): any[] => {
+    if (!Array.isArray(entries)) return entries;
+    
+    return entries.map((entry) => {
+        if (typeof entry !== 'object' || entry === null) {
+            return entry;
+        }
+        
+        const processedEntry = { ...entry };
+        const currentType = processedEntry.type;
+        
+        const entryConfig = ENTRIES_WITH_ENUMERATED_TITLES_LOOKUP[currentType];
+        
+        if (entryConfig && entry.name != null) {
+            let titleDepth = depth;
+            if (entryConfig?.depth !== undefined) {
+                titleDepth = entryConfig.depth;
+            } else if (entryConfig?.depthIncrement) {
+                titleDepth = depth + 1;
+            } else if (currentType === 'section') {
+                titleDepth = -1;
+            }
+            titleDepth = Math.min(Math.max(titleDepth, -1), 2);
+            
+            if (titleDepth < 2) {
+                if ('ENG_name' in processedEntry) {
+                    processedEntry.ENG_title = processedEntry.ENG_name;
+                    delete processedEntry.ENG_name;
+                }
+                if ('name' in processedEntry) {
+                    processedEntry.title = processedEntry.name;
+                    delete processedEntry.name;
+                }
+                processedEntry.title_fork = titleDepth;
+            }
+        }
+        
+        if (Array.isArray(processedEntry.entries)) {
+            let nextDepth = depth;
+            
+            if (currentType === 'section') {
+                nextDepth = -1;
+            } else if (entryConfig?.depth !== undefined) {
+                nextDepth = entryConfig.depth;
+            } else if (entryConfig?.depthIncrement) {
+                nextDepth = depth + 1;
+            }
+            
+            nextDepth = Math.min(Math.max(nextDepth, -1), 2);
+            
+            processedEntry.entries = processEntriesWithTitleFork(processedEntry.entries, nextDepth, currentType);
+        }
+        
+        return processedEntry;
+    });
+};
+
 const removeChapterPrefix = (name: string): string => {
     const prefixes = [
         /^Chapter \d+: /i,
@@ -66,14 +141,16 @@ const loadBookContentFile = async (bookId: string, type: 'book' | 'adventure'): 
 
     try {
         const enContent = await fs.readFile(enPath, 'utf-8');
-        enData = JSON.parse(enContent).data || [];
+        const parsed = JSON.parse(enContent).data;
+        enData = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
     } catch (e) {
         // 英文数据不存在，跳过
     }
 
     try {
         const zhContent = await fs.readFile(zhPath, 'utf-8');
-        zhData = JSON.parse(zhContent).data || [];
+        const parsed = JSON.parse(zhContent).data;
+        zhData = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
     } catch (e) {
         // 中文数据不存在，跳过
     }
@@ -211,8 +288,8 @@ const processContentEntry = async (
         const page = sectionEn?.page || sectionZh?.page || 0;
         const type = sectionEn?.type || sectionZh?.type || 'section';
 
-        let enContent = sectionEn ? { entries: [...sectionEn.entries] } : null;
-        let zhContent = sectionZh ? { entries: [...sectionZh.entries] } : null;
+        let enContent = sectionEn ? { ...sectionEn, entries: [...sectionEn.entries] } : null;
+        let zhContent = sectionZh ? { ...sectionZh, entries: [...sectionZh.entries] } : null;
 
         const headerSubpageMap = new Map<string, string>();
 
@@ -241,6 +318,13 @@ const processContentEntry = async (
         }
         if (enContent && headerSubpageMap.size > 0) {
             enContent.entries = replaceSectionsWithSubpages(enContent.entries, headerSubpageMap);
+        }
+
+        if (zhContent) {
+            zhContent.entries = processEntriesWithTitleFork(zhContent.entries);
+        }
+        if (enContent) {
+            enContent.entries = processEntriesWithTitleFork(enContent.entries);
         }
 
         const fileData = {
@@ -356,8 +440,11 @@ const writeSectionFile = async (
     const page = sectionEn?.page || sectionZh?.page || 0;
     const type = sectionEn?.type || sectionZh?.type || 'section';
 
-    const enContent = { entries: enEntries };
-    const zhContent = { entries: zhEntries };
+    const processedZhEntries = processEntriesWithTitleFork(zhEntries);
+    const processedEnEntries = processEntriesWithTitleFork(enEntries);
+    
+    const enContent = { entries: processedEnEntries };
+    const zhContent = { entries: processedZhEntries };
 
     const fileData = {
         dataType,
