@@ -52,7 +52,7 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
             }
             titleDepth = Math.min(Math.max(titleDepth, 0), 2);
             
-            if (titleDepth < 2) {
+            if (titleDepth < 3) {
                 if ('ENG_name' in processedEntry) {
                     processedEntry.ENG_title = processedEntry.ENG_name;
                     delete processedEntry.ENG_name;
