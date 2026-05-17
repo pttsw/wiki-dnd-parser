@@ -48,9 +48,9 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
             } else if (entryConfig?.depthIncrement) {
                 titleDepth = depth + 1;
             } else if (currentType === 'section') {
-                titleDepth = -1;
+                titleDepth = 0;
             }
-            titleDepth = Math.min(Math.max(titleDepth, -1), 2);
+            titleDepth = Math.min(Math.max(titleDepth, 0), 2);
             
             if (titleDepth < 2) {
                 if ('ENG_name' in processedEntry) {
