@@ -48,11 +48,11 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
             } else if (entryConfig?.depthIncrement) {
                 titleDepth = depth + 1;
             } else if (currentType === 'section') {
-                titleDepth = 0;
+                titleDepth = -1;
             }
-            titleDepth = Math.min(Math.max(titleDepth, 0), 2);
+            titleDepth = Math.min(Math.max(titleDepth, -1), 2);
             
-            if (titleDepth < 3) {
+            if (titleDepth < 2) {
                 if ('ENG_name' in processedEntry) {
                     processedEntry.ENG_title = processedEntry.ENG_name;
                     delete processedEntry.ENG_name;
@@ -61,7 +61,7 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
                     processedEntry.title = processedEntry.name;
                     delete processedEntry.name;
                 }
-                processedEntry.title_fork = titleDepth;
+                processedEntry.title_fork = titleDepth + 1;
             }
         }
         
