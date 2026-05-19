@@ -209,12 +209,12 @@ async function generateSourcesJson(
         // 收集每个来源包含的类别
         const sourceTypes: Record<string, Set<string>> = {};
 
-        // 初始化每个书籍来源
+        // 初始化每个扩展来源
         for (const enBook of enBooks) {
             sourceTypes[enBook.id] = new Set();
         }
 
-        // 初始化每个冒险来源
+        // 初始化每个模组来源
         for (const adv of enAdventures) {
             sourceTypes[adv.id] = new Set();
         }
@@ -269,7 +269,7 @@ async function generateSourcesJson(
 
         const data: Record<string, any> = {};
 
-        // 生成书籍来源数据
+        // 生成扩展来源数据
         for (const enBook of enBooks) {
             const id = enBook.id;
             const zhBook = zhBooks.find(b => b.id === id);
@@ -286,7 +286,7 @@ async function generateSourcesJson(
             };
         }
 
-        // 生成冒险来源数据
+        // 生成模组来源数据
         for (const adv of enAdventures) {
             const id = adv.id;
 
@@ -1032,7 +1032,7 @@ class BookMgr implements DataMgr<BookFileEntry> {
             const id = this.getId(enBook);
             const zhBook = zh.book.find(b => this.getId(b) === id);
             if (!zhBook) {
-                logger.log('BookMgr', `未找到中文版本的书籍：${enBook.name} (${id})`);
+                logger.log('BookMgr', `未找到中文版本的出版物：${enBook.name} (${id})`);
             }
 
             const bookData: WikiBookData = {
@@ -4750,7 +4750,7 @@ let isnavpillIds = new Set<string>();
         await createOutputFolders(generatePages);
         printProgress('输出目录已重建');
 
-        // 生成出版物目录和分割书籍（仅在非page模式下）
+        // 生成出版物目录和分割出版物（仅在非page模式下）
         let contentsResult = { bookCount: 0, adventureCount: 0, copiedCount: 0 };
         if (!generatePages) {
             // 调用 generate-contents.ts
@@ -4763,11 +4763,11 @@ let isnavpillIds = new Set<string>();
             
             // 调用 split-books.ts
             try {
-                console.log('[prepareData] 开始分割书籍和冒险...');
+                console.log('[prepareData] 开始分割扩展和模组...');
                 await splitBooks();
                 sectionTextIdMap.printStats();
             } catch (error) {
-                console.error('[prepareData] 分割书籍和冒险失败:', error);
+                console.error('[prepareData] 分割扩展和模组失败:', error);
             }
         }
 

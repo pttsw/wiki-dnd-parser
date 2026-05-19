@@ -190,7 +190,7 @@ export class WikiPageGenerator {
     }
 
     private toWikiTitle(fileTitle: string): string {
-        return fileTitle.replace(/_1_/g, '/');
+        return fileTitle.replace(/_9_/g, '/');
     }
 
     private normalizeItemHierarchy(item: WikiItemData): HierarchyInfo {

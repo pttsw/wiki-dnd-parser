@@ -60,7 +60,7 @@ export const mwUtil = {
     getMwTitle: (title: string): string => {
         return title.trim()
             .replace(/\\/g, '_0_')
-            .replace(/\//g, '_1_')
+            .replace(/\//g, '_9_')
             .replace(/:/g, '_2_')
             .replace(/\*/g, '_3_')
             .replace(/"/g, '_4_')

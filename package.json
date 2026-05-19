@@ -7,11 +7,12 @@
   "scripts": {
     "getCnRepo": "node --import ./loader.js src/getGitRepo.ts",
     "start": "npm run generateContents && npm run splitBooks && node --import ./loader.js src/prepareData.ts",
-    "page": "node --import ./loader.js src/prepareData.ts --page",
+    "page": "npm run generateContents && npm run splitBooks && node --import ./loader.js src/prepareData.ts --page && node --import ./loader.js src/generateBookPages.ts",
     "processGenerated": "node --import ./loader.js src/processGenerated.ts",
     "generateContents": "node --import ./loader.js src/generate-contents.ts",
     "splitBooks": "node --import ./loader.js src/split-books.ts",
-    "listFiles": "node --import ./loader.js src/list-files.ts"
+    "listFiles": "node --import ./loader.js src/list-files.ts",
+    "generateBookPages": "node --import ./loader.js src/generateBookPages.ts"
   },
   "author": "",
   "license": "ISC",
