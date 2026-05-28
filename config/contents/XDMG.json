@@ -3549,7 +3549,7 @@
                          "zh_name":  "设定汇编",
                          "ordinal":  {
                                          "type":  "appendix",
-                                         "identifier":  1
+                                         "identifier":  "A"
                                      },
                          "source":  "",
                          "headers":  [
@@ -4598,7 +4598,7 @@
                          "zh_name":  "地图",
                          "ordinal":  {
                                          "type":  "appendix",
-                                         "identifier":  2
+                                         "identifier":  "B"
                                      },
                          "source":  "",
                          "headers":  [
@@ -4821,7 +4821,7 @@
                          "zh_name":  "跟踪表",
                          "ordinal":  {
                                          "type":  "appendix",
-                                         "identifier":  3
+                                         "identifier":  "C"
                                      },
                          "source":  "",
                          "headers":  [
