@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Acquisitions Incorporated",
-    "zh_name":  "艾奎兹玄有限责任公司",
+    "displayName": {
+      "zh": "艾奎兹玄有限责任公司",
+      "en": "Acquisitions Incorporated"
+    },
     "id":  "AI",
     "booktype":  "扩展\u0026资源",
     "tag":  [

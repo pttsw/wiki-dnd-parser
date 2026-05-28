@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Dungeon Master\u0027s Guide (2024)",
-    "zh_name":  "地下城主指南2024",
+    "displayName": {
+      "zh": "地下城主指南2024",
+      "en": "Dungeon Master\u0027s Guide (2024)"
+    },
     "id":  "XDMG",
     "booktype":  "核心",
     "tag":  [

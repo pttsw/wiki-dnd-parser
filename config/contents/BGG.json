@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Bigby Presents: Glory of the Giants",
-    "zh_name":  "毕格比巨献：巨人之荣耀",
+    "displayName": {
+      "zh": "毕格比巨献：巨人之荣耀",
+      "en": "Bigby Presents: Glory of the Giants"
+    },
     "id":  "BGG",
     "booktype":  "扩展\u0026资源",
     "tag":  [

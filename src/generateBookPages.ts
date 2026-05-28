@@ -150,8 +150,8 @@ const getParentChapters = (bookId: string, pageId: string): ChapterHierarchy[] =
             if (children && Array.isArray(children)) {
                 pathArray.push({
                     id: item.id,
-                    nameZh: item.zh_name || item.name,
-                    nameEn: item.name,
+                    nameZh: item.displayName?.zh || item.zh_name || item.name,
+                    nameEn: item.displayName?.en || item.name,
                 });
                 if (findInContents(children, targetId)) {
                     return true;
@@ -178,8 +178,8 @@ const getBookName = (bookId: string): { zh?: string; en?: string } => {
     const config = bookConfigs.get(bookId);
     if (config) {
         return {
-            zh: config.zh_name || config.name,
-            en: config.name,
+            zh: config.displayName?.zh || config.zh_name || config.name,
+            en: config.displayName?.en || config.name,
         };
     }
     return { zh: bookId, en: bookId };

@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Boo\u0027s Astral Menagerie",
-    "zh_name":  "布布的星界怪兽展",
+    "displayName": {
+      "zh": "布布的星界怪兽展",
+      "en": "Boo\u0027s Astral Menagerie"
+    },
     "id":  "BAM",
     "booktype":  "扩展\u0026资源",
     "tag":  [

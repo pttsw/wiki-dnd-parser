@@ -1,0 +1,5043 @@
+{
+    "_hjschema": "出版物",
+    "displayName": {
+        "zh": "地下城主指南2024",
+        "en": "Dungeon Master's Guide (2024)"
+    },
+    "id": "XDMG",
+    "booktype": "核心",
+    "tag": [
+        "三宝书"
+    ],
+    "newest": true,
+    "source": "",
+    "cover": {
+        "type": "internal",
+        "path": "XDMG.png"
+    },
+    "published": "2024-11-12",
+    "author": "Wizards RPG Team",
+    "merge": "",
+    "contents": [
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 1
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "001",
+                    "displayName": {
+                        "zh": "DM是做什么的？",
+                        "en": "What Does a DM Do?"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "004",
+                    "displayName": {
+                        "zh": "你需要的东西",
+                        "en": "Things You Need"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "014",
+                    "displayName": {
+                        "zh": "准备一次团",
+                        "en": "Preparing a Session"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "01a",
+                    "displayName": {
+                        "zh": "如何带一次团",
+                        "en": "How to Run a Session"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "024",
+                    "displayName": {
+                        "zh": "游玩实例",
+                        "en": "Example of Play"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "02c",
+                    "displayName": {
+                        "zh": "每个DM都是独一无二的",
+                        "en": "Every DM Is Unique"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "035",
+                            "displayName": {
+                                "zh": "相互尊重",
+                                "en": "Mutual Respect"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "03d",
+                            "displayName": {
+                                "zh": "尊重玩家",
+                                "en": "Respect For The Players"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "043",
+                            "displayName": {
+                                "zh": "尊重DM",
+                                "en": "Respect For The DM"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "034",
+                    "displayName": {
+                        "zh": "确保所有人玩得开心",
+                        "en": "Ensuring Fun for All"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "000",
+            "displayName": {
+                "zh": "基础",
+                "en": "The Basics"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 2
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "04e",
+                    "displayName": {
+                        "zh": "了解你的玩家",
+                        "en": "Know Your Players"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "057",
+                    "displayName": {
+                        "zh": "团队规模",
+                        "en": "Group Size"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "067",
+                    "displayName": {
+                        "zh": "多位DM",
+                        "en": "Multiple DMs"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "06d",
+                    "displayName": {
+                        "zh": "叙事",
+                        "en": "Narration"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "075",
+                            "displayName": {
+                                "zh": "属性检定",
+                                "en": "Ability Checks"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "07a",
+                            "displayName": {
+                                "zh": "攻击检定",
+                                "en": "Attack Rolls"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "07b",
+                            "displayName": {
+                                "zh": "豁免检定",
+                                "en": "Saving Throws"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "07c",
+                            "displayName": {
+                                "zh": "难度等级",
+                                "en": "Difficulty Class"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0bf",
+                            "displayName": {
+                                "zh": "优势与劣势",
+                                "en": "Advantage and Disadvantage"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "081",
+                            "displayName": {
+                                "zh": "后果",
+                                "en": "Consequences"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "086",
+                            "displayName": {
+                                "zh": "即兴伤害",
+                                "en": "Improvising Damage"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "087",
+                            "displayName": {
+                                "zh": "即兴答复",
+                                "en": "Improvising Answers "
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "074",
+                    "displayName": {
+                        "zh": "决定掷骰结果",
+                        "en": "Resolving Outcomes"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "08a",
+                            "displayName": {
+                                "zh": "角色扮演",
+                                "en": "Roleplaying"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "093",
+                            "displayName": {
+                                "zh": "态度",
+                                "en": "Attitude"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "089",
+                    "displayName": {
+                        "zh": "运作交涉",
+                        "en": "Running Social Interaction"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "097",
+                            "displayName": {
+                                "zh": "使用地图",
+                                "en": "Using a Map"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "098",
+                            "displayName": {
+                                "zh": "跟进时间",
+                                "en": "Tracking Time"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "099",
+                            "displayName": {
+                                "zh": "探索中的动作",
+                                "en": "Actions in exploration"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "09c",
+                            "displayName": {
+                                "zh": "察觉",
+                                "en": "Perception"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0a5",
+                            "displayName": {
+                                "zh": "旅行",
+                                "en": "Travel"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "096",
+                    "displayName": {
+                        "zh": "运作探索",
+                        "en": "Running Exploration"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0bb",
+                            "displayName": {
+                                "zh": "投掷先攻",
+                                "en": "Rolling Initiative"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0c0",
+                            "displayName": {
+                                "zh": "跟进先攻",
+                                "en": "Tracking Initiative"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0c3",
+                            "displayName": {
+                                "zh": "跟进怪物生命值",
+                                "en": "Tracking Monsters’ Hit Points"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0c4",
+                            "displayName": {
+                                "zh": "使用并跟进状态",
+                                "en": "Using and Tracking Conditions"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0c5",
+                            "displayName": {
+                                "zh": "微缩模型",
+                                "en": "Miniatures"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0cc",
+                            "displayName": {
+                                "zh": "跟进远距离的位置",
+                                "en": "Tracking Position For Long Range"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0cd",
+                            "displayName": {
+                                "zh": "战斗中的叙述",
+                                "en": "Narration in Combat"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0d3",
+                            "displayName": {
+                                "zh": "让战斗持续推进",
+                                "en": "Keeping Combat Moving"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0da",
+                            "displayName": {
+                                "zh": "调整难度",
+                                "en": "Adjusting Difficulty"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "0db",
+                            "displayName": {
+                                "zh": "战斗或者逃跑",
+                                "en": "Fight or Flight"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "0ba",
+                    "displayName": {
+                        "zh": "运作战斗",
+                        "en": "Running Combat"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "0dd",
+                    "displayName": {
+                        "zh": "角色升级",
+                        "en": "Character Advancement"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "04d",
+            "displayName": {
+                "zh": "运作游戏",
+                "en": "Running the Game"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 3
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "445",
+                    "displayName": {
+                        "zh": "阵营",
+                        "en": "Alignment"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "0f1",
+                    "displayName": {
+                        "zh": "追逐",
+                        "en": "Chases"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "0fc",
+                    "displayName": {
+                        "zh": "创作背景",
+                        "en": "Creating a Background"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "102",
+                    "displayName": {
+                        "zh": "创作生物",
+                        "en": "Creating a Creature"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "10e",
+                    "displayName": {
+                        "zh": "创作魔法物品",
+                        "en": "Creating a Magic Item"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "11c",
+                    "displayName": {
+                        "zh": "创作法术",
+                        "en": "Creating a Spell"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "11f",
+                    "displayName": {
+                        "zh": "诅咒与魔法疫病",
+                        "en": "Curses and Magical Contagions"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "132",
+                    "displayName": {
+                        "zh": "死亡",
+                        "en": "Death"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "141",
+                    "displayName": {
+                        "zh": "门",
+                        "en": "Doors"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "148",
+                    "displayName": {
+                        "zh": "地下城",
+                        "en": "Dungeons"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "15a",
+                    "displayName": {
+                        "zh": "环境影响",
+                        "en": "Environmental Effects"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "16c",
+                    "displayName": {
+                        "zh": "恐惧与精神压力",
+                        "en": "Fear and Mental Stress"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "173",
+                    "displayName": {
+                        "zh": "枪械与爆炸物",
+                        "en": "Firearms and Explosives"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "181",
+                    "displayName": {
+                        "zh": "神祇与其余大能",
+                        "en": "Gods and Other Powers"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "18b",
+                    "displayName": {
+                        "zh": "危害",
+                        "en": "Hazards"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "19f",
+                    "displayName": {
+                        "zh": "名望的标志",
+                        "en": "Marks of Prestige"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1a8",
+                    "displayName": {
+                        "zh": "怪群",
+                        "en": "Mobs"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1ad",
+                    "displayName": {
+                        "zh": "非玩家角色",
+                        "en": "Nonplayer Characters"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1bd",
+                    "displayName": {
+                        "zh": "毒药",
+                        "en": "Poison"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1cf",
+                    "displayName": {
+                        "zh": "声望",
+                        "en": "Renown"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1d7",
+                    "displayName": {
+                        "zh": "聚落",
+                        "en": "Settlements"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1da",
+                    "displayName": {
+                        "zh": "攻城装备",
+                        "en": "Siege Equipment"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "1f7",
+                    "displayName": {
+                        "zh": "超自然赠礼",
+                        "en": "Supernatural Gifts"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "208",
+                    "displayName": {
+                        "zh": "陷阱",
+                        "en": "Traps"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "0e7",
+            "displayName": {
+                "zh": "地下城主工具箱",
+                "en": "DM's Toolbox"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 4
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "22b",
+                    "displayName": {
+                        "zh": "冒险的设计步骤",
+                        "en": "Step-by-Step Adventures"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "22f",
+                            "displayName": {
+                                "zh": "冒险背景",
+                                "en": "Adventure Premise"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "230",
+                            "displayName": {
+                                "zh": "冒险冲突",
+                                "en": "Adventure Conflict"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "231",
+                            "displayName": {
+                                "zh": "不同等级的冒险情景",
+                                "en": "Adventure Situations By Level"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "236",
+                            "displayName": {
+                                "zh": "冒险设定",
+                                "en": "Adventure Setting"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "22d",
+                    "displayName": {
+                        "zh": "布置背景",
+                        "en": "Lay Out the Premise"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "241",
+                            "displayName": {
+                                "zh": "冒险赞助者",
+                                "en": "Adventure Patrons"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "242",
+                            "displayName": {
+                                "zh": "超自然引子",
+                                "en": "Supernatural Hooks"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "243",
+                            "displayName": {
+                                "zh": "巧合引子",
+                                "en": "Happenstance Hooks"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "23f",
+                    "displayName": {
+                        "zh": "导入玩家",
+                        "en": "Draw In the Players"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "245",
+                            "displayName": {
+                                "zh": "角色目标",
+                                "en": "Character Objectives"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "24d",
+                            "displayName": {
+                                "zh": "维持冒险运行",
+                                "en": "Keeping The Adventure Moving"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "24e",
+                            "displayName": {
+                                "zh": "人人有份",
+                                "en": "Something For Everyone"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "24f",
+                            "displayName": {
+                                "zh": "多种发展方式",
+                                "en": "Multiple Ways To Progress"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "250",
+                            "displayName": {
+                                "zh": "交涉遭遇",
+                                "en": "Social Interaction Encounters"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "251",
+                            "displayName": {
+                                "zh": "探索遭遇",
+                                "en": "Exploration Encounters"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "252",
+                            "displayName": {
+                                "zh": "战斗遭遇",
+                                "en": "Combat Encounters"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "25e",
+                            "displayName": {
+                                "zh": "怪物行为",
+                                "en": "Monster Behavior"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "264",
+                            "displayName": {
+                                "zh": "遭遇节奏和紧张感",
+                                "en": "Encounter Pace And Tension"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "244",
+                    "displayName": {
+                        "zh": "规划遭遇",
+                        "en": "Plan Encounters"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "26f",
+                            "displayName": {
+                                "zh": "收尾",
+                                "en": "Denouement"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "26e",
+                    "displayName": {
+                        "zh": "结束冒险",
+                        "en": "Bring It to an End"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "270",
+                    "displayName": {
+                        "zh": "冒险奖励",
+                        "en": "Adventure Rewards"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "277",
+                            "displayName": {
+                                "zh": "秽染溪泉",
+                                "en": "The Fouled Stream"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "27e",
+                            "displayName": {
+                                "zh": "矿洞惊魂",
+                                "en": "Miner Difficulties"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "283",
+                            "displayName": {
+                                "zh": "有翼之神",
+                                "en": "The Winged God"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "289",
+                            "displayName": {
+                                "zh": "兽之角冠",
+                                "en": "Horns Of The Beast"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "291",
+                            "displayName": {
+                                "zh": "北风舞会",
+                                "en": "Boreal Ball"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "275",
+                    "displayName": {
+                        "zh": "范例冒险",
+                        "en": "Adventure Examples"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "22a",
+            "displayName": {
+                "zh": "创建冒险",
+                "en": "Creating Adventures"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 5
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "296",
+                    "displayName": {
+                        "zh": "战役的设计步骤",
+                        "en": "Step-by-Step Campaigns"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "297",
+                    "displayName": {
+                        "zh": "你的战役日志",
+                        "en": "Your Campaign Journal"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "29d",
+                            "displayName": {
+                                "zh": "战役中的角色",
+                                "en": "Campaign Characters"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "7fb",
+                            "displayName": {
+                                "zh": "战役冲突",
+                                "en": "Campaign Conflicts"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "2a7",
+                            "displayName": {
+                                "zh": "奇幻风格",
+                                "en": "Flavors of Fantasy"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "2bc",
+                            "displayName": {
+                                "zh": "战役设定",
+                                "en": "Campaign Setting"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "29c",
+                    "displayName": {
+                        "zh": "战役背景",
+                        "en": "Campaign Premise"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "2c0",
+                    "displayName": {
+                        "zh": "开始战役",
+                        "en": "Campaign Start"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "2ce",
+                            "displayName": {
+                                "zh": "单元剧和连续剧",
+                                "en": "Episodes and Serials"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "2d3",
+                            "displayName": {
+                                "zh": "让玩家投入",
+                                "en": "Getting Players Invested"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "2df",
+                            "displayName": {
+                                "zh": "战役中的时间",
+                                "en": "Time in the Campaign"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "2cd",
+                    "displayName": {
+                        "zh": "规划冒险",
+                        "en": "Plan Adventures"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "2e1",
+                    "displayName": {
+                        "zh": "结束战役",
+                        "en": "Ending a Campaign"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": false,
+                            "id": "2e5",
+                            "displayName": {
+                                "zh": "重要名词",
+                                "en": "Important Names"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "headers": [
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "2f1",
+                                    "displayName": {
+                                        "zh": "灰鹰世设",
+                                        "en": "The Greyhawk Setting"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "2f4",
+                                    "displayName": {
+                                        "zh": "派系和组织",
+                                        "en": "Factions and Organizations"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "2fa",
+                                    "displayName": {
+                                        "zh": "灰鹰的魔法",
+                                        "en": "Magic in Greyhawk"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "2fb",
+                                    "displayName": {
+                                        "zh": "灰鹰的传说",
+                                        "en": "Mysteries of Greyhawk"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "301",
+                                    "displayName": {
+                                        "zh": "灰鹰诸神",
+                                        "en": "Gods of Greyhawk"
+                                    }
+                                }
+                            ],
+                            "alonepage": true,
+                            "id": "2e6",
+                            "displayName": {
+                                "zh": "灰鹰的背景",
+                                "en": "Greyhawk's Premise"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "headers": [
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": false,
+                                    "headers": [],
+                                    "id": "30b",
+                                    "displayName": {
+                                        "zh": "如何使用这座城市",
+                                        "en": "How to Use the City"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": false,
+                                    "headers": [],
+                                    "id": "310",
+                                    "displayName": {
+                                        "zh": "城市概览",
+                                        "en": "City Overview"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "31c",
+                                            "displayName": {
+                                                "zh": "黑龙旅店",
+                                                "en": "Black Dragon Inn"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "320",
+                                            "displayName": {
+                                                "zh": "大城堡",
+                                                "en": "Grand Citadel"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "324",
+                                            "displayName": {
+                                                "zh": "大图书馆",
+                                                "en": "Great Library"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "328",
+                                            "displayName": {
+                                                "zh": "高塔旅店",
+                                                "en": "High Tower Inn"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "32c",
+                                            "displayName": {
+                                                "zh": "银龙旅店",
+                                                "en": "Silver Dragon Inn"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "330",
+                                            "displayName": {
+                                                "zh": "远界神殿",
+                                                "en": "Temple of the Far Horizon"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "334",
+                                            "displayName": {
+                                                "zh": "光辉圣阳神殿",
+                                                "en": "Temple of the Radiant Sun"
+                                            }
+                                        },
+                                        {
+                                            "ordinal": {
+                                                "type": "text",
+                                                "identifier": 0
+                                            },
+                                            "source": "",
+                                            "alonepage": true,
+                                            "headers": [],
+                                            "id": "338",
+                                            "displayName": {
+                                                "zh": "破解奥秘",
+                                                "en": "Unearthed Arcana"
+                                            }
+                                        }
+                                    ],
+                                    "id": "31b",
+                                    "displayName": {
+                                        "zh": "城市地点",
+                                        "en": "City Locations"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "33c",
+                                    "displayName": {
+                                        "zh": "城墙之外",
+                                        "en": "Beyond the City Walls"
+                                    }
+                                }
+                            ],
+                            "alonepage": true,
+                            "id": "302",
+                            "displayName": {
+                                "zh": "自由城市灰鹰",
+                                "en": "Free City of Greyhawk"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "headers": [
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "340",
+                                    "displayName": {
+                                        "zh": "中法兰尼斯",
+                                        "en": "Central Flanaess"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "349",
+                                    "displayName": {
+                                        "zh": "东法兰尼斯",
+                                        "en": "Eastern Flanaess"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "351",
+                                    "displayName": {
+                                        "zh": "北法兰尼斯",
+                                        "en": "Northern Flanaess"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "35a",
+                                    "displayName": {
+                                        "zh": "旧科奥兰地区",
+                                        "en": "Old Keoland"
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": true,
+                                    "headers": [],
+                                    "id": "364",
+                                    "displayName": {
+                                        "zh": "西法兰尼斯",
+                                        "en": "Western Flanaess"
+                                    }
+                                }
+                            ],
+                            "alonepage": true,
+                            "id": "33d",
+                            "displayName": {
+                                "zh": "灰鹰地理志",
+                                "en": "Greyhawk Gazetteer"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "2e3",
+                    "displayName": {
+                        "zh": "灰鹰",
+                        "en": "Greyhawk"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "295",
+            "displayName": {
+                "zh": "创作战役",
+                "en": "Creating Campaigns"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 6
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "369",
+                    "displayName": {
+                        "zh": "诸位面",
+                        "en": "The Planes"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "372",
+                    "displayName": {
+                        "zh": "位面旅行",
+                        "en": "Planar Travel"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "37a",
+                    "displayName": {
+                        "zh": "位面冒险",
+                        "en": "Planar Adventuring"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "37e",
+                            "displayName": {
+                                "zh": "无底深渊",
+                                "en": "Abyss"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "389",
+                            "displayName": {
+                                "zh": "修罗场",
+                                "en": "Acheron"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "38b",
+                            "displayName": {
+                                "zh": "奔放之野",
+                                "en": "Arborea"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "38d",
+                            "displayName": {
+                                "zh": "世外桃源",
+                                "en": "Arcadia"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "38f",
+                            "displayName": {
+                                "zh": "星光位面",
+                                "en": "Astral Plane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "396",
+                            "displayName": {
+                                "zh": "万兽乡",
+                                "en": "Beastlands"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "398",
+                            "displayName": {
+                                "zh": "双生天堂",
+                                "en": "Bytopia"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "39a",
+                            "displayName": {
+                                "zh": "卡瑟利",
+                                "en": "Carceri"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "39d",
+                            "displayName": {
+                                "zh": "半位面",
+                                "en": "Demiplanes"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "39f",
+                            "displayName": {
+                                "zh": "气元素位面",
+                                "en": "Elemental Plane of Air"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3a5",
+                            "displayName": {
+                                "zh": "土元素位面",
+                                "en": "Elemental Plane of Earth"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3aa",
+                            "displayName": {
+                                "zh": "火元素位面",
+                                "en": "Elemental Plane of Fire"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3b0",
+                            "displayName": {
+                                "zh": "水元素位面",
+                                "en": "Elemental Plane of Water"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3b8",
+                            "displayName": {
+                                "zh": "极乐境",
+                                "en": "Elysium"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3ba",
+                            "displayName": {
+                                "zh": "以太位面",
+                                "en": "Ethereal Plane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3c0",
+                            "displayName": {
+                                "zh": "遥远国度",
+                                "en": "Far Realm"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3c2",
+                            "displayName": {
+                                "zh": "妖精荒野",
+                                "en": "Feywild"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3cd",
+                            "displayName": {
+                                "zh": "焦炎火狱",
+                                "en": "Gehenna"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3cf",
+                            "displayName": {
+                                "zh": "哈迪斯",
+                                "en": "Hades"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3d2",
+                            "displayName": {
+                                "zh": "混沌海",
+                                "en": "Limbo"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3d5",
+                            "displayName": {
+                                "zh": "物质位面",
+                                "en": "Material Plane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3db",
+                            "displayName": {
+                                "zh": "机械境",
+                                "en": "Mechanus"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3dd",
+                            "displayName": {
+                                "zh": "天界山",
+                                "en": "Mount Celestia"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3df",
+                            "displayName": {
+                                "zh": "负位面",
+                                "en": "Negative Plane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3e1",
+                            "displayName": {
+                                "zh": "九层地狱",
+                                "en": "Nine Hells"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3f0",
+                            "displayName": {
+                                "zh": "外域",
+                                "en": "Outlands"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3f2",
+                            "displayName": {
+                                "zh": "喧癫空隧",
+                                "en": "Pandemonium"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3f4",
+                            "displayName": {
+                                "zh": "次生元素位面",
+                                "en": "Para-elemental Planes"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3fa",
+                            "displayName": {
+                                "zh": "正位面",
+                                "en": "Positive Plane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "3fc",
+                            "displayName": {
+                                "zh": "堕影冥界",
+                                "en": "Shadowfell"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "407",
+                            "displayName": {
+                                "zh": "众门之城印记城",
+                                "en": "Sigil, City of Doors"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "408",
+                            "displayName": {
+                                "zh": "伊斯加德",
+                                "en": "Ysgard"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "37d",
+                    "displayName": {
+                        "zh": "多元宇宙之旅",
+                        "en": "Tour of the Multiverse"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "368",
+            "displayName": {
+                "zh": "宇宙学",
+                "en": "Cosmology"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 7
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "40b",
+                    "displayName": {
+                        "zh": "宝藏主题",
+                        "en": "Treasure Themes"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "40c",
+                    "displayName": {
+                        "zh": "钱币",
+                        "en": "Coins"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "40d",
+                    "displayName": {
+                        "zh": "贸易金属条",
+                        "en": "Trade Bars"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "40e",
+                    "displayName": {
+                        "zh": "商业货物",
+                        "en": "Trade Goods"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "40f",
+                    "displayName": {
+                        "zh": "宝石",
+                        "en": "Gemstones"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "410",
+                    "displayName": {
+                        "zh": "艺术品",
+                        "en": "Art Objects"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "417",
+                            "displayName": {
+                                "zh": "魔法物品的类别",
+                                "en": "Magic Item Categories"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "425",
+                            "displayName": {
+                                "zh": "魔法物品的稀有度",
+                                "en": "Magic Item Rarity"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "427",
+                            "displayName": {
+                                "zh": "奖励魔法物品",
+                                "en": "Awarding Magic Items"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "42f",
+                            "displayName": {
+                                "zh": "激活魔法物品",
+                                "en": "Activating a Magic Item"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "434",
+                            "displayName": {
+                                "zh": "“次日黎明”",
+                                "en": "\"The Next Dawn\""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "诅咒物品",
+                                "en": "Curse Items"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "魔法物品的耐久",
+                                "en": "Magic Items Resilience"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "437",
+                            "displayName": {
+                                "zh": "制作魔法物品",
+                                "en": "Crafting Magic Items"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "43f",
+                            "displayName": {
+                                "zh": "魔法物品的独特特性",
+                                "en": "Magic Item Special Features"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "440",
+                            "displayName": {
+                                "zh": "神器",
+                                "en": "Artifacts"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "442",
+                            "displayName": {
+                                "zh": "智能魔法物品",
+                                "en": "Sentient Magic Items"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "411",
+                    "displayName": {
+                        "zh": "魔法物品",
+                        "en": "Magic Items"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "护甲",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "药水",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "戒指",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "卷轴",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "武器",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "法杖",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "魔杖",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "权杖",
+                                "en": ""
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": false,
+                                    "headers": [],
+                                    "id": "",
+                                    "displayName": {
+                                        "zh": "着装品（斗篷、手套等）",
+                                        "en": ""
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": false,
+                                    "headers": [],
+                                    "id": "",
+                                    "displayName": {
+                                        "zh": "装饰品（护符、头饰等）",
+                                        "en": ""
+                                    }
+                                },
+                                {
+                                    "ordinal": {
+                                        "type": "text",
+                                        "identifier": 0
+                                    },
+                                    "source": "",
+                                    "alonepage": false,
+                                    "headers": [],
+                                    "id": "",
+                                    "displayName": {
+                                        "zh": "其他物品",
+                                        "en": ""
+                                    }
+                                }
+                            ],
+                            "id": "",
+                            "displayName": {
+                                "zh": "奇物",
+                                "en": ""
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "44a",
+                    "displayName": {
+                        "zh": "魔法物品详述",
+                        "en": "Magic Items A-Z"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "704",
+                            "displayName": {
+                                "zh": "奥秘表",
+                                "en": "Arcana Tables"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "705",
+                            "displayName": {
+                                "zh": "武备表",
+                                "en": "Armaments Tables"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "706",
+                            "displayName": {
+                                "zh": "器具表",
+                                "en": "Implements Tables"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "707",
+                            "displayName": {
+                                "zh": "圣物表",
+                                "en": "Relics Tables"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "703",
+                    "displayName": {
+                        "zh": "随机魔法物品",
+                        "en": "Random Magic Items"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "797",
+            "displayName": {
+                "zh": "宝藏",
+                "en": "Treasure"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 8
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "709",
+                    "displayName": {
+                        "zh": "建立一个据点",
+                        "en": "Gaining a Bastion"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "70a",
+                    "displayName": {
+                        "zh": "据点回合",
+                        "en": "Bastion Turns"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "70c",
+                    "displayName": {
+                        "zh": "据点地图",
+                        "en": "Bastion Map"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "193",
+                    "displayName": {
+                        "zh": "基础设施",
+                        "en": "Basic Facilities"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "奥术研究室",
+                                "en": "Arcane Study"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "军械库",
+                                "en": "Armory"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "兵营",
+                                "en": "Barrack"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "种植园",
+                                "en": "Garden"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "图书馆",
+                                "en": "Library"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "圣坛",
+                                "en": "Sanctuary"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "铁匠铺",
+                                "en": "Smithy"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "仓库",
+                                "en": "Storehouse"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "工坊",
+                                "en": "Workshop"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "马厩",
+                                "en": "Stable"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "游戏厅",
+                                "en": "Gaming Hall"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "温室",
+                                "en": "Greenhouse"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "实验室",
+                                "en": "Laboratory"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "圣器室",
+                                "en": "Sacristy"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "抄写室",
+                                "en": "Scriptorium"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "传送法阵",
+                                "en": "Teleportation Circle"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "剧院",
+                                "en": "Theater"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "训练场",
+                                "en": "Training Area"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "陈列室",
+                                "en": "Trophy Room"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "档案馆",
+                                "en": "Archive"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "冥想间",
+                                "en": "Meditating Chamber"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "兽栏",
+                                "en": "Menagerie"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "天文台",
+                                "en": "Observatory"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "酒馆",
+                                "en": "Pub"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "圣物库",
+                                "en": "Reliquary"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "半位面",
+                                "en": "Demiplane"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "公会大厅",
+                                "en": "GuildHall"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "圣所",
+                                "en": "Sanctum"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "作战指挥室",
+                                "en": "War Room"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bastion",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "",
+                            "displayName": {
+                                "zh": "特色设施",
+                                "en": "Speical Facilities"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "712",
+                    "displayName": {
+                        "zh": "特色设施",
+                        "en": "Special Facilities"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "78a",
+                    "displayName": {
+                        "zh": "据点事件",
+                        "en": "Bastion Events"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "798",
+                    "displayName": {
+                        "zh": "失去据点",
+                        "en": "Fall of a Bastion"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "",
+            "displayName": {
+                "zh": "据点",
+                "en": "Bastions"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 1
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79a",
+                    "displayName": {
+                        "zh": "阿瑟瑞克",
+                        "en": "Acererak"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79b",
+                    "displayName": {
+                        "zh": "精金",
+                        "en": "Adamantine"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79c",
+                    "displayName": {
+                        "zh": "艾拉斯卓·银手",
+                        "en": "Alustriel Silverhand"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79d",
+                    "displayName": {
+                        "zh": "阿莎德隆",
+                        "en": "Ashardalon"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79e",
+                    "displayName": {
+                        "zh": "芭芭雅嘎",
+                        "en": "Baba Yaga"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "79f",
+                    "displayName": {
+                        "zh": "巴哈姆特",
+                        "en": "Bahamut"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a0",
+                    "displayName": {
+                        "zh": "博德之门",
+                        "en": "Baldur's Gate"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a1",
+                    "displayName": {
+                        "zh": "巴洛维亚",
+                        "en": "Barovia"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a2",
+                    "displayName": {
+                        "zh": "毕格比",
+                        "en": "Bigby"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a3",
+                    "displayName": {
+                        "zh": "布布",
+                        "en": "Boo"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a4",
+                    "displayName": {
+                        "zh": "鸦阁堡",
+                        "en": "Castle Ravenloft"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a5",
+                    "displayName": {
+                        "zh": "秘银五侠",
+                        "en": "Companions of the Hall, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a6",
+                    "displayName": {
+                        "zh": "七人团",
+                        "en": "Company of Seven, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a7",
+                    "displayName": {
+                        "zh": "科瑞隆",
+                        "en": "Corellon"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a8",
+                    "displayName": {
+                        "zh": "戴琳娜",
+                        "en": "Delina"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7a9",
+                    "displayName": {
+                        "zh": "迪安卡斯特拉",
+                        "en": "Diancastra"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7aa",
+                    "displayName": {
+                        "zh": "崔斯特·杜垩登",
+                        "en": "Drizzt Do'Urden"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ab",
+                    "displayName": {
+                        "zh": "上古邪物",
+                        "en": "Elder Evils"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ac",
+                    "displayName": {
+                        "zh": "伊尔明斯特",
+                        "en": "Elminster"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ad",
+                    "displayName": {
+                        "zh": "尤瑞艾莉",
+                        "en": "Euryale"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ae",
+                    "displayName": {
+                        "zh": "应变小队",
+                        "en": "Fallbacks, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7af",
+                    "displayName": {
+                        "zh": "第一世界",
+                        "en": "First World, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b0",
+                    "displayName": {
+                        "zh": "费兹本",
+                        "en": "Fizban"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b1",
+                    "displayName": {
+                        "zh": "魔冢大行军",
+                        "en": "Great Modron March, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b2",
+                    "displayName": {
+                        "zh": "格乌什",
+                        "en": "Gruumsh"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b3",
+                    "displayName": {
+                        "zh": "哈达",
+                        "en": "Hadar"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b4",
+                    "displayName": {
+                        "zh": "竖琴手联盟",
+                        "en": "Harpers, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b5",
+                    "displayName": {
+                        "zh": "长枪英雄",
+                        "en": "Heroes of the Lance, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b6",
+                    "displayName": {
+                        "zh": "国度英雄",
+                        "en": "Heroes of the Realm, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b7",
+                    "displayName": {
+                        "zh": "冰风谷",
+                        "en": "Icewind Dale"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b8",
+                    "displayName": {
+                        "zh": "伊格薇尔伏",
+                        "en": "Iggwilv"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7b9",
+                    "displayName": {
+                        "zh": "埃乌兹",
+                        "en": "Iuz"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ba",
+                    "displayName": {
+                        "zh": "贾拉兹·萨维恩",
+                        "en": "Jallarzi Sallavarian"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7bb",
+                    "displayName": {
+                        "zh": "背叛者凯斯",
+                        "en": "Kas the Betrayer"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7bc",
+                    "displayName": {
+                        "zh": "克拉普提斯",
+                        "en": "Keraptis"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7bd",
+                    "displayName": {
+                        "zh": "凯沃斯",
+                        "en": "Kyuss"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7be",
+                    "displayName": {
+                        "zh": "莱拉·银手",
+                        "en": "Laeral Silverhand"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7bf",
+                    "displayName": {
+                        "zh": "恶毒同盟",
+                        "en": "League of Malevolence, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c0",
+                    "displayName": {
+                        "zh": "索思爵士",
+                        "en": "Lord Soth"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c1",
+                    "displayName": {
+                        "zh": "魔索布莱城",
+                        "en": "Menzoberranzan"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c2",
+                    "displayName": {
+                        "zh": "明斯克",
+                        "en": "Minsc"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c3",
+                    "displayName": {
+                        "zh": "秘银",
+                        "en": "Mithral"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c4",
+                    "displayName": {
+                        "zh": "摩拉丁",
+                        "en": "Moradin"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c5",
+                    "displayName": {
+                        "zh": "魔邓肯",
+                        "en": "Mordenkainen"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c6",
+                    "displayName": {
+                        "zh": "无冬城",
+                        "en": "Neverwinter"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c7",
+                    "displayName": {
+                        "zh": "欧提路克",
+                        "en": "Otiluke"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c8",
+                    "displayName": {
+                        "zh": "奥图",
+                        "en": "Otto"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7c9",
+                    "displayName": {
+                        "zh": "凡达林",
+                        "en": "Phandalin"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ca",
+                    "displayName": {
+                        "zh": "冰霜王子",
+                        "en": "Prince of Frost, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7cb",
+                    "displayName": {
+                        "zh": "空暗女王",
+                        "en": "Queen of Air and Darkness, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7cc",
+                    "displayName": {
+                        "zh": "渡鸦女王",
+                        "en": "Raven Queen, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7cd",
+                    "displayName": {
+                        "zh": "布拉岩城",
+                        "en": "Rock of Bral, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7ce",
+                    "displayName": {
+                        "zh": "鲁道夫·范·里希滕",
+                        "en": "Rudolph van Richten"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7cf",
+                    "displayName": {
+                        "zh": "施特拉德·冯·扎洛维奇",
+                        "en": "Strahd von Zarovich"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d0",
+                    "displayName": {
+                        "zh": "仲夏女王",
+                        "en": "Summer Queen, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d1",
+                    "displayName": {
+                        "zh": "剑湾",
+                        "en": "Sword Coast, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d2",
+                    "displayName": {
+                        "zh": "萨扎斯·坦",
+                        "en": "Szass Tam"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d3",
+                    "displayName": {
+                        "zh": "塔莎",
+                        "en": "Tasha"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d4",
+                    "displayName": {
+                        "zh": "萨瑞兹顿",
+                        "en": "Tharizdun"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d5",
+                    "displayName": {
+                        "zh": "提亚马特",
+                        "en": "Tiamat"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d6",
+                    "displayName": {
+                        "zh": "幽暗地域",
+                        "en": "Underdark, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d7",
+                    "displayName": {
+                        "zh": "地脉迷城",
+                        "en": "Undermountain"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d8",
+                    "displayName": {
+                        "zh": "瓦婕拉·莎法尔",
+                        "en": "Vajra Safahr"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7d9",
+                    "displayName": {
+                        "zh": "勇者之唤",
+                        "en": "Valor's Call"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7da",
+                    "displayName": {
+                        "zh": "维克那",
+                        "en": "Vecna"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7db",
+                    "displayName": {
+                        "zh": "文格尔",
+                        "en": "Venger"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7dc",
+                    "displayName": {
+                        "zh": "蔚",
+                        "en": "Vi"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7dd",
+                    "displayName": {
+                        "zh": "维拉基斯",
+                        "en": "Vlaakith"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7de",
+                    "displayName": {
+                        "zh": "深水城",
+                        "en": "Waterdeep"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7df",
+                    "displayName": {
+                        "zh": "珊娜萨",
+                        "en": "Xanathar"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7e0",
+                    "displayName": {
+                        "zh": "哈欠门酒馆",
+                        "en": "Yawning Portal, The"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7e1",
+                    "displayName": {
+                        "zh": "悠兰德",
+                        "en": "Yolande"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7e2",
+                    "displayName": {
+                        "zh": "扎吉格",
+                        "en": "Zagyg"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": false,
+                    "id": "7e3",
+                    "displayName": {
+                        "zh": "扎贡",
+                        "en": "Zargon"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "",
+            "displayName": {
+                "zh": "设定汇编",
+                "en": "Lore Glossary"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 2
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7e5",
+                    "displayName": {
+                        "zh": "Barrow Crypt",
+                        "en": "Barrow Crypt"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7e6",
+                    "displayName": {
+                        "zh": "Caravan Encampment",
+                        "en": "Caravan Encampment"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7e7",
+                    "displayName": {
+                        "zh": "Crossroads Village",
+                        "en": "Crossroads Village"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7e8",
+                    "displayName": {
+                        "zh": "Dragon's Lair",
+                        "en": "Dragon's Lair"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7e9",
+                    "displayName": {
+                        "zh": "Dungeon Hideout",
+                        "en": "Dungeon Hideout"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7ea",
+                    "displayName": {
+                        "zh": "Farmstead",
+                        "en": "Farmstead"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7eb",
+                    "displayName": {
+                        "zh": "Keep",
+                        "en": "Keep"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7ec",
+                    "displayName": {
+                        "zh": "Manor",
+                        "en": "Manor"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7ed",
+                    "displayName": {
+                        "zh": "Mine",
+                        "en": "Mine"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7ee",
+                    "displayName": {
+                        "zh": "Roadside Inn",
+                        "en": "Roadside Inn"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7ef",
+                    "displayName": {
+                        "zh": "Ship",
+                        "en": "Ship"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f0",
+                    "displayName": {
+                        "zh": "Spooky House",
+                        "en": "Spooky House"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f1",
+                    "displayName": {
+                        "zh": "Underdark Warren",
+                        "en": "Underdark Warren"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f2",
+                    "displayName": {
+                        "zh": "Volcanic Caves",
+                        "en": "Volcanic Caves"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f3",
+                    "displayName": {
+                        "zh": "Wizard's Tower",
+                        "en": "Wizard's Tower"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "",
+            "displayName": {
+                "zh": "地图",
+                "en": "Maps"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 3
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f5",
+                    "displayName": {
+                        "zh": "Game Expectations",
+                        "en": "Game Expectations"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f6",
+                    "displayName": {
+                        "zh": "Travel Planner",
+                        "en": "Travel Planner"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f7",
+                    "displayName": {
+                        "zh": "NPC Tracker",
+                        "en": "NPC Tracker"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f8",
+                    "displayName": {
+                        "zh": "Settlement Tracker",
+                        "en": "Settlement Tracker"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7f9",
+                    "displayName": {
+                        "zh": "Campaign Journal",
+                        "en": "Campaign Journal"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7fa",
+                    "displayName": {
+                        "zh": "DM's Character Tracker",
+                        "en": "DM's Character Tracker"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7fb",
+                    "displayName": {
+                        "zh": "Campaign Conflicts",
+                        "en": "Campaign Conflicts"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7fc",
+                    "displayName": {
+                        "zh": "Magic Item Tracker",
+                        "en": "Magic Item Tracker"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 0
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "7fd",
+                    "displayName": {
+                        "zh": "Bastion Tracker",
+                        "en": "Bastion Tracker"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "id": "",
+            "displayName": {
+                "zh": "跟踪表",
+                "en": "Tracking Sheets"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "text",
+                "identifier": 0
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "7fe",
+            "displayName": {
+                "zh": "Credits",
+                "en": "Credits"
+            }
+        }
+    ],
+    "order": 100,
+    "id_zh": ""
+}

@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Adventurers League",
-    "zh_name":  "冒险者联盟",
+    "displayName": {
+      "zh": "冒险者联盟",
+      "en": "Adventurers League"
+    },
     "id":  "AL",
     "booktype":  "贤者谏言\u0026杂项出版物",
     "tag":  [

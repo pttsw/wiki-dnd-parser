@@ -59,7 +59,7 @@ async function getLegacySources(): Promise<Set<string>> {
             }
         }
     } catch (error) {
-        console.warn(`无法读取 parser.js 获取过时源数据列表，使用默认列表:`, error);
+        console.warn('无法读取 parser.js 获取过时源数据列表，使用默认列表:', error);
     }
 
     return legacySources;
@@ -69,7 +69,6 @@ function buildNameToIdMap(dataArray: any[]): Map<string, string> {
     const nameToIdMap = new Map<string, string>();
 
     function removeChapterPrefix(name: string): string {
-        // 匹配各种章节前缀格式
         const prefixes = [
             /^Chapter \d+: /i,
             /^Chapter \d+ /i,
@@ -162,6 +161,58 @@ function getOrderForBooktype(booktype: string, bookId: string, coreOrder: Record
     return orderMap[booktype] ?? 100;
 }
 
+// 转换单个文件的内容，将name/zh_name转换为displayName
+const convertFileToNewFormat = (obj: any): any => {
+    const result = { ...obj };
+    
+    // 转换根级别
+    if (result.zh_name || result.name) {
+        result.displayName = {
+            zh: result.zh_name || result.name,
+            en: result.name,
+        };
+        delete result.zh_name;
+        delete result.name;
+    }
+    
+    // 递归转换contents
+    const convertArray = (arr: any[]): any[] => {
+        if (!Array.isArray(arr)) return arr;
+        
+        return arr.map((item: any) => {
+            const newItem: any = { ...item };
+            
+            // 转换displayName
+            if (newItem.zh_name || newItem.name) {
+                newItem.displayName = {
+                    zh: newItem.zh_name || newItem.name,
+                    en: newItem.name,
+                };
+                delete newItem.zh_name;
+                delete newItem.name;
+            }
+            
+            // 递归处理子contents
+            if (newItem.contents) {
+                newItem.contents = convertArray(newItem.contents);
+            }
+            
+            // 递归处理headers
+            if (newItem.headers) {
+                newItem.headers = convertArray(newItem.headers);
+            }
+            
+            return newItem;
+        });
+    };
+    
+    if (result.contents) {
+        result.contents = convertArray(result.contents);
+    }
+    
+    return result;
+};
+
 function convertToOutputFormat(
     book: any, 
     type: 'book' | 'adventure',
@@ -170,45 +221,34 @@ function convertToOutputFormat(
     legacySources: Set<string>,
     nameToIdMap: Map<string, string>
 ) {
-    const convertHeaders = (headers: Array<string | { index?: number; header: string }> = []) => {
-        return headers.map((header) => {
-            const headerObj = typeof header === 'string' ? { header } : header;
-            return {
-                name: headerObj.header,
-                zh_name: headerObj.header,
-                ordinal: { type: 'text', identifier: 0 },
-                source: '',
-                alonepage: false,
-                headers: [],
-            };
-        });
-    };
-
-    const convertContents = (contents: any[]) => {
-        if (!Array.isArray(contents)) return [];
+    // 递归转换一个条目数组，将name/zh_name转换为displayName
+    const convertArray = (arr: any[]): any[] => {
+        if (!Array.isArray(arr)) return arr;
         
-        return contents.map((chapter, idx) => {
-            const ordinal = chapter.ordinal || { type: 'chapter', identifier: idx + 1 };
-            const headers = convertHeaders(chapter.headers);
+        return arr.map((item: any) => {
+            const newItem: any = { ...item };
             
-            let id = '';
-            const nameToMatch = chapter.ENG_name || chapter.name;
-            if (nameToMatch) {
-                id = nameToIdMap.get(nameToMatch) || '';
+            // 转换displayName
+            if (newItem.zh_name || newItem.name) {
+                newItem.displayName = {
+                    zh: newItem.zh_name || newItem.name,
+                    en: newItem.name,
+                };
+                delete newItem.zh_name;
+                delete newItem.name;
             }
             
-            return {
-                id,
-                name: chapter.ENG_name || chapter.name,
-                zh_name: chapter.name,
-                ordinal: {
-                    type: ordinal.type,
-                    identifier: ordinal.identifier,
-                },
-                source: '',
-                headers,
-                alonepage: headers.length > 0,
-            };
+            // 递归处理子contents
+            if (newItem.contents) {
+                newItem.contents = convertArray(newItem.contents);
+            }
+            
+            // 递归处理headers
+            if (newItem.headers) {
+                newItem.headers = convertArray(newItem.headers);
+            }
+            
+            return newItem;
         });
     };
 
@@ -217,9 +257,9 @@ function convertToOutputFormat(
 
     let booktype = '';
     if (booktypeConfig) {
-        for (const [typeName, ids] of Object.entries(booktypeConfig)) {
+        for (const [_type, ids] of Object.entries(booktypeConfig)) {
             if (Array.isArray(ids) && ids.includes(book.id)) {
-                booktype = typeName;
+                booktype = _type;
                 break;
             }
         }
@@ -227,10 +267,8 @@ function convertToOutputFormat(
 
     const order = getOrderForBooktype(booktype, book.id, coreOrder);
 
-    return {
+    const result: any = {
         _hjschema: '出版物',
-        name: book.ENG_name || book.name,
-        zh_name: book.name,
         id: book.id,
         booktype,
         tag: getTagsFromGroup(book.group),
@@ -245,8 +283,20 @@ function convertToOutputFormat(
         published: book.published || '',
         author: book.author || '',
         merge: '',
-        contents: convertContents(book.contents),
     };
+
+    if (book.zh_name || book.name) {
+        result.displayName = {
+            zh: book.name,
+            en: book.ENG_name || book.name,
+        };
+    }
+    
+    if (book.contents) {
+        result.contents = convertArray(book.contents);
+    }
+
+    return result;
 }
 
 export const generateContents = async () => {
@@ -275,62 +325,23 @@ export const generateContents = async () => {
         await fs.mkdir(outputBookDir, { recursive: true });
         await fs.mkdir(outputAdventureDir, { recursive: true });
 
-        const books = [...(Array.isArray(booksZh.book) ? booksZh.book : []), ...(Array.isArray(booksEn.book) ? booksEn.book : [])];
-        const adventures = [...(Array.isArray(adventuresZh.adventure) ? adventuresZh.adventure : []), ...(Array.isArray(adventuresEn.adventure) ? adventuresEn.adventure : [])];
-
-        const bookMap = new Map<string, any>();
-        books.forEach(book => {
-            if (!bookMap.has(book.id)) {
-                bookMap.set(book.id, book);
-            }
-        });
-
-        const adventureMap = new Map<string, any>();
-        adventures.forEach(adv => {
-            if (!adventureMap.has(adv.id)) {
-                adventureMap.set(adv.id, adv);
-            }
-        });
-
-        let bookCount = 0;
-        for (const [id, book] of bookMap) {
-            if (existingIds.has(id)) {
-                continue;
-            }
-
-            try {
-                const nameToIdMap = await loadBookContentFile(id, 'book');
-                const output = convertToOutputFormat(book, 'book', booktypeConfig, coreOrder, legacySources, nameToIdMap);
-                const outputPath = path.join(outputBookDir, `${id}.json`);
-                await fs.writeFile(outputPath, JSON.stringify(output, null, 4), 'utf-8');
-                bookCount++;
-            } catch (err) {
-                console.warn(`Failed to process book ${id}:`, err);
-            }
+        const allBookIds = new Set<string>();
+        if (Array.isArray(booksZh.book)) {
+            booksZh.book.forEach((b: any) => allBookIds.add(b.id));
         }
-        console.log(`[generateContents] 生成扩展目录：${bookCount} 个`);
-
-        let adventureCount = 0;
-        for (const [id, adventure] of adventureMap) {
-            if (existingIds.has(id)) {
-                continue;
-            }
-
-            try {
-                const nameToIdMap = await loadBookContentFile(id, 'adventure');
-                const output = convertToOutputFormat(adventure, 'adventure', booktypeConfig, coreOrder, legacySources, nameToIdMap);
-                const outputPath = path.join(outputAdventureDir, `${id}.json`);
-                await fs.writeFile(outputPath, JSON.stringify(output, null, 4), 'utf-8');
-                adventureCount++;
-            } catch (err) {
-                console.warn(`[generateContents] Failed to process adventure ${id}:`, err);
-            }
+        if (Array.isArray(booksEn.book)) {
+            booksEn.book.forEach((b: any) => allBookIds.add(b.id));
         }
-        console.log(`[generateContents] 生成模组目录：${adventureCount} 个`);
-
-        // 复制已有目录到 output
-        const allBookIds = new Set<string>([...(booksZh.book || []), ...(booksEn.book || [])].map(b => b.id));
-        const allAdventureIds = new Set<string>([...(adventuresZh.adventure || []), ...(adventuresEn.adventure || [])].map(a => a.id));
+        
+        const allAdventureIds = new Set<string>();
+        if (Array.isArray(adventuresZh.adventure)) {
+            adventuresZh.adventure.forEach((a: any) => allAdventureIds.add(a.id));
+        }
+        if (Array.isArray(adventuresEn.adventure)) {
+            adventuresEn.adventure.forEach((a: any) => allAdventureIds.add(a.id));
+        }
+        
+        // 处理并复制已存在的目录
         let copiedCount = 0;
 
         for (const filename of existingContents) {
@@ -345,7 +356,7 @@ export const generateContents = async () => {
             } else if (allAdventureIds.has(id)) {
                 destDir = outputAdventureDir;
             } else {
-                // 默认按 booktype-config 里的类型判断
+                // 默认按booktype-config里的类型判断
                 destDir = outputBookDir;
                 if (booktypeConfig) {
                     for (const [type, ids] of Object.entries(booktypeConfig)) {
@@ -359,27 +370,29 @@ export const generateContents = async () => {
             
             try {
                 const destPath = path.join(destDir, filename);
-                // 读取文件，去掉 BOM，然后保存为 UTF-8
+                // 读取文件，去掉BOM
                 let content = await fs.readFile(srcPath, 'utf-8');
-                // 去掉 BOM
                 if (content.charCodeAt(0) === 0xFEFF) {
                     content = content.slice(1);
                 }
-                await fs.writeFile(destPath, content, 'utf-8');
+                
+                const obj = JSON.parse(content);
+                const converted = convertFileToNewFormat(obj);
+                await fs.writeFile(destPath, JSON.stringify(converted, null, 4), 'utf-8');
                 copiedCount++;
             } catch (err) {
-                console.warn(`[generateContents] Failed to copy ${filename}:`, err);
+                console.warn(`[generateContents] 复制 ${filename} 失败:`, err);
             }
         }
         
-        console.log(`[generateContents] 复制已有目录：${copiedCount} 个`);
+        console.log(`[generateContents] 复制已有目录: ${copiedCount} 个`);
         console.log(`[generateContents] 完成`);
         
-        return { bookCount, adventureCount, copiedCount };
+        return { bookCount: 0, adventureCount: 0, copiedCount };
     } catch (e) {
-        console.error('Fatal error:', e);
+        console.error('致命错误:', e);
         if (e instanceof Error) {
-            console.error('Error stack:', e.stack);
+            console.error('错误堆栈:', e.stack);
         }
         throw e;
     }

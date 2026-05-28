@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "Adventure Atlas: The Mortuary",
-    "zh_name":  "冒险地图匣：葬仪社",
+	"displayName": {
+      "zh": "冒险地图匣：葬仪社",
+      "en": "Adventure Atlas: The Mortuary"
+    },
     "id":  "AATM",
     "booktype":  "电子资源",
     "tag":  [

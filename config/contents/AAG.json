@@ -1,7 +1,9 @@
 {
     "_hjschema":  "出版物",
-    "name":  "Astral Adventurer\u0027s Guide",
-    "zh_name":  "星界冒险者指南",
+    "displayName": {
+      "zh": "星界冒险者指南",
+      "en": "Astral Adventurer\u0027s Guide"
+    },
     "id":  "AAG",
     "booktype":  "扩展\u0026资源",
     "tag":  [

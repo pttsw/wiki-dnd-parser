@@ -1,7 +1,9 @@
 ﻿{
     "_hjschema":  "出版物",
-    "name":  "The Book of Many Things",
-    "zh_name":  "万象无常书",
+    "displayName": {
+      "zh": "万象无常书",
+      "en": "The Book of Many Things"
+    },
     "id":  "BMT",
     "booktype":  "扩展\u0026资源",
     "tag":  [

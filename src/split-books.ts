@@ -159,12 +159,14 @@ const loadBookContentFile = async (bookId: string, type: 'book' | 'adventure'): 
 };
 
 const extractEnNameFromEntry = (entry: any): string => {
+    if (entry.displayName?.en) return entry.displayName.en;
     if (entry.ENG_name) return entry.ENG_name;
     if (entry.name) return entry.name;
     return '';
 };
 
 const extractZhNameFromEntry = (entry: any): string => {
+    if (entry.displayName?.zh) return entry.displayName.zh;
     if (entry.zh_name) return entry.zh_name;
     if (entry.name) return entry.name;
     return '';
