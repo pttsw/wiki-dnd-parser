@@ -359,7 +359,13 @@ export const generateContents = async () => {
             
             try {
                 const destPath = path.join(destDir, filename);
-                await fs.copyFile(srcPath, destPath);
+                // 读取文件，去掉 BOM，然后保存为 UTF-8
+                let content = await fs.readFile(srcPath, 'utf-8');
+                // 去掉 BOM
+                if (content.charCodeAt(0) === 0xFEFF) {
+                    content = content.slice(1);
+                }
+                await fs.writeFile(destPath, content, 'utf-8');
                 copiedCount++;
             } catch (err) {
                 console.warn(`[generateContents] Failed to copy ${filename}:`, err);

@@ -191,8 +191,11 @@ const getDisplayNameWithPrefix = (enName: string, zhName: string, ordinal: any):
         }
     } else if (ordinal?.type === 'appendix' && ordinal.identifier !== undefined) {
         const identifier = ordinal.identifier;
-        displayEn = `Appendix ${identifier}: ${enName}`;
-        displayZh = `附录${identifier}：${zhName}`;
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            displayEn = `Appendix ${identifier}: ${enName}`;
+            displayZh = `附录${chineseNum}：${zhName}`;
+        }
     }
 
     return { en: displayEn, zh: displayZh };
