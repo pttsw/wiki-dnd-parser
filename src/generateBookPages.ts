@@ -42,7 +42,7 @@ interface PageData {
     page: number;
     type: string;
     identifier?: number;
-    displayName: {
+    displayName?: {
         zh?: string | null;
         en?: string | null;
     };
@@ -58,6 +58,13 @@ interface PageData {
         name?: string;
         title?: string;
     };
+    ordinal?: {
+        type?: string;
+        identifier?: number | string;
+    };
+    zh_name?: string;
+    name?: string;
+    ENG_name?: string;
 }
 
 interface ChapterHierarchy {
@@ -70,19 +77,25 @@ interface BookContentConfig {
     id: string;
     name?: string;
     zh_name?: string;
+    displayName?: {
+        zh?: string;
+        en?: string;
+    };
     contents?: Array<{
         id: string;
         name?: string;
         zh_name?: string;
+        displayName?: {
+            zh?: string;
+            en?: string;
+        };
         contents?: Array<any>;
+        headers?: Array<any>;
     }>;
 }
 
 const bookConfigs: Map<string, BookContentConfig> = new Map();
 const writtenFiles: Map<string, string> = new Map();
-const logger = (msg: string) => {
-    console.error(msg);
-};
 
 const loadBookConfigs = async (): Promise<void> => {
     const configDir = './config/contents';
@@ -100,7 +113,7 @@ const loadBookConfigs = async (): Promise<void> => {
             }
         }
     } catch (error) {
-        logger(`加载配置目录失败: ${error}`);
+        console.error(`加载配置目录失败: ${error}`);
     }
 
     try {
@@ -124,14 +137,14 @@ const loadBookConfigs = async (): Promise<void> => {
                     }
                 }
             } catch (e) {
-                logger(`目录不存在或无法读取: ${dir}, 错误: ${e}`);
+                console.error(`目录不存在或无法读取: ${dir}, 错误: ${e}`);
             }
         }
     } catch (error) {
-        logger(`加载输出配置目录失败: ${error}`);
+        console.error(`加载输出配置目录失败: ${error}`);
     }
 
-    logger(`配置加载完成，共 ${bookConfigs.size} 个配置`);
+    console.error(`配置加载完成，共 ${bookConfigs.size} 个配置`);
 };
 
 const getParentChapters = (bookId: string, pageId: string): ChapterHierarchy[] => {
@@ -186,16 +199,16 @@ const getBookName = (bookId: string): { zh?: string; en?: string } => {
 };
 
 const getPageNameZh = (pageData: PageData): string => {
-    const nameZh = pageData.displayName?.zh || pageData.zh?.title || pageData.zh?.name;
+    const nameZh = pageData.displayName?.zh || pageData.zh?.title || pageData.zh?.name || pageData.zh_name;
     if (nameZh) return nameZh;
-    const nameEn = pageData.displayName?.en || pageData.en?.title || pageData.en?.name;
+    const nameEn = pageData.displayName?.en || pageData.en?.title || pageData.en?.name || pageData.name;
     return nameEn || pageData.id.split('|')[0];
 };
 
 const getPageNameEn = (pageData: PageData): string => {
-    const nameEn = pageData.displayName?.en || pageData.en?.title || pageData.en?.name;
+    const nameEn = pageData.displayName?.en || pageData.en?.title || pageData.en?.name || pageData.ENG_name || pageData.name;
     if (nameEn) return nameEn;
-    const nameZh = pageData.displayName?.zh || pageData.zh?.title || pageData.zh?.name;
+    const nameZh = pageData.displayName?.zh || pageData.zh?.title || pageData.zh?.name || pageData.zh_name;
     return nameZh || pageData.id.split('|')[0];
 };
 
@@ -245,7 +258,7 @@ const writePage = async (
 
     if (existing !== undefined) {
         if (existing !== normalizedContent) {
-            logger(`页面标题冲突，保留首个文件：${filePath}`);
+            console.error(`页面标题冲突，保留首个文件：${filePath}`);
         }
     } else {
         await fs.writeFile(filePath, normalizedContent, 'utf-8');
@@ -258,9 +271,9 @@ const writePage = async (
     
     let redirectTarget = '';
     if (pageNameZh) {
-        redirectTarget = `${categoryFolder}/${sanitizeFileSegment(finalBookNameZh)}/${escapedTitle}`;
+        redirectTarget = `${sanitizeFileSegment(finalBookNameZh)}/${escapedTitle}`;
     } else if (pageNameEn) {
-        redirectTarget = `${categoryFolder}/${sanitizeFileSegment(finalBookNameEn)}/${escapedTitle}`;
+        redirectTarget = `${sanitizeFileSegment(finalBookNameEn)}/${escapedTitle}`;
     }
 
     if (redirectTarget) {
@@ -358,7 +371,7 @@ const processBook = async (bookDir: string, bookId: string, isAdventure: boolean
             }
         }
     } catch (error) {
-        logger(`处理书籍 ${bookId} 失败: ${error}`);
+        console.error(`处理书籍 ${bookId} 失败: ${error}`);
     }
 
     return { zhCount, enCount };
@@ -379,9 +392,9 @@ const generateAll = async (): Promise<{
     let processedBooks = 0;
     let processedAdventures = 0;
 
-    logger('开始加载配置...');
+    console.error('开始加载配置...');
     await loadBookConfigs();
-    logger('配置加载完成！');
+    console.error('配置加载完成！');
 
     const booksDir = './output/book';
     try {
@@ -398,11 +411,11 @@ const generateAll = async (): Promise<{
                     processedBooks++;
                 }
             } catch (error) {
-                logger(`处理书籍目录失败: ${error}`);
+                console.error(`处理书籍目录失败: ${error}`);
             }
         }
     } catch (error) {
-        logger(`读取书籍目录失败: ${error}`);
+        console.error(`读取书籍目录失败: ${error}`);
     }
 
     const adventuresDir = './output/adventure';
@@ -420,11 +433,11 @@ const generateAll = async (): Promise<{
                     processedAdventures++;
                 }
             } catch (error) {
-                logger(`处理冒险目录失败: ${error}`);
+                console.error(`处理冒险目录失败: ${error}`);
             }
         }
     } catch (error) {
-        logger(`读取冒险目录失败: ${error}`);
+        console.error(`读取冒险目录失败: ${error}`);
     }
 
     return {
@@ -437,10 +450,14 @@ const generateAll = async (): Promise<{
 
 const main = async () => {
     console.log('开始生成书籍和冒险页面...');
-    const result = await generateAll();
+    try {
+        const result = await generateAll();
+        console.log(`生成完成！中文: ${result.totalZh}，英文: ${result.totalEn}`);
+        console.log(`处理书籍: ${result.processedBooks}，处理冒险: ${result.processedAdventures}`);
+    } catch (error) {
+        console.error('生成页面失败:', error);
+        process.exit(1);
+    }
 };
 
-main().catch((error) => {
-    console.error('生成页面失败:', error);
-    process.exit(1);
-});
+main();
