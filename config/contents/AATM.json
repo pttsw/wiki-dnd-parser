@@ -1,147 +1,151 @@
-﻿{
-    "_hjschema":  "出版物",
-	"displayName": {
-      "zh": "冒险地图匣：葬仪社",
-      "en": "Adventure Atlas: The Mortuary"
+{
+    "_hjschema": "出版物",
+    "displayName": {
+        "zh": "冒险地图匣：葬仪社",
+        "en": "Adventure Atlas: The Mortuary"
     },
-    "id":  "AATM",
-    "booktype":  "电子资源",
-    "tag":  [
-                "额外资源"
+    "id": "AATM",
+    "booktype": "电子资源",
+    "tag": [
+        "额外资源"
+    ],
+    "newest": true,
+    "id_zh": "",
+    "order": 8,
+    "source": "AATM",
+    "cover": {
+        "path": "AATM.png",
+        "type": "internal"
+    },
+    "published": "2023-10-17",
+    "author": "Wizards RPG Team",
+    "merge": "",
+    "contents": [
+        {
+            "ordinal": {
+                "type": "text",
+                "identifier": 1
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "001",
+                    "displayName": {
+                        "en": "Using This Supplement",
+                        "zh": ""
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "003",
+                    "displayName": {
+                        "en": "Heralds of Dust",
+                        "zh": ""
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "00d",
+                    "displayName": {
+                        "en": "The Mortuary",
+                        "zh": ""
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "02c",
+                    "displayName": {
+                        "en": "Appendix: Mortuary Creatures",
+                        "zh": ""
+                    }
+                }
             ],
-    "newest":  true,
-    "id_zh":  "",
-    "order":  8,
-    "source":  "AATM",
-    "cover":  {
-                  "path":  "AATM.png",
-                  "type":  "internal"
-              },
-    "published":  "2023-10-17",
-    "author":  "Wizards RPG Team",
-    "merge":  "",
-    "contents":  [
-                     {
-                         "name":  "Adventure Atlas: The Mortuary",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "text",
-                                         "identifier":  1
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Using This Supplement",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "001"
-                                         },
-                                         {
-                                             "name":  "Heralds of Dust",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "003"
-                                         },
-                                         {
-                                             "name":  "The Mortuary",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "00d"
-                                         },
-                                         {
-                                             "name":  "Appendix: Mortuary Creatures",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "02c"
-                                         }
-                                     ],
-                         "alonepage":  true,
-                         "id":  "000"
-                     },
-                     {
-                         "name":  "",
-                         "zh_name":  "图鉴",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  2
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Heralds of Dust Exorcist",
-                                             "zh_name":  "灰烬先驱·驱魔师",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ],
-                                             "id":  "02f"
-                                         },
-                                         {
-                                             "name":  "Animated Coffin ",
-                                             "zh_name":  "活化棺材",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Credits",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  3
-                                     },
-                         "source":  "",
-                         "alonepage":  true,
-                         "headers":  [
-
-                                     ],
-                         "id":  "036"
-                     }
-                 ]
+            "alonepage": true,
+            "id": "000",
+            "displayName": {
+                "en": "Adventure Atlas: The Mortuary",
+                "zh": ""
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 2
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "id": "02f",
+                    "displayName": {
+                        "en": "Heralds of Dust Exorcist",
+                        "zh": "灰烬先驱·驱魔师"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Animated Coffin ",
+                        "zh": "活化棺材"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "",
+                "zh": "图鉴"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "credits",
+                "identifier": 3
+            },
+            "source": "",
+            "alonepage": true,
+            "headers": [],
+            "id": "036",
+            "displayName": {
+                "en": "Credits",
+                "zh": ""
+            }
+        }
+    ]
 }

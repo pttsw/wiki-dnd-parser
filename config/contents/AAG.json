@@ -1,653 +1,667 @@
 {
-    "_hjschema":  "出版物",
+    "_hjschema": "出版物",
     "displayName": {
-      "zh": "星界冒险者指南",
-      "en": "Astral Adventurer\u0027s Guide"
+        "zh": "星界冒险者指南",
+        "en": "Astral Adventurer's Guide"
     },
-    "id":  "AAG",
-    "booktype":  "扩展\u0026资源",
-    "tag":  [
-                "规则扩展"
+    "id": "AAG",
+    "booktype": "扩展&资源",
+    "tag": [
+        "规则扩展"
+    ],
+    "newest": true,
+    "id_zh": "星界书",
+    "order": 7,
+    "source": "AAG",
+    "cover": {
+        "path": "AAG.png",
+        "type": "internal"
+    },
+    "published": "2022-08-16",
+    "author": "Wizards RPG Team",
+    "merge": "",
+    "contents": [
+        {
+            "ordinal": {
+                "type": "text",
+                "identifier": 1
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "000",
+            "displayName": {
+                "en": "Introduction: Vast Oceans of Adventure",
+                "zh": "简介：浩瀚的冒险之海"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 2
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Astral Drifter ",
+                                "zh": "星界浪客 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Wildspacer ",
+                                "zh": "荒宇人"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "005",
+                    "displayName": {
+                        "en": "Backgrounds",
+                        "zh": "背景"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Astral Elf ",
+                                "zh": "星界精灵 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Autognome",
+                                "zh": "自动侏儒 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Giff ",
+                                "zh": "诘弗人 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Hadozee",
+                                "zh": "鼯猴人"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Plasmoid",
+                                "zh": "流浆体 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "race",
+                                "identifier": 0
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Thri-kreen ",
+                                "zh": "螳螂人"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "00c",
+                    "displayName": {
+                        "en": "Races",
+                        "zh": "种族"
+                    }
+                }
             ],
-    "newest":  true,
-    "id_zh":  "星界书",
-    "order":  7,
-    "source":  "AAG",
-    "cover":  {
-                  "path":  "AAG.png",
-                  "type":  "internal"
-              },
-    "published":  "2022-08-16",
-    "author":  "Wizards RPG Team",
-    "merge":  "",
-    "contents":  [
-                     {
-                         "name":  "Introduction: Vast Oceans of Adventure",
-                         "zh_name":  "简介：浩瀚的冒险之海",
-                         "ordinal":  {
-                                         "type":  "text",
-                                         "identifier":  1
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true,
-                         "id":  "000"
-                     },
-                     {
-                         "name":  "Character Options",
-                         "zh_name":  "角色选项",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  2
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Backgrounds",
-                                             "zh_name":  "背景",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Astral Drifter ",
-                                                                 "zh_name":  "星界浪客 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Wildspacer ",
-                                                                 "zh_name":  "荒宇人",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "005"
-                                         },
-                                         {
-                                             "name":  "Races",
-                                             "zh_name":  "种族",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Astral Elf ",
-                                                                 "zh_name":  "星界精灵 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Autognome",
-                                                                 "zh_name":  "自动侏儒 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Giff ",
-                                                                 "zh_name":  "诘弗人 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Hadozee",
-                                                                 "zh_name":  "鼯猴人",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Plasmoid",
-                                                                 "zh_name":  "流浆体 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Thri-kreen ",
-                                                                 "zh_name":  "螳螂人",
-                                                                 "ordinal":  {
-                                                                                 "type":  "race",
-                                                                                 "identifier":  0
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "00c"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Astral Adventuring",
-                         "zh_name":  "星界冒险 ",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  3
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "How Spelljamming Works",
-                                             "zh_name":  "法驱是如何运作的",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "054"
-                                         },
-                                         {
-                                             "name":  "The Astral Plane ",
-                                             "zh_name":  "星光位面",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         },
-                                         {
-                                             "name":  "Weightlessness",
-                                             "zh_name":  "失重 ",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "06d"
-                                         },
-                                         {
-                                             "name":  "Magic",
-                                             "zh_name":  "魔法",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Air Bubble ",
-                                                                 "zh_name":  "空气泡泡",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Create Spelljamming Helm",
-                                                                 "zh_name":  "创造法驱魔舵",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  false,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Fish Suit ",
-                                                                 "zh_name":  "游鱼服 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "item",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  " Spelljamming Helm",
-                                                                 "zh_name":  "法驱魔舵 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "item",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Wildspace Orrery ",
-                                                                 "zh_name":  "荒宇系仪",
-                                                                 "ordinal":  {
-                                                                                 "type":  "item",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "06e"
-                                         },
-                                         {
-                                             "name":  "Spelljamming Ships",
-                                             "zh_name":  "法驱舰船",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  5
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "079"
-                                         },
-                                         {
-                                             "name":  "Spelljammer Vessels",
-                                             "zh_name":  "魔法船列表",
-                                             "ordinal":  {
-                                                             "type":  "chapter",
-                                                             "identifier":  6
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  " Bombard ",
-                                                                 "zh_name":  "炮舰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Damselfly Ship ",
-                                                                 "zh_name":  "蜻蛉舰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Flying Fish Ship",
-                                                                 "zh_name":  "飞鱼舰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Hammerhead Ship",
-                                                                 "zh_name":  "锤头鲨舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Lamprey Ship ",
-                                                                 "zh_name":  "七鳃鳗舰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  false,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Living Ship ",
-                                                                 "zh_name":  "生物舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  6
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Nautiloid ",
-                                                                 "zh_name":  "鹦鹉螺",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  7
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Nightspider",
-                                                                 "zh_name":  "夜蛛 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  8
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Scorpion Ship ",
-                                                                 "zh_name":  "蝎舰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  9
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Shrike Ship ",
-                                                                 "zh_name":  "伯劳鸟舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  10
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Space Galleon ",
-                                                                 "zh_name":  "太空帆船",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  11
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Squid Ship ",
-                                                                 "zh_name":  "鱿鱼舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  12
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Star Moth",
-                                                                 "zh_name":  "星蛾",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  13
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Turtle Ship ",
-                                                                 "zh_name":  "海龟舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  14
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Tyrant Ship ",
-                                                                 "zh_name":  "暴君舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  15
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Wasp Ship",
-                                                                 "zh_name":  "黄蜂舰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "vehicle",
-                                                                                 "identifier":  16
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "083"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "The Rock of Bral",
-                         "zh_name":  "布拉岩城",
-                         "ordinal":  {
-                                         "type":  "text",
-                                         "identifier":  4
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "High City ",
-                                             "zh_name":  "上城",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         },
-                                         {
-                                             "name":  "Middle City ",
-                                             "zh_name":  "中城",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         },
-                                         {
-                                             "name":  "Low City ",
-                                             "zh_name":  "下城 ",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         },
-                                         {
-                                             "name":  "Underside ",
-                                             "zh_name":  "布拉之岩底部",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Additional Spelljammer Tables",
-                         "zh_name":  "额外魔法船表格",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  5
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true,
-                         "id":  "007"
-                     },
-                     {
-                         "name":  "Poster Map",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  6
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true,
-                         "id":  "006"
-                     },
-                     {
-                         "name":  "Credits",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  7
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true,
-                         "id":  "014"
-                     }
-                 ]
+            "alonepage": true,
+            "displayName": {
+                "en": "Character Options",
+                "zh": "角色选项"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 3
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "054",
+                    "displayName": {
+                        "en": "How Spelljamming Works",
+                        "zh": "法驱是如何运作的"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "The Astral Plane ",
+                        "zh": "星光位面"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "06d",
+                    "displayName": {
+                        "en": "Weightlessness",
+                        "zh": "失重 "
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Air Bubble ",
+                                "zh": "空气泡泡"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Create Spelljamming Helm",
+                                "zh": "创造法驱魔舵"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "item",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Fish Suit ",
+                                "zh": "游鱼服 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "item",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": " Spelljamming Helm",
+                                "zh": "法驱魔舵 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "item",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Wildspace Orrery ",
+                                "zh": "荒宇系仪"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "06e",
+                    "displayName": {
+                        "en": "Magic",
+                        "zh": "魔法"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 5
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "079",
+                    "displayName": {
+                        "en": "Spelljamming Ships",
+                        "zh": "法驱舰船"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "chapter",
+                        "identifier": 6
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": " Bombard ",
+                                "zh": "炮舰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Damselfly Ship ",
+                                "zh": "蜻蛉舰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Flying Fish Ship",
+                                "zh": "飞鱼舰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Hammerhead Ship",
+                                "zh": "锤头鲨舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Lamprey Ship ",
+                                "zh": "七鳃鳗舰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 6
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Living Ship ",
+                                "zh": "生物舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 7
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Nautiloid ",
+                                "zh": "鹦鹉螺"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 8
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Nightspider",
+                                "zh": "夜蛛 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 9
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Scorpion Ship ",
+                                "zh": "蝎舰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 10
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Shrike Ship ",
+                                "zh": "伯劳鸟舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 11
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Space Galleon ",
+                                "zh": "太空帆船"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 12
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Squid Ship ",
+                                "zh": "鱿鱼舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 13
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Star Moth",
+                                "zh": "星蛾"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 14
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Turtle Ship ",
+                                "zh": "海龟舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 15
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Tyrant Ship ",
+                                "zh": "暴君舰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "vehicle",
+                                "identifier": 16
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Wasp Ship",
+                                "zh": "黄蜂舰"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "083",
+                    "displayName": {
+                        "en": "Spelljammer Vessels",
+                        "zh": "魔法船列表"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Astral Adventuring",
+                "zh": "星界冒险 "
+            }
+        },
+        {
+            "ordinal": {
+                "type": "text",
+                "identifier": 4
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "High City ",
+                        "zh": "上城"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "Middle City ",
+                        "zh": "中城"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "Low City ",
+                        "zh": "下城 "
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "Underside ",
+                        "zh": "布拉之岩底部"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "The Rock of Bral",
+                "zh": "布拉岩城"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 5
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "007",
+            "displayName": {
+                "en": "Additional Spelljammer Tables",
+                "zh": "额外魔法船表格"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 6
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "006",
+            "displayName": {
+                "en": "Poster Map",
+                "zh": ""
+            }
+        },
+        {
+            "ordinal": {
+                "type": "credits",
+                "identifier": 7
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "014",
+            "displayName": {
+                "en": "Credits",
+                "zh": ""
+            }
+        }
+    ]
 }

@@ -1,1227 +1,1257 @@
-﻿{
-    "_hjschema":  "出版物",
+{
+    "_hjschema": "出版物",
     "displayName": {
-      "zh": "艾奎兹玄有限责任公司",
-      "en": "Acquisitions Incorporated"
+        "zh": "艾奎兹玄有限责任公司",
+        "en": "Acquisitions Incorporated"
     },
-    "id":  "AI",
-    "booktype":  "扩展\u0026资源",
-    "tag":  [
-                "规则扩展"
+    "id": "AI",
+    "booktype": "扩展&资源",
+    "tag": [
+        "规则扩展"
+    ],
+    "newest": true,
+    "id_zh": "公司书",
+    "order": 7,
+    "source": "AI",
+    "cover": {
+        "path": "AI.png",
+        "type": "internal"
+    },
+    "published": "2019-06-18",
+    "author": "Wizards RPG Team",
+    "merge": "",
+    "contents": [
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 1
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "001",
+                    "displayName": {
+                        "en": "It's Just Business",
+                        "zh": "说白了只是做生意"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "003",
+                    "displayName": {
+                        "en": "A Corporate Prospectus",
+                        "zh": "公司发展史"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "008",
+                    "displayName": {
+                        "en": "Fast Franchise Generator",
+                        "zh": "快速创建加盟公司"
+                    }
+                }
             ],
-    "newest":  true,
-    "id_zh":  "公司书",
-    "order":  7,
-    "source":  "AI",
-    "cover":  {
-                  "path":  "AI.png",
-                  "type":  "internal"
-              },
-    "published":  "2019-06-18",
-    "author":  "Wizards RPG Team",
-    "merge":  "",
-    "contents":  [
-                     {
-                         "name":  "Acquisitions Incorporated",
-                         "zh_name":  "艾奎兹玄有限责任公司",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  1
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "It\u0027s Just Business",
-                                             "zh_name":  "说白了只是做生意",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "001"
-                                         },
-                                         {
-                                             "name":  "A Corporate Prospectus",
-                                             "zh_name":  "公司发展史",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "003"
-                                         },
-                                         {
-                                             "name":  "Fast Franchise Generator",
-                                             "zh_name":  "快速创建加盟公司",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "008"
-                                         }
-                                     ],
-                         "alonepage":  true,
-                         "id":  "166"
-                     },
-                     {
-                         "name":  "Growing Your Franchise",
-                         "zh_name":  "发展你的加盟公司",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  2
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Franchise Advancement",
-                                             "zh_name":  "特许经营许可",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "00a"
-                                         },
-                                         {
-                                             "name":  "Company Positions",
-                                             "zh_name":  "公司职位",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Cartographer",
-                                                                 "zh_name":  "制图师",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "04a"
-                                                             },
-                                                             {
-                                                                 "name":  "Decisionist",
-                                                                 "zh_name":  "决策者",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  false,
-                                                                 "id":  "054"
-                                                             },
-                                                             {
-                                                                 "name":  "Documancer",
-                                                                 "zh_name":  "文件管理员",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "05e"
-                                                             },
-                                                             {
-                                                                 "name":  "Hoardsperson",
-                                                                 "zh_name":  "囤积者",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "068"
-                                                             },
-                                                             {
-                                                                 "name":  "Loremonger",
-                                                                 "zh_name":  "知识贩子",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "072"
-                                                             },
-                                                             {
-                                                                 "name":  "Obviator",
-                                                                 "zh_name":  "避险者",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  6
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "07c"
-                                                             },
-                                                             {
-                                                                 "name":  "Occultant",
-                                                                 "zh_name":  "玄学师",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  7
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "086"
-                                                             },
-                                                             {
-                                                                 "name":  "Secretarian",
-                                                                 "zh_name":  "秘书",
-                                                                 "ordinal":  {
-                                                                                 "type":  "class",
-                                                                                 "identifier":  8
-                                                                             },
-                                                                 "source":  "",
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "alonepage":  true,
-                                                                 "id":  "090"
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "045"
-                                         },
-                                         {
-                                             "name":  "Franchise Tasks and Downtime",
-                                             "zh_name":  "公司任务和休整期",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Franchise Restructuring",
-                                                                 "zh_name":  "特许经营重组 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Headquarters Modification",
-                                                                 "zh_name":  "总部修改",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Marketeering",
-                                                                 "zh_name":  "营销",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Philanthropic Enterprise",
-                                                                 "zh_name":  "慈善企业",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Running a Franchise ",
-                                                                 "zh_name":  "营运加盟业",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  false,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Scrutineering",
-                                                                 "zh_name":  "技术检查",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  6
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Shady Business Practice ",
-                                                                 "zh_name":  "可疑商业行为 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  7
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Schmoozing ",
-                                                                 "zh_name":  "闲谈",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  8
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Team Building",
-                                                                 "zh_name":  "团建",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  9
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "09a"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Player Options",
-                         "zh_name":  "玩家选项",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  3
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Backgrounds",
-                                             "zh_name":  "背景",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Celebrity Adventurer\u0027s Scion",
-                                                                 "zh_name":  "名人冒险家的子孙",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Failed Merchant",
-                                                                 "zh_name":  "失败商人",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Gambler",
-                                                                 "zh_name":  "赌徒",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Plaintiff",
-                                                                 "zh_name":  "起诉人",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Rival Intern",
-                                                                 "zh_name":  "竞争对手实习生",
-                                                                 "ordinal":  {
-                                                                                 "type":  "background",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "0dd"
-                                         },
-                                         {
-                                             "name":  "Playing with Class",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "0de"
-                                         },
-                                         {
-                                             "name":  "Verdan",
-                                             "zh_name":  "佛丹人",
-                                             "ordinal":  {
-                                                             "type":  "race",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true
-                                         },
-                                         {
-                                             "name":  "New Spells",
-                                             "zh_name":  "新法术",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Distort Value",
-                                                                 "zh_name":  "扭曲价值",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Fast Friends",
-                                                                 "zh_name":  "快速交友",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Gift of Gab",
-                                                                 "zh_name":  "巧舌如簧",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Incite Greed",
-                                                                 "zh_name":  "鼓动贪欲",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Jim\u0027s Glowing Coin",
-                                                                 "zh_name":  "吉姆的发光硬币",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Jim\u0027s Magic Missile",
-                                                                 "zh_name":  "吉姆的魔法飞弹",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  6
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             },
-                                                             {
-                                                                 "name":  "Motivational Speech",
-                                                                 "zh_name":  "励志演讲",
-                                                                 "ordinal":  {
-                                                                                 "type":  "spell",
-                                                                                 "identifier":  7
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ]
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "163"
-                                         },
-                                         {
-                                             "name":  "Factions and Rivals",
-                                             "zh_name":  "派系和对手",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  5
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Acquisitions Incorporated",
-                                                                 "zh_name":  "艾奎兹玄有限责任公司 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "166"
-                                                             },
-                                                             {
-                                                                 "name":  "Dran Enterprises",
-                                                                 "zh_name":  "德兰企业",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "167"
-                                                             },
-                                                             {
-                                                                 "name":  "The Noble Knife",
-                                                                 "zh_name":  "贵刃集团",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "168"
-                                                             },
-                                                             {
-                                                                 "name":  "The Silver Sliver",
-                                                                 "zh_name":  "银印映影",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "169"
-                                                             },
-                                                             {
-                                                                 "name":  "The Six",
-                                                                 "zh_name":  "“六大天王” ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "text",
-                                                                                 "identifier":  5
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "16a"
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "165"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "The Orrery of the Wanderer",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "chapter",
-                                         "identifier":  4
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Acq Inc",
-                         "zh_name":  "公司成员",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  5
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Omin Dran",
-                                             "zh_name":  "欧敏·德兰",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "16c"
-                                         },
-                                         {
-                                             "name":  "Jim Darkmagic",
-                                             "zh_name":  "吉姆·黑魔法",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "16d"
-                                         },
-                                         {
-                                             "name":  "Viari",
-                                             "zh_name":  "维阿里",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "16e"
-                                         },
-                                         {
-                                             "name":  "Môrgæn",
-                                             "zh_name":  "莫尔甘",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "16f"
-                                         },
-                                         {
-                                             "name":  "Flabbergast",
-                                             "zh_name":  "法柏贾斯特",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  5
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "170"
-                                         },
-                                         {
-                                             "name":  "The \"C\" Team",
-                                             "zh_name":  "C小队",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  6
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Donaar Blit\u0027zen",
-                                                                 "zh_name":  "多纳尔·布里岑",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "172"
-                                                             },
-                                                             {
-                                                                 "name":  "K\u0027thriss Drow\u0027b",
-                                                                 "zh_name":  "克里斯·卓尔布 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "173"
-                                                             },
-                                                             {
-                                                                 "name":  "Rosie Beestinger",
-                                                                 "zh_name":  "罗西·贝辛格",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "174"
-                                                             },
-                                                             {
-                                                                 "name":  "Walnut Dankgrass",
-                                                                 "zh_name":  "沃勒·邓格瑞斯",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "175"
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "171"
-                                         },
-                                         {
-                                             "name":  "The \"B\" Team",
-                                             "zh_name":  "B小队",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  7
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Brahma Lutier",
-                                                                 "zh_name":  "芭玛·路提尔",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "177"
-                                                             },
-                                                             {
-                                                                 "name":  "Oak Truestrike",
-                                                                 "zh_name":  "奥克·图斯崔 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "178"
-                                                             },
-                                                             {
-                                                                 "name":  "Pendragon Beestinger",
-                                                                 "zh_name":  "潘德拉贡·贝辛格",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "179"
-                                                             },
-                                                             {
-                                                                 "name":  "Phoenix Anvil",
-                                                                 "zh_name":  "费尼克斯·锻砧",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  4
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "17a"
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "176"
-                                         },
-                                         {
-                                             "name":  "House Dran",
-                                             "zh_name":  "德兰家族",
-                                             "ordinal":  {
-                                                             "type":  "text",
-                                                             "identifier":  8
-                                                         },
-                                             "source":  "",
-                                             "headers":  [
-                                                             {
-                                                                 "name":  "Auspicia Dran",
-                                                                 "zh_name":  "奥斯佩莎·德兰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  1
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "17c"
-                                                             },
-                                                             {
-                                                                 "name":  "Portentia Dran",
-                                                                 "zh_name":  "佩登莎·德兰 ",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  2
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  false,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "17d"
-                                                             },
-                                                             {
-                                                                 "name":  "Prophetess Dran",
-                                                                 "zh_name":  "帕博蒂斯·德兰",
-                                                                 "ordinal":  {
-                                                                                 "type":  "bestiary",
-                                                                                 "identifier":  3
-                                                                             },
-                                                                 "source":  "",
-                                                                 "alonepage":  true,
-                                                                 "headers":  [
-
-                                                                             ],
-                                                                 "id":  "17e"
-                                                             }
-                                                         ],
-                                             "alonepage":  true,
-                                             "id":  "17b"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Monsters",
-                         "zh_name":  "怪物",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  6
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Chaos Quadrapod",
-                                             "zh_name":  "混沌四足怪 ",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Clockwork Dragon",
-                                             "zh_name":  "发条龙",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Deep Crow",
-                                             "zh_name":  "深地鸦",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Keg Robot",
-                                             "zh_name":  "酒桶机器人",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Splugoth the Returned",
-                                             "zh_name":  "复生者斯普鲁格斯",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  5
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Iconic Faction Features",
-                                             "zh_name":  "标志性派系特征",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  6
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ],
-                                             "id":  "180"
-                                         },
-                                         {
-                                             "name":  "Iconic Franchise Features",
-                                             "zh_name":  "",
-                                             "ordinal":  {
-                                                             "type":  "bestiary",
-                                                             "identifier":  7
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ],
-                                             "id":  "195"
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Vehicles",
-                         "zh_name":  "载具",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  7
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Battle Balloon",
-                                             "zh_name":  "浮空战船",
-                                             "ordinal":  {
-                                                             "type":  "vehicle",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ],
-                                             "id":  "02c"
-                                         },
-                                         {
-                                             "name":  "Mechanical Beholder",
-                                             "zh_name":  "眼魔型动力飞船",
-                                             "ordinal":  {
-                                                             "type":  "vehicle",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "",
-                         "zh_name":  "位面游荡仪",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  8
-                                     },
-                         "source":  "",
-                         "headers":  [
-                                         {
-                                             "name":  "Orrery of the Wanderer",
-                                             "zh_name":  "位面游荡仪",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  1
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Chronolometer",
-                                             "zh_name":  "年表仪盘",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  2
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Dimensional Loop",
-                                             "zh_name":  "维度环",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  3
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Far Gear",
-                                             "zh_name":  "遥远齿轮",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  4
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Rotor of Return",
-                                             "zh_name":  "回溯引擎",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  5
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Timepiece of Travel",
-                                             "zh_name":  "旅行表盘",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  6
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         },
-                                         {
-                                             "name":  "Wheel of Stars",
-                                             "zh_name":  "星轮",
-                                             "ordinal":  {
-                                                             "type":  "item",
-                                                             "identifier":  7
-                                                         },
-                                             "source":  "",
-                                             "alonepage":  true,
-                                             "headers":  [
-
-                                                         ]
-                                         }
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Trinkets",
-                         "zh_name":  "饰品",
-                         "ordinal":  {
-                                         "type":  "appendix",
-                                         "identifier":  9
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true
-                     },
-                     {
-                         "name":  "Credits",
-                         "zh_name":  "",
-                         "ordinal":  {
-                                         "type":  "text",
-                                         "identifier":  10
-                                     },
-                         "source":  "",
-                         "headers":  [
-
-                                     ],
-                         "alonepage":  true,
-                         "id":  "0ad"
-                     }
-                 ]
+            "alonepage": true,
+            "id": "166",
+            "displayName": {
+                "en": "Acquisitions Incorporated",
+                "zh": "艾奎兹玄有限责任公司"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 2
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "00a",
+                    "displayName": {
+                        "en": "Franchise Advancement",
+                        "zh": "特许经营许可"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "04a",
+                            "displayName": {
+                                "en": "Cartographer",
+                                "zh": "制图师"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": false,
+                            "id": "054",
+                            "displayName": {
+                                "en": "Decisionist",
+                                "zh": "决策者"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "05e",
+                            "displayName": {
+                                "en": "Documancer",
+                                "zh": "文件管理员"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "068",
+                            "displayName": {
+                                "en": "Hoardsperson",
+                                "zh": "囤积者"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "072",
+                            "displayName": {
+                                "en": "Loremonger",
+                                "zh": "知识贩子"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 6
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "07c",
+                            "displayName": {
+                                "en": "Obviator",
+                                "zh": "避险者"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 7
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "086",
+                            "displayName": {
+                                "en": "Occultant",
+                                "zh": "玄学师"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "class",
+                                "identifier": 8
+                            },
+                            "source": "",
+                            "headers": [],
+                            "alonepage": true,
+                            "id": "090",
+                            "displayName": {
+                                "en": "Secretarian",
+                                "zh": "秘书"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "045",
+                    "displayName": {
+                        "en": "Company Positions",
+                        "zh": "公司职位"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Franchise Restructuring",
+                                "zh": "特许经营重组 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Headquarters Modification",
+                                "zh": "总部修改"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Marketeering",
+                                "zh": "营销"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Philanthropic Enterprise",
+                                "zh": "慈善企业"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Running a Franchise ",
+                                "zh": "营运加盟业"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 6
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Scrutineering",
+                                "zh": "技术检查"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 7
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Shady Business Practice ",
+                                "zh": "可疑商业行为 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 8
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Schmoozing ",
+                                "zh": "闲谈"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 9
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Team Building",
+                                "zh": "团建"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "09a",
+                    "displayName": {
+                        "en": "Franchise Tasks and Downtime",
+                        "zh": "公司任务和休整期"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Growing Your Franchise",
+                "zh": "发展你的加盟公司"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 3
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Celebrity Adventurer's Scion",
+                                "zh": "名人冒险家的子孙"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Failed Merchant",
+                                "zh": "失败商人"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Gambler",
+                                "zh": "赌徒"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Plaintiff",
+                                "zh": "起诉人"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "background",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Rival Intern",
+                                "zh": "竞争对手实习生"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "0dd",
+                    "displayName": {
+                        "en": "Backgrounds",
+                        "zh": "背景"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "0de",
+                    "displayName": {
+                        "en": "Playing with Class",
+                        "zh": ""
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "race",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "displayName": {
+                        "en": "Verdan",
+                        "zh": "佛丹人"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Distort Value",
+                                "zh": "扭曲价值"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Fast Friends",
+                                "zh": "快速交友"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Gift of Gab",
+                                "zh": "巧舌如簧"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Incite Greed",
+                                "zh": "鼓动贪欲"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Jim's Glowing Coin",
+                                "zh": "吉姆的发光硬币"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 6
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Jim's Magic Missile",
+                                "zh": "吉姆的魔法飞弹"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "spell",
+                                "identifier": 7
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "displayName": {
+                                "en": "Motivational Speech",
+                                "zh": "励志演讲"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "163",
+                    "displayName": {
+                        "en": "New Spells",
+                        "zh": "新法术"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 5
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "166",
+                            "displayName": {
+                                "en": "Acquisitions Incorporated",
+                                "zh": "艾奎兹玄有限责任公司 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "167",
+                            "displayName": {
+                                "en": "Dran Enterprises",
+                                "zh": "德兰企业"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "168",
+                            "displayName": {
+                                "en": "The Noble Knife",
+                                "zh": "贵刃集团"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "169",
+                            "displayName": {
+                                "en": "The Silver Sliver",
+                                "zh": "银印映影"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "text",
+                                "identifier": 5
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "16a",
+                            "displayName": {
+                                "en": "The Six",
+                                "zh": "“六大天王” "
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "165",
+                    "displayName": {
+                        "en": "Factions and Rivals",
+                        "zh": "派系和对手"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Player Options",
+                "zh": "玩家选项"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "chapter",
+                "identifier": 4
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "displayName": {
+                "en": "The Orrery of the Wanderer",
+                "zh": ""
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 5
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "16c",
+                    "displayName": {
+                        "en": "Omin Dran",
+                        "zh": "欧敏·德兰"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "16d",
+                    "displayName": {
+                        "en": "Jim Darkmagic",
+                        "zh": "吉姆·黑魔法"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "16e",
+                    "displayName": {
+                        "en": "Viari",
+                        "zh": "维阿里"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "16f",
+                    "displayName": {
+                        "en": "Môrgæn",
+                        "zh": "莫尔甘"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 5
+                    },
+                    "source": "",
+                    "headers": [],
+                    "alonepage": true,
+                    "id": "170",
+                    "displayName": {
+                        "en": "Flabbergast",
+                        "zh": "法柏贾斯特"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 6
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "172",
+                            "displayName": {
+                                "en": "Donaar Blit'zen",
+                                "zh": "多纳尔·布里岑"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "173",
+                            "displayName": {
+                                "en": "K'thriss Drow'b",
+                                "zh": "克里斯·卓尔布 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "174",
+                            "displayName": {
+                                "en": "Rosie Beestinger",
+                                "zh": "罗西·贝辛格"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "175",
+                            "displayName": {
+                                "en": "Walnut Dankgrass",
+                                "zh": "沃勒·邓格瑞斯"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "171",
+                    "displayName": {
+                        "en": "The \"C\" Team",
+                        "zh": "C小队"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 7
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "177",
+                            "displayName": {
+                                "en": "Brahma Lutier",
+                                "zh": "芭玛·路提尔"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "178",
+                            "displayName": {
+                                "en": "Oak Truestrike",
+                                "zh": "奥克·图斯崔 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "179",
+                            "displayName": {
+                                "en": "Pendragon Beestinger",
+                                "zh": "潘德拉贡·贝辛格"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 4
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "17a",
+                            "displayName": {
+                                "en": "Phoenix Anvil",
+                                "zh": "费尼克斯·锻砧"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "176",
+                    "displayName": {
+                        "en": "The \"B\" Team",
+                        "zh": "B小队"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "text",
+                        "identifier": 8
+                    },
+                    "source": "",
+                    "headers": [
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 1
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "17c",
+                            "displayName": {
+                                "en": "Auspicia Dran",
+                                "zh": "奥斯佩莎·德兰"
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 2
+                            },
+                            "source": "",
+                            "alonepage": false,
+                            "headers": [],
+                            "id": "17d",
+                            "displayName": {
+                                "en": "Portentia Dran",
+                                "zh": "佩登莎·德兰 "
+                            }
+                        },
+                        {
+                            "ordinal": {
+                                "type": "bestiary",
+                                "identifier": 3
+                            },
+                            "source": "",
+                            "alonepage": true,
+                            "headers": [],
+                            "id": "17e",
+                            "displayName": {
+                                "en": "Prophetess Dran",
+                                "zh": "帕博蒂斯·德兰"
+                            }
+                        }
+                    ],
+                    "alonepage": true,
+                    "id": "17b",
+                    "displayName": {
+                        "en": "House Dran",
+                        "zh": "德兰家族"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Acq Inc",
+                "zh": "公司成员"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 6
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Chaos Quadrapod",
+                        "zh": "混沌四足怪 "
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Clockwork Dragon",
+                        "zh": "发条龙"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Deep Crow",
+                        "zh": "深地鸦"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Keg Robot",
+                        "zh": "酒桶机器人"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 5
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Splugoth the Returned",
+                        "zh": "复生者斯普鲁格斯"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 6
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "id": "180",
+                    "displayName": {
+                        "en": "Iconic Faction Features",
+                        "zh": "标志性派系特征"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "bestiary",
+                        "identifier": 7
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "id": "195",
+                    "displayName": {
+                        "en": "Iconic Franchise Features",
+                        "zh": ""
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Monsters",
+                "zh": "怪物"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 7
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "vehicle",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "id": "02c",
+                    "displayName": {
+                        "en": "Battle Balloon",
+                        "zh": "浮空战船"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "vehicle",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Mechanical Beholder",
+                        "zh": "眼魔型动力飞船"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "Vehicles",
+                "zh": "载具"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 8
+            },
+            "source": "",
+            "headers": [
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 1
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Orrery of the Wanderer",
+                        "zh": "位面游荡仪"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 2
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Chronolometer",
+                        "zh": "年表仪盘"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 3
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Dimensional Loop",
+                        "zh": "维度环"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 4
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Far Gear",
+                        "zh": "遥远齿轮"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 5
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Rotor of Return",
+                        "zh": "回溯引擎"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 6
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Timepiece of Travel",
+                        "zh": "旅行表盘"
+                    }
+                },
+                {
+                    "ordinal": {
+                        "type": "item",
+                        "identifier": 7
+                    },
+                    "source": "",
+                    "alonepage": true,
+                    "headers": [],
+                    "displayName": {
+                        "en": "Wheel of Stars",
+                        "zh": "星轮"
+                    }
+                }
+            ],
+            "alonepage": true,
+            "displayName": {
+                "en": "",
+                "zh": "位面游荡仪"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "appendix",
+                "identifier": 9
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "displayName": {
+                "en": "Trinkets",
+                "zh": "饰品"
+            }
+        },
+        {
+            "ordinal": {
+                "type": "credits",
+                "identifier": 10
+            },
+            "source": "",
+            "headers": [],
+            "alonepage": true,
+            "id": "0ad",
+            "displayName": {
+                "en": "Credits",
+                "zh": ""
+            }
+        }
+    ]
 }

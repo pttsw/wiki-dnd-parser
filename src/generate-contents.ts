@@ -359,16 +359,6 @@ function convertToOutputFormat(
     return result;
 }
 
-function mergeBookContents(existingBook: any, generatedBook: any): any {
-    if (!existingBook.contents || !Array.isArray(existingBook.contents)) {
-        return generatedBook;
-    }
-
-    const merged = { ...generatedBook };
-    merged.contents = existingBook.contents;
-    return merged;
-}
-
 export const generateContents = async () => {
     try {
         console.log('[generateContents] 开始生成出版物目录');
@@ -430,24 +420,10 @@ export const generateContents = async () => {
                     if (content.charCodeAt(0) === 0xFEFF) {
                         content = content.slice(1);
                     }
-                    const existingBook = JSON.parse(content);
-                    
-                    const nameToIdMap = await loadBookContentFile(bookId, 'book');
-                    const generatedBook = convertToOutputFormat(
-                        enBook || {},
-                        zhBook || {},
-                        'book',
-                        booktypeConfig,
-                        coreOrder,
-                        legacySources,
-                        nameToIdMap
-                    );
-                    
-                    const mergedBook = mergeBookContents(existingBook, generatedBook);
-                    await fs.writeFile(destPath, JSON.stringify(mergedBook, null, 4), 'utf-8');
+                    await fs.writeFile(destPath, content, 'utf-8');
                     copiedCount++;
                 } catch (err) {
-                    console.warn(`[generateContents] 复制/合并 ${bookId} 失败:`, err);
+                    console.warn(`[generateContents] 复制 ${bookId} 失败:`, err);
                 }
             } else {
                 try {
@@ -485,24 +461,10 @@ export const generateContents = async () => {
                     if (content.charCodeAt(0) === 0xFEFF) {
                         content = content.slice(1);
                     }
-                    const existingAdventure = JSON.parse(content);
-                    
-                    const nameToIdMap = await loadBookContentFile(adventureId, 'adventure');
-                    const generatedAdventure = convertToOutputFormat(
-                        enAdventure || {},
-                        zhAdventure || {},
-                        'adventure',
-                        booktypeConfig,
-                        coreOrder,
-                        legacySources,
-                        nameToIdMap
-                    );
-                    
-                    const mergedAdventure = mergeBookContents(existingAdventure, generatedAdventure);
-                    await fs.writeFile(destPath, JSON.stringify(mergedAdventure, null, 4), 'utf-8');
+                    await fs.writeFile(destPath, content, 'utf-8');
                     copiedCount++;
                 } catch (err) {
-                    console.warn(`[generateContents] 复制/合并 ${adventureId} 失败:`, err);
+                    console.warn(`[generateContents] 复制 ${adventureId} 失败:`, err);
                 }
             } else {
                 try {
