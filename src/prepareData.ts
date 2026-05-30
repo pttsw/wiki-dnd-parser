@@ -78,6 +78,8 @@ import { escapeFileName, sectionTextIdMap } from './exporters/shared.js';
 import { generateContents } from './generate-contents.js';
 import { splitBooks } from './split-books.js';
 
+const CONFIG_CONTENTS_DIR = './config/contents';
+
 /**
  * 生成图鉴名称列表文件
  * @param type 图鉴类型，如 'item' 或 'spell'
@@ -175,6 +177,37 @@ async function getLegacySources(parserJsPath: string): Promise<Set<string>> {
  * @param bestiaryMgr BestiaryMgr 实例
  * @param outputDir 输出目录
  */
+async function loadConfigContentsNames(): Promise<Record<string, { zh: string; en: string }>> {
+    const names: Record<string, { zh: string; en: string }> = {};
+    try {
+        const files = await fs.readdir(CONFIG_CONTENTS_DIR);
+        for (const file of files) {
+            if (path.extname(file).toLowerCase() === '.json') {
+                const bookId = path.basename(file, '.json');
+                const filePath = path.join(CONFIG_CONTENTS_DIR, file);
+                try {
+                    let content = await fs.readFile(filePath, 'utf-8');
+                    if (content.charCodeAt(0) === 0xFEFF) {
+                        content = content.slice(1);
+                    }
+                    const data = JSON.parse(content);
+                    if (data.displayName) {
+                        names[bookId] = {
+                            zh: data.displayName.zh || '',
+                            en: data.displayName.en || ''
+                        };
+                    }
+                } catch (err) {
+                    console.warn(`[generateSourcesJson] 读取 ${file} 失败:`, err);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[generateSourcesJson] 读取 config/contents 目录失败:', err);
+    }
+    return names;
+}
+
 async function generateSourcesJson(
     bookMgr: BookMgr,
     featMgr: FeatMgr,
@@ -188,6 +221,9 @@ async function generateSourcesJson(
     try {
         const enBooks = bookMgr.raw.en?.book || [];
         const zhBooks = bookMgr.raw.zh?.book || [];
+
+        // 从 config/contents 加载书名
+        const configContentsNames = await loadConfigContentsNames();
 
         // 加载 adventures.json
         const adventureFilePath = path.join(config.DATA_ZH_DIR, 'adventures.json');
@@ -273,14 +309,15 @@ async function generateSourcesJson(
         for (const enBook of enBooks) {
             const id = enBook.id;
             const zhBook = zhBooks.find(b => b.id === id);
+            const configName = configContentsNames[id];
 
             data[id] = {
                 id: id,
                 src: id,
                 type: 'book',
-                name_en: enBook.name,
+                name_en: configName?.en || enBook.name,
                 source_published: enBook.published || '',
-                name_zh: zhBook ? zhBook.name : enBook.name,
+                name_zh: configName?.zh || (zhBook ? zhBook.name : enBook.name),
                 newest: !legacySources.has(id),
                 have: Array.from(sourceTypes[id] || [])
             };
@@ -289,13 +326,14 @@ async function generateSourcesJson(
         // 生成模组来源数据
         for (const adv of enAdventures) {
             const id = adv.id;
+            const configName = configContentsNames[id];
 
             data[id] = {
                 id: id,
                 type: 'adventure',
-                name_en: adv.name,
+                name_en: configName?.en || adv.name,
                 source_published: adv.published || '',
-                name_zh: adv.name,
+                name_zh: configName?.zh || adv.name,
                 newest: !legacySources.has(id),
                 have: Array.from(sourceTypes[id] || [])
             };

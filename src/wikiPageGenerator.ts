@@ -1,10 +1,15 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { BookFile } from './types/books.js';
 import { WikiItemData } from './types/items.js';
 import { WikiSpellData } from './types/spells.js';
 import { WikiBestiaryData } from './types/bestiary.js';
 import { escapeFileName } from './exporters/shared.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CONFIG_CONTENTS_DIR = path.join(__dirname, '..', 'config', 'contents');
 
 type SourceNameEntry = {
     zh?: string;
@@ -55,6 +60,8 @@ export class WikiPageGenerator {
     private skippedSelfRedirects = 0;
     private pageConflicts = 0;
 
+    private readonly options: WikiPageGeneratorOptions;
+
     constructor(options: WikiPageGeneratorOptions) {
         this.outputRoot = options.outputRoot || './output_page';
         this.spellsDir = path.join(this.outputRoot, '法术');
@@ -62,8 +69,8 @@ export class WikiPageGenerator {
         this.bestiaryDir = path.join(this.outputRoot, '怪物');
         this.spells = options.spells;
         this.logger = options.logger || (() => {});
+        this.options = options;
 
-        this.buildSourceNameIndex(options.books);
         this.buildItemIndex(options.baseItems, options.items, options.magicVariants);
         this.buildBestiaryIndex(options.bestiary);
     }
@@ -72,6 +79,8 @@ export class WikiPageGenerator {
         await fs.mkdir(this.spellsDir, { recursive: true });
         await fs.mkdir(this.itemsDir, { recursive: true });
         await fs.mkdir(this.bestiaryDir, { recursive: true });
+
+        await this.buildSourceNameIndex(this.options.books);
 
         const spellFiles = await this.generateSpellPages();
         const itemFiles = await this.generateItemPages();
@@ -87,7 +96,40 @@ export class WikiPageGenerator {
         };
     }
 
-    private buildSourceNameIndex(books: { en: BookFile; zh: BookFile }) {
+    private async loadConfigContentsNames(): Promise<Map<string, SourceNameEntry>> {
+        const names = new Map<string, SourceNameEntry>();
+        try {
+            const files = await fs.readdir(CONFIG_CONTENTS_DIR);
+            for (const file of files) {
+                if (path.extname(file).toLowerCase() === '.json') {
+                    const bookId = path.basename(file, '.json');
+                    const filePath = path.join(CONFIG_CONTENTS_DIR, file);
+                    try {
+                        let content = await fs.readFile(filePath, 'utf-8');
+                        if (content.charCodeAt(0) === 0xFEFF) {
+                            content = content.slice(1);
+                        }
+                        const data = JSON.parse(content);
+                        if (data.displayName) {
+                            names.set(bookId, {
+                                zh: data.displayName.zh || '',
+                                en: data.displayName.en || '',
+                            });
+                        }
+                    } catch (err) {
+                        console.warn(`[WikiPageGenerator] 读取 ${file} 失败:`, err);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('[WikiPageGenerator] 读取 config/contents 目录失败:', err);
+        }
+        return names;
+    }
+
+    private async buildSourceNameIndex(books: { en: BookFile; zh: BookFile }) {
+        const configNames = await this.loadConfigContentsNames();
+        
         const zhByKey = new Map<string, string>();
         for (const book of books.zh.book || []) {
             const keys = new Set<string>([book.id, book.source].filter(Boolean));
@@ -98,10 +140,12 @@ export class WikiPageGenerator {
 
         for (const book of books.en.book || []) {
             const keys = new Set<string>([book.id, book.source].filter(Boolean));
-            const zhName = zhByKey.get(book.id) || zhByKey.get(book.source);
+            const configName = configNames.get(book.id);
+            const zhName = configName?.zh || zhByKey.get(book.id) || zhByKey.get(book.source);
+            const enName = configName?.en || book.name;
             const existing: SourceNameEntry = {
                 zh: zhName,
-                en: book.name,
+                en: enName,
             };
             for (const key of keys) {
                 this.sourceNames.set(key, existing);
@@ -110,11 +154,12 @@ export class WikiPageGenerator {
 
         for (const book of books.zh.book || []) {
             const keys = new Set<string>([book.id, book.source].filter(Boolean));
+            const configName = configNames.get(book.id);
             for (const key of keys) {
                 const existing = this.sourceNames.get(key) || {};
                 this.sourceNames.set(key, {
-                    zh: existing.zh || book.name,
-                    en: existing.en || book.ENG_name,
+                    zh: configName?.zh || existing.zh || book.name,
+                    en: configName?.en || existing.en || book.ENG_name,
                 });
             }
         }

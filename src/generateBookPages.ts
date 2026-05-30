@@ -98,24 +98,6 @@ const bookConfigs: Map<string, BookContentConfig> = new Map();
 const writtenFiles: Map<string, string> = new Map();
 
 const loadBookConfigs = async (): Promise<void> => {
-    const configDir = './config/contents';
-    try {
-        const files = await fs.readdir(configDir);
-        for (const file of files) {
-            if (file.endsWith('.json')) {
-                const filePath = path.join(configDir, file);
-                let content = await fs.readFile(filePath, 'utf-8');
-                if (content.charCodeAt(0) === 0xFEFF) {
-                    content = content.slice(1);
-                }
-                const config = JSON.parse(content);
-                bookConfigs.set(config.id, config);
-            }
-        }
-    } catch (error) {
-        console.error(`加载配置目录失败: ${error}`);
-    }
-
     try {
         const outputContentsDir = './output/contents';
         const types = ['book', 'adventure'];
@@ -142,6 +124,24 @@ const loadBookConfigs = async (): Promise<void> => {
         }
     } catch (error) {
         console.error(`加载输出配置目录失败: ${error}`);
+    }
+
+    const configDir = './config/contents';
+    try {
+        const files = await fs.readdir(configDir);
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const filePath = path.join(configDir, file);
+                let content = await fs.readFile(filePath, 'utf-8');
+                if (content.charCodeAt(0) === 0xFEFF) {
+                    content = content.slice(1);
+                }
+                const config = JSON.parse(content);
+                bookConfigs.set(config.id, config);
+            }
+        }
+    } catch (error) {
+        console.error(`加载配置目录失败: ${error}`);
     }
 
     console.error(`配置加载完成，共 ${bookConfigs.size} 个配置`);
