@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { TagParser } from './contentGen.js';
 
 const numberToChinese = (num: number): string => {
     const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
@@ -217,7 +218,7 @@ const getPageNameEn = (pageData: PageData): string => {
     return nameZh || pageData.id.split('|')[0];
 };
 
-const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | string }, isChinese: boolean = true): string => {
+const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | string }, isChinese: boolean = true, parentName?: string): string => {
     if (!ordinal?.type || ordinal.identifier === undefined) {
         return '';
     }
@@ -225,8 +226,27 @@ const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | stri
     const type = ordinal.type;
     const identifier = ordinal.identifier;
 
+    if (parentName) {
+        if (isChinese) {
+            if (parentName.startsWith('第') && parentName.includes('章')) {
+                return '';
+            }
+            if (parentName.startsWith('附录')) {
+                return '';
+            }
+        } else {
+            if (parentName.startsWith('Chapter')) {
+                return '';
+            }
+            if (parentName.startsWith('Appendix')) {
+                return '';
+            }
+        }
+    }
+
     if (type === 'chapter') {
         if (typeof identifier === 'number') {
+            if (identifier === 0) return '';
             const chineseNum = numberToChinese(identifier);
             return isChinese ? `第${chineseNum}章：` : `Chapter ${identifier}: `;
         } else if (identifier !== null && identifier !== '') {
@@ -234,6 +254,7 @@ const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | stri
         }
     } else if (type === 'appendix') {
         if (typeof identifier === 'number') {
+            if (identifier === 0) return '';
             const chineseNum = numberToChinese(identifier);
             return isChinese ? `附录${chineseNum}：` : `Appendix ${identifier}: `;
         } else if (identifier !== null && identifier !== '') {
@@ -244,29 +265,86 @@ const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | stri
     return '';
 };
 
+const hasChapterPrefixZh = (name: string): boolean => {
+    return name.startsWith('第') && name.includes('章');
+};
+
+const hasAppendixPrefixZh = (name: string): boolean => {
+    return name.startsWith('附录');
+};
+
+const hasChapterPrefixEn = (name: string): boolean => {
+    return name.startsWith('Chapter');
+};
+
+const hasAppendixPrefixEn = (name: string): boolean => {
+    return name.startsWith('Appendix');
+};
+
 const buildPagePrefix = (pageData: PageData): { zhPrefix: string; enPrefix: string } => {
     let zhPrefix = '';
     let enPrefix = '';
     const type = pageData.type;
     const identifier = pageData.identifier;
 
+    const nameZh = getPageNameZh(pageData);
+    const nameEn = getPageNameEn(pageData);
+
     if (type === 'chapter' && identifier !== undefined) {
         if (typeof identifier === 'number') {
-            const chineseNum = numberToChinese(identifier);
-            zhPrefix = `第${chineseNum}章：`;
-            enPrefix = `Chapter ${identifier}: `;
+            if (identifier === 0) {
+                return { zhPrefix: '', enPrefix: '' };
+            }
+            if (hasChapterPrefixZh(nameZh)) {
+                zhPrefix = '';
+            } else {
+                const chineseNum = numberToChinese(identifier);
+                zhPrefix = `第${chineseNum}章：`;
+            }
+            if (hasChapterPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Chapter ${identifier}: `;
+            }
         } else if (identifier !== null && identifier !== '') {
-            zhPrefix = `附录${identifier}：`;
-            enPrefix = `Appendix ${identifier}: `;
+            if (hasAppendixPrefixZh(nameZh)) {
+                zhPrefix = '';
+            } else {
+                zhPrefix = `附录${identifier}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${identifier}: `;
+            }
         }
     } else if (type === 'appendix' && identifier !== undefined) {
         if (typeof identifier === 'number') {
-            const chineseNum = numberToChinese(identifier);
-            zhPrefix = `附录${chineseNum}：`;
-            enPrefix = `Appendix ${identifier}: `;
+            if (identifier === 0) {
+                return { zhPrefix: '', enPrefix: '' };
+            }
+            if (hasAppendixPrefixZh(nameZh)) {
+                zhPrefix = '';
+            } else {
+                const chineseNum = numberToChinese(identifier);
+                zhPrefix = `附录${chineseNum}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${identifier}: `;
+            }
         } else if (identifier !== null && identifier !== '') {
-            zhPrefix = `附录${identifier}：`;
-            enPrefix = `Appendix ${identifier}: `;
+            if (hasAppendixPrefixZh(nameZh)) {
+                zhPrefix = '';
+            } else {
+                zhPrefix = `附录${identifier}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${identifier}: `;
+            }
         }
     }
 
@@ -274,7 +352,18 @@ const buildPagePrefix = (pageData: PageData): { zhPrefix: string; enPrefix: stri
 };
 
 const sanitizeFileSegment = (value: string): string => {
-    return value.replace(/[\\/:*?"<>|]/g, '_').trim();
+    return value
+        .replace(/\\/g, '_0_')
+        .replace(/_1_/g, '_1_')
+        .replace(/:/g, '_2_')
+        .replace(/\*/g, '_3_')
+        .replace(/"/g, '_4_')
+        .replace(/</g, '_5_')
+        .replace(/>/g, '_6_')
+        .replace(/\|/g, '_7_')
+        .replace(/\?/g, '_8_')
+        .replace(/\//g, '_9_')
+        .trim();
 };
 
 const writePage = async (
@@ -367,8 +456,8 @@ const processBook = async (bookDir: string, bookId: string, isAdventure: boolean
                     const parentPartsEn: string[] = [];
 
                     for (const parent of parentChapters) {
-                        const parentZhPrefix = buildParentPrefix(parent.ordinal);
-                        const parentEnPrefix = buildParentPrefix(parent.ordinal, false);
+                        const parentZhPrefix = buildParentPrefix(parent.ordinal, true, parent.nameZh);
+                        const parentEnPrefix = buildParentPrefix(parent.ordinal, false, parent.nameEn);
                         
                         if (parent.nameZh) {
                             parentPartsZh.push(parentZhPrefix + parent.nameZh);

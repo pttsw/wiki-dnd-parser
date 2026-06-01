@@ -403,20 +403,28 @@ export class SectionTextIdMap {
         }
     }
 
-    getTextId(bookId: string, chapterIndex?: number, sectionTitle?: string): string | null {
+    getTextId(bookId: string, chapterIndexOrTextId?: string | number, sectionTitle?: string): string | null {
         const normalizedBookId = bookId.toLowerCase();
         
-        // 策略1：使用bookId和chapterIndex直接查找（最重要的策略）
-        if (chapterIndex !== undefined) {
-            const chapterKey = `${normalizedBookId}|${chapterIndex}`;
+        // 策略0：优先尝试将chapterIndexOrTextId作为chapterIndex查找（章节索引到textId的映射）
+        if (chapterIndexOrTextId !== undefined && typeof chapterIndexOrTextId === 'number') {
+            const chapterKey = `${normalizedBookId}|${chapterIndexOrTextId}`;
             if (this.chapterIndexToTextIdMap.has(chapterKey)) {
                 return this.chapterIndexToTextIdMap.get(chapterKey)!;
             }
         }
+        
+        // 策略1：尝试将chapterIndexOrTextId作为textId直接查找
+        if (chapterIndexOrTextId !== undefined) {
+            const textIdKey = `${normalizedBookId}|${chapterIndexOrTextId}`;
+            if (this.bookIdToTextIdMap.has(textIdKey)) {
+                return this.bookIdToTextIdMap.get(textIdKey)!;
+            }
+        }
 
         // 策略2：完整匹配（bookId + chapterIndex + sectionTitle）
-        if (sectionTitle && chapterIndex !== undefined) {
-            const key = `${normalizedBookId}|${chapterIndex}|${sectionTitle}`;
+        if (sectionTitle && chapterIndexOrTextId !== undefined) {
+            const key = `${normalizedBookId}|${chapterIndexOrTextId}|${sectionTitle}`;
             if (this.map.has(key)) {
                 return this.map.get(key)!;
             }
@@ -433,10 +441,10 @@ export class SectionTextIdMap {
         }
 
         // 策略4：匹配bookId、chapterIndex和sectionTitle（嵌套查找）
-        if (sectionTitle && chapterIndex !== undefined && this.chapterIndexMap.has(normalizedBookId)) {
+        if (sectionTitle && chapterIndexOrTextId !== undefined && typeof chapterIndexOrTextId === 'number' && this.chapterIndexMap.has(normalizedBookId)) {
             const chapterMap = this.chapterIndexMap.get(normalizedBookId)!;
-            if (chapterMap.has(chapterIndex)) {
-                const sectionMap = chapterMap.get(chapterIndex)!;
+            if (chapterMap.has(chapterIndexOrTextId)) {
+                const sectionMap = chapterMap.get(chapterIndexOrTextId)!;
                 if (sectionMap.has(sectionTitle)) {
                     return sectionMap.get(sectionTitle)!;
                 }

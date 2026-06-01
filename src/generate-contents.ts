@@ -75,11 +75,20 @@ function buildNameToIdMap(dataArray: any[]): Map<string, string> {
     function removeChapterPrefix(name: string): string {
         const prefixes = [
             /^Chapter \d+: /i,
+            /^Chapter \d+:/i,
             /^Chapter \d+ /i,
             /^Part \d+: /i,
+            /^Part \d+:/i,
             /^Part \d+ /i,
             /^Appendix [A-Z]: /i,
+            /^Appendix [A-Z]:/i,
+            /^Appendix \d+:/i,
+            /^Appendix \d+: /i,
             /^Appendix [A-Z] /i,
+            /^Appendix [A-Z] /i,
+            /^[A-Z]\d+. /i,
+            /^[A-Z]\d+: /i,
+			/^Encounter \d+: /i,
         ];
         
         for (const prefix of prefixes) {

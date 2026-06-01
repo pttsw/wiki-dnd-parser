@@ -45,6 +45,7 @@ class TagParser {
         let lastIndex = 0;
         for (const match of input.matchAll(tagRegex)) {
             const [fullMatch, tagName, param] = match;
+
             if (lastIndex < match.index) {
                 parts.push(input.slice(lastIndex, match.index));
             }
@@ -71,7 +72,7 @@ class TagParser {
             // 检查是否有来源后缀（parts[1]应该是来源，parts[2]应该是显示文本）
             if (parts.length >= 2 && !parts[1].trim()) {
                 // 格式为 {@item name||display}，没有来源后缀，添加|DMG
-                const result = `{{${tag.tagName}|${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}}}`;
+                const result = `{${tag.tagName} ${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}}`;
                 // 保存处理后的参数
                 if (this.allTags.has(tag.tagName)) {
                     this.allTags.get(tag.tagName)!.add(`${parts[0]}|DMG${parts.length > 2 ? '|' + parts.slice(2).join('|') : ''}`);
@@ -81,7 +82,7 @@ class TagParser {
                 return result;
             } else if (parts.length === 1) {
                 // 格式为 {@item name}，没有来源后缀，添加|DMG
-                const result = `{{${tag.tagName}|${parts[0]}|DMG}}`;
+                const result = `{${tag.tagName} ${parts[0]}|DMG}`;
                 // 保存处理后的参数
                 if (this.allTags.has(tag.tagName)) {
                     this.allTags.get(tag.tagName)!.add(`${parts[0]}|DMG`);
@@ -97,24 +98,26 @@ class TagParser {
             const parts = tag.param.split('|');
             const displayText = parts[0];
             const bookId = parts[1] || '';
-            const chapterIndexStr = parts[2];
+            const chapterIndexOrTextIdStr = parts[2];
             const sectionTitle = parts[3];
             const number = parts[4];
 
-            let chapterIndex: number | undefined;
-            if (chapterIndexStr) {
-                const parsed = parseInt(chapterIndexStr, 10);
+            let chapterIndexOrTextId: string | number | undefined;
+            if (chapterIndexOrTextIdStr) {
+                const parsed = parseInt(chapterIndexOrTextIdStr, 10);
                 if (!isNaN(parsed)) {
-                    chapterIndex = parsed;
+                    chapterIndexOrTextId = parsed;
+                } else {
+                    chapterIndexOrTextId = chapterIndexOrTextIdStr;
                 }
             }
 
             // 尝试获取textId
             let textId: string | null = null;
             if (bookId) {
-                // 策略1：有 bookId 和 chapterIndex 时，先尝试查找
-                if (chapterIndex !== undefined) {
-                    textId = sectionTextIdMap.getTextId(bookId, chapterIndex, sectionTitle);
+                // 策略1：有 bookId 和 chapterIndexOrTextId 时，先尝试查找
+                if (chapterIndexOrTextId !== undefined) {
+                    textId = sectionTextIdMap.getTextId(bookId, chapterIndexOrTextId, sectionTitle);
                 }
                 
                 // 策略2：如果没找到，尝试只用 sectionTitle 查找
@@ -122,9 +125,9 @@ class TagParser {
                     textId = sectionTextIdMap.getTextIdByTitleOnly(bookId, sectionTitle);
                 }
                 
-                // 策略3：如果还没找到，使用 chapterIndex 作为 textId（假设 chapterIndex 就是 textId）
-                if (!textId && chapterIndex !== undefined) {
-                    textId = String(chapterIndex);
+                // 策略3：如果还没找到，使用 chapterIndexOrTextId 作为 textId
+                if (!textId && chapterIndexOrTextId !== undefined) {
+                    textId = String(chapterIndexOrTextId);
                 }
             }
 
@@ -142,7 +145,7 @@ class TagParser {
                     }
                 } else {
                     // 没有找到textId，保持原样
-                    if (chapterIndexStr) newParam += `|${chapterIndexStr}`;
+                    if (chapterIndexOrTextIdStr) newParam += `|${chapterIndexOrTextIdStr}`;
                     if (sectionTitle) newParam += `|${sectionTitle}`;
                     if (number) newParam += `|${number}`;
                 }
@@ -155,7 +158,7 @@ class TagParser {
                 this.allTags.set(tag.tagName, new Set([newParam]));
             }
 
-            return `{{${tag.tagName}|${newParam}}}`;
+            return `{${tag.tagName} ${newParam}}`;
         }
 
         // 保存原始参数
@@ -165,7 +168,7 @@ class TagParser {
             this.allTags.set(tag.tagName, new Set([tag.param || '']));
         }
 
-        return `{{${tag.tagName}${tag.param ? `|${tag.param}` : ''}}}`;
+        return `{${tag.tagName}${tag.param ? ` ${tag.param}` : ''}}`;
     }
     async generateFiles() {
         // save allTags to ./output/tags.json

@@ -2,12 +2,30 @@ import fs from 'fs/promises';
 import path from 'path';
 import config from './config.js';
 import { escapeFileName, sectionTextIdMap } from './exporters/shared.js';
+import { tagParser } from './contentGen.js';
 
 const removeBOM = (content: string): string => {
     if (content.startsWith('\uFEFF')) {
         return content.slice(1);
     }
     return content;
+};
+
+const processBookTags = (obj: any): any => {
+    if (typeof obj === 'string') {
+        return tagParser.parse(obj);
+    } else if (typeof obj === 'number') {
+        return obj;
+    } else if (Array.isArray(obj)) {
+        return obj.map(item => processBookTags(item));
+    } else if (typeof obj === 'object' && obj !== null) {
+        const result: any = {};
+        for (const key of Object.keys(obj)) {
+            result[key] = processBookTags(obj[key]);
+        }
+        return result;
+    }
+    return obj;
 };
 
 const ENTRIES_WITH_ENUMERATED_TITLES = [
@@ -332,6 +350,10 @@ const processContentEntry = async (
             enContent.entries = processEntriesWithTitleFork(enContent.entries);
         }
 
+        // 处理内容中的 {@book} 标签
+        const processedZhContent = processBookTags(zhContent);
+        const processedEnContent = processBookTags(enContent);
+
         const fileData = {
             dataType,
             uid,
@@ -346,8 +368,8 @@ const processContentEntry = async (
                 zh: zhName || null,
                 en: enName || null,
             },
-            zh: zhContent,
-            en: enContent,
+            zh: processedZhContent,
+            en: processedEnContent,
         };
 
         const preferredFileName = `${escapeFileName(sectionId)}.json`;
@@ -357,12 +379,6 @@ const processContentEntry = async (
 
         await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
        // console.log(`  生成: ${filePath}`);
-        
-        // 添加到章节映射
-        sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
-        if (zhName && zhName !== enName) {
-            sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
-        }
 
         return {
             id: sectionId,
@@ -452,6 +468,10 @@ const writeSectionFile = async (
     const enContent = { entries: processedEnEntries };
     const zhContent = { entries: processedZhEntries };
 
+    // 处理内容中的 {@book} 标签
+    const processedZhContent = processBookTags(zhContent);
+    const processedEnContent = processBookTags(enContent);
+
     const fileData = {
         dataType,
         uid,
@@ -465,8 +485,8 @@ const writeSectionFile = async (
             zh: zhName || null,
             en: enName || null,
         },
-        zh: zhContent,
-        en: enContent,
+        zh: processedZhContent,
+        en: processedEnContent,
     };
 
     const preferredFileName = `${escapeFileName(sectionId)}.json`;
@@ -475,12 +495,6 @@ const writeSectionFile = async (
     const filePath = path.join(bookOutputDir, preferredFileName);
 
     await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
-    
-    // 添加到章节映射
-    sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
-    if (zhName && zhName !== enName) {
-        sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
-    }
 };
 
 const processSingleBook = async (
@@ -506,6 +520,43 @@ const processSingleBook = async (
         return;
     }
 
+    // 预处理阶段：先建立完整的章节映射
+    for (let chapterIndex = 0; chapterIndex < contentData.contents.length; chapterIndex++) {
+        const entry = contentData.contents[chapterIndex];
+        const enName = extractEnNameFromEntry(entry);
+        const zhName = extractZhNameFromEntry(entry);
+        const nameForId = enName || zhName;
+        let sectionId = entry.id || '';
+
+        if (!sectionId && nameForId) {
+            sectionId = nameToIdMap.get(nameForId) || nameToIdMap.get(removeChapterPrefix(nameForId)) || '';
+        }
+
+        if (sectionId) {
+            sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
+            if (zhName && zhName !== enName) {
+                sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
+            }
+
+            // 处理子章节
+            if (entry.headers && Array.isArray(entry.headers)) {
+                for (const header of entry.headers) {
+                    const headerEnName = extractEnNameFromEntry(header);
+                    const headerZhName = extractZhNameFromEntry(header);
+                    const headerSectionId = header.id || '';
+
+                    if (headerSectionId) {
+                        sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerEnName);
+                        if (headerZhName && headerZhName !== headerEnName) {
+                            sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerZhName);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 处理阶段：处理内容并写入文件
     for (let chapterIndex = 0; chapterIndex < contentData.contents.length; chapterIndex++) {
         const entry = contentData.contents[chapterIndex];
         const enName = extractEnNameFromEntry(entry);
@@ -682,6 +733,7 @@ const main = async () => {
                 bookIds.add(book.id);
             }
         }
+
         
         // 从原始数据中收集冒险ID
         for (const adventure of [...enAdventures, ...zhAdventures]) {
@@ -689,6 +741,7 @@ const main = async () => {
                 adventureIds.add(adventure.id);
             }
         }
+
 
         // 也检查生成的内容目录作为后备
         for (const dir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
@@ -840,6 +893,7 @@ export const splitBooks = async () => {
                 bookIds.add(book.id);
             }
         }
+
         
         // 从原始数据中收集冒险ID
         for (const adventure of [...enAdventures, ...zhAdventures]) {
@@ -847,6 +901,7 @@ export const splitBooks = async () => {
                 adventureIds.add(adventure.id);
             }
         }
+
 
         // 也检查生成的内容目录作为后备
         for (const dir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
@@ -919,6 +974,6 @@ export const splitBooks = async () => {
 };
 
 // 直接运行时的入口
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file://${process.argv[1]}` || import.meta.url.endsWith('/split-books.ts')) {
     splitBooks();
 }
