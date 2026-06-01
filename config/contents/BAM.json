@@ -4,6 +4,7 @@
         "zh": "布布的星界怪兽展",
         "en": "Boo's Astral Menagerie"
     },
+    "dataType": "book",
     "id": "BAM",
     "booktype": "扩展&资源",
     "tag": [

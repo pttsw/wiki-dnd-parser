@@ -4,6 +4,7 @@
         "zh": "星界冒险者指南",
         "en": "Astral Adventurer's Guide"
     },
+    "dataType": "book",
     "id": "AAG",
     "booktype": "扩展&资源",
     "tag": [

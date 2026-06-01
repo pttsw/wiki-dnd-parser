@@ -4,6 +4,7 @@
         "zh": "地下城主指南2024",
         "en": "Dungeon Master's Guide (2024)"
     },
+    "dataType": "book",
     "id": "XDMG",
     "booktype": "核心",
     "tag": [

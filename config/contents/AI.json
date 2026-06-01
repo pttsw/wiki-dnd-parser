@@ -5,6 +5,7 @@
         "en": "Acquisitions Incorporated"
     },
     "id": "AI",
+    "dataType": "book",
     "booktype": "扩展&资源",
     "tag": [
         "规则扩展"

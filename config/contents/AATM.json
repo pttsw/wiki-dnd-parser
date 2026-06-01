@@ -4,6 +4,7 @@
         "zh": "冒险地图匣：葬仪社",
         "en": "Adventure Atlas: The Mortuary"
     },
+    "dataType": "book",
     "id": "AATM",
     "booktype": "电子资源",
     "tag": [

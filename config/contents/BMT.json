@@ -4,6 +4,7 @@
         "zh": "万象无常书",
         "en": "The Book of Many Things"
     },
+    "dataType": "book",
     "id": "BMT",
     "booktype": "扩展&资源",
     "tag": [

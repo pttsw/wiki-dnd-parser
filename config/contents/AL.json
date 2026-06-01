@@ -4,6 +4,7 @@
         "zh": "冒险者联盟",
         "en": "Adventurers League"
     },
+    "dataType": "book",
     "id": "AL",
     "booktype": "贤者谏言&杂项出版物",
     "tag": [

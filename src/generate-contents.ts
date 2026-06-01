@@ -327,6 +327,7 @@ function convertToOutputFormat(
     const result: any = {
         _hjschema: '出版物',
         id: enBook.id,
+        dataType: type,
         booktype,
         tag: getTagsFromGroup(enBook.group),
         newest: !legacySources.has(enBook.id),
@@ -420,7 +421,9 @@ export const generateContents = async () => {
                     if (content.charCodeAt(0) === 0xFEFF) {
                         content = content.slice(1);
                     }
-                    await fs.writeFile(destPath, content, 'utf-8');
+                    const data = JSON.parse(content);
+                    data.dataType = 'book';
+                    await fs.writeFile(destPath, JSON.stringify(data, null, 4), 'utf-8');
                     copiedCount++;
                 } catch (err) {
                     console.warn(`[generateContents] 复制 ${bookId} 失败:`, err);
@@ -461,7 +464,9 @@ export const generateContents = async () => {
                     if (content.charCodeAt(0) === 0xFEFF) {
                         content = content.slice(1);
                     }
-                    await fs.writeFile(destPath, content, 'utf-8');
+                    const data = JSON.parse(content);
+                    data.dataType = 'adventure';
+                    await fs.writeFile(destPath, JSON.stringify(data, null, 4), 'utf-8');
                     copiedCount++;
                 } catch (err) {
                     console.warn(`[generateContents] 复制 ${adventureId} 失败:`, err);
