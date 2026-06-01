@@ -4,7 +4,7 @@
 - 用途：把 5etools 的中英文数据整理为适合 MediaWiki/灰机Wiki 导入的结构化 JSON 与 HTML 片段。
 - 入口脚本：`src/prepareData.ts`（`npm run start`）。
 - 辅助脚本：`src/getGitRepo.ts`（`npm run getCnRepo`，按需拉取源数据）。  
-`src/wikiPageGenerator.ts`（`npm run page`，输出 wiki 内容页面）
+`src/wikiPageGenerator.ts`（`npm run page`，根据 `./output` 目录下输出的 JSON 文件，生成对应的 wiki 内容页面）
 `src/list-files.ts`（`npm run listFiles`，输出output跟page文件对应页面名的收集表格）
 
 运行逻辑概览
@@ -81,6 +81,8 @@ Wiki 页面输出产物（`npm run page`）：
 - `output_page/法术/{来源}/*.wiki`
 - `output_page/物品/{来源}/*.wiki`
 - `output_page/怪物/{来源}/*.wiki`
+- `output_page/扩展/{来源}/*.wiki`
+- `output_page/模组/{来源}/*.wiki`
 
 Wiki 文件名格式：**中文名.wiki**（按来源分文件夹存放）
 

@@ -341,6 +341,7 @@ const processContentEntry = async (
             page,
             type: entry.ordinal?.type || type,
             identifier: entry.ordinal?.identifier,
+            ordinal: entry.ordinal,
             displayName: {
                 zh: zhName || null,
                 en: enName || null,

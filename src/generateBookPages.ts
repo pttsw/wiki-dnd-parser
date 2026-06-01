@@ -215,15 +215,28 @@ const getPageNameEn = (pageData: PageData): string => {
 const buildPagePrefix = (pageData: PageData): { zhPrefix: string; enPrefix: string } => {
     let zhPrefix = '';
     let enPrefix = '';
+    const ordinal = pageData.ordinal;
 
-    if (pageData.type === 'chapter' && typeof pageData.identifier === 'number') {
-        const chineseNum = numberToChinese(pageData.identifier);
-        zhPrefix = `第${chineseNum}章：`;
-        enPrefix = `Chapter ${pageData.identifier}: `;
-    } else if (pageData.type === 'appendix' && typeof pageData.identifier === 'number') {
-        const chineseNum = numberToChinese(pageData.identifier);
-        zhPrefix = `附录${chineseNum}：`;
-        enPrefix = `Appendix ${pageData.identifier}: `;
+    if (ordinal?.type === 'chapter' && ordinal.identifier !== undefined) {
+        const identifier = ordinal.identifier;
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            zhPrefix = `第${chineseNum}章：`;
+            enPrefix = `Chapter ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            zhPrefix = `附录${identifier}：`;
+            enPrefix = `Appendix ${identifier}: `;
+        }
+    } else if (ordinal?.type === 'appendix' && ordinal.identifier !== undefined) {
+        const identifier = ordinal.identifier;
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            zhPrefix = `附录${chineseNum}：`;
+            enPrefix = `Appendix ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            zhPrefix = `附录${identifier}：`;
+            enPrefix = `Appendix ${identifier}: `;
+        }
     }
 
     return { zhPrefix, enPrefix };
