@@ -71,6 +71,10 @@ interface ChapterHierarchy {
     id: string;
     nameZh?: string;
     nameEn?: string;
+    ordinal?: {
+        type?: string;
+        identifier?: number | string;
+    };
 }
 
 interface BookContentConfig {
@@ -165,6 +169,7 @@ const getParentChapters = (bookId: string, pageId: string): ChapterHierarchy[] =
                     id: item.id,
                     nameZh: item.displayName?.zh || item.zh_name || item.name,
                     nameEn: item.displayName?.en || item.name,
+                    ordinal: item.ordinal,
                 });
                 if (findInContents(children, targetId)) {
                     return true;
@@ -212,13 +217,40 @@ const getPageNameEn = (pageData: PageData): string => {
     return nameZh || pageData.id.split('|')[0];
 };
 
+const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | string }, isChinese: boolean = true): string => {
+    if (!ordinal?.type || ordinal.identifier === undefined) {
+        return '';
+    }
+
+    const type = ordinal.type;
+    const identifier = ordinal.identifier;
+
+    if (type === 'chapter') {
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            return isChinese ? `第${chineseNum}章：` : `Chapter ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            return isChinese ? `附录${identifier}：` : `Appendix ${identifier}: `;
+        }
+    } else if (type === 'appendix') {
+        if (typeof identifier === 'number') {
+            const chineseNum = numberToChinese(identifier);
+            return isChinese ? `附录${chineseNum}：` : `Appendix ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            return isChinese ? `附录${identifier}：` : `Appendix ${identifier}: `;
+        }
+    }
+
+    return '';
+};
+
 const buildPagePrefix = (pageData: PageData): { zhPrefix: string; enPrefix: string } => {
     let zhPrefix = '';
     let enPrefix = '';
-    const ordinal = pageData.ordinal;
+    const type = pageData.type;
+    const identifier = pageData.identifier;
 
-    if (ordinal?.type === 'chapter' && ordinal.identifier !== undefined) {
-        const identifier = ordinal.identifier;
+    if (type === 'chapter' && identifier !== undefined) {
         if (typeof identifier === 'number') {
             const chineseNum = numberToChinese(identifier);
             zhPrefix = `第${chineseNum}章：`;
@@ -227,8 +259,7 @@ const buildPagePrefix = (pageData: PageData): { zhPrefix: string; enPrefix: stri
             zhPrefix = `附录${identifier}：`;
             enPrefix = `Appendix ${identifier}: `;
         }
-    } else if (ordinal?.type === 'appendix' && ordinal.identifier !== undefined) {
-        const identifier = ordinal.identifier;
+    } else if (type === 'appendix' && identifier !== undefined) {
         if (typeof identifier === 'number') {
             const chineseNum = numberToChinese(identifier);
             zhPrefix = `附录${chineseNum}：`;
@@ -336,8 +367,15 @@ const processBook = async (bookDir: string, bookId: string, isAdventure: boolean
                     const parentPartsEn: string[] = [];
 
                     for (const parent of parentChapters) {
-                        if (parent.nameZh) parentPartsZh.push(parent.nameZh);
-                        if (parent.nameEn) parentPartsEn.push(parent.nameEn);
+                        const parentZhPrefix = buildParentPrefix(parent.ordinal);
+                        const parentEnPrefix = buildParentPrefix(parent.ordinal, false);
+                        
+                        if (parent.nameZh) {
+                            parentPartsZh.push(parentZhPrefix + parent.nameZh);
+                        }
+                        if (parent.nameEn) {
+                            parentPartsEn.push(parentEnPrefix + parent.nameEn);
+                        }
                     }
 
                     fullNameZh = [...parentPartsZh, fullNameZh].join('_1_');
