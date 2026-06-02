@@ -1,4 +1,4 @@
-import { parse } from 'path';
+import { parse, join } from 'path';
 import fs from 'fs/promises';
 import { sectionTextIdMap } from './exporters/shared.js';
 import type {
@@ -25,15 +25,69 @@ interface TagEntry {
     param: string | null;
 }
 
+const findPageTitleBySectionTitle = async (bookId: string, sectionTitle: string, isZh: boolean): Promise<string | null> => {
+    const outputDir = './output/book';
+    const bookDir = join(outputDir, bookId);
+    
+    try {
+        const files = await fs.readdir(bookDir);
+        for (const file of files) {
+            if (!file.endsWith('.json')) continue;
+            
+            const filePath = join(bookDir, file);
+            const content = await fs.readFile(filePath, 'utf-8');
+            const data = JSON.parse(content);
+            
+            const found = findTitleInEntry(data, sectionTitle);
+            if (found) {
+                const displayName = isZh ? data.displayName?.zh : data.displayName?.en;
+                if (displayName) {
+                    return displayName;
+                }
+            }
+        }
+    } catch (e) {
+        // 文件不存在或读取失败，返回 null
+    }
+    
+    return null;
+};
+
+const findTitleInEntry = (entry: any, targetTitle: string): boolean => {
+    if (!entry || typeof entry !== 'object') return false;
+    
+    if (entry.name === targetTitle || entry.title === targetTitle) {
+        return true;
+    }
+    
+    for (const key of Object.keys(entry)) {
+        const value = entry[key];
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                if (findTitleInEntry(item, targetTitle)) {
+                    return true;
+                }
+            }
+        } else if (typeof value === 'object' && value !== null) {
+            if (findTitleInEntry(value, targetTitle)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+};
+
 class TagParser {
     allTags: Map<string, Set<string>> = new Map();
     constructor() {}
     /**
      * 解析一个字符串，将其中的tag提取并使用parseSingleTag方法处理，拼合后返回一个字符串。
      * @param input
+     * @param isZh - 是否为中文内容
      * @returns
      */
-    parse(input: string | number | undefined): string {
+    parse(input: string | number | undefined, isZh: boolean = true): string {
         if (typeof input !== 'string') {
             if (!input) {
                 return '';
@@ -60,12 +114,12 @@ class TagParser {
         for (const part of parts) {
             if (typeof part === 'string') output.push(part);
             else {
-                output.push(this.parseSingleTag(part));
+                output.push(this.parseSingleTag(part, isZh));
             }
         }
         return output.join('');
     }
-    parseSingleTag(tag: TagEntry): string {
+    parseSingleTag(tag: TagEntry, isZh: boolean = true): string {
         // 处理{@item}标签，为没有来源后缀的物品添加|DMG后缀
         if (tag.tagName === '@item' && tag.param) {
             const parts = tag.param.split('|');
@@ -93,7 +147,7 @@ class TagParser {
             }
         }
 
-        // 处理{@book}标签，替换章节索引为textId
+        // 处理{@book}标签，替换章节索引为页面标题
         if (tag.tagName === '@book' && tag.param) {
             const parts = tag.param.split('|');
             const displayText = parts[0];
@@ -112,20 +166,44 @@ class TagParser {
                 }
             }
 
-            // 尝试获取textId
+            // 判断第三个参数是否已经是完整的页面标题（包含/表示层级路径）
+            let pageTitle: string | null = null;
+            
+            // 如果有第四个参数（sectionTitle），优先通过 sectionTitle 查找页面标题
+            if (sectionTitle && bookId) {
+                pageTitle = sectionTextIdMap.getPageTitleBySectionTitle(bookId, sectionTitle, isZh);
+            }
+            
+            // 如果没有找到（没有第四个参数或查找失败），再检查第三个参数是否是完整页面标题
+            if (!pageTitle && chapterIndexOrTextIdStr && chapterIndexOrTextIdStr.includes('/')) {
+                pageTitle = chapterIndexOrTextIdStr;
+            }
+            
+            // 如果上述都没找到，按原逻辑处理
+            if (!pageTitle && bookId && chapterIndexOrTextId !== undefined) {
+                // 尝试获取页面标题
+                pageTitle = sectionTextIdMap.getPageTitle(bookId, String(chapterIndexOrTextId), isZh, sectionTitle);
+                
+                // 如果没找到，尝试将 chapterIndexOrTextId 作为章节索引获取 textId，再用 textId 查找
+                if (!pageTitle) {
+                    const textIdFromIndex = sectionTextIdMap.getTextId(bookId, chapterIndexOrTextId, sectionTitle);
+                    if (textIdFromIndex) {
+                        pageTitle = sectionTextIdMap.getPageTitle(bookId, textIdFromIndex, isZh, sectionTitle);
+                    }
+                }
+            }
+            
+            // 如果没有找到页面标题，使用 textId 作为后备
             let textId: string | null = null;
-            if (bookId) {
-                // 策略1：有 bookId 和 chapterIndexOrTextId 时，先尝试查找
+            if (!pageTitle && bookId) {
                 if (chapterIndexOrTextId !== undefined) {
                     textId = sectionTextIdMap.getTextId(bookId, chapterIndexOrTextId, sectionTitle);
                 }
                 
-                // 策略2：如果没找到，尝试只用 sectionTitle 查找
                 if (!textId && sectionTitle) {
                     textId = sectionTextIdMap.getTextIdByTitleOnly(bookId, sectionTitle);
                 }
                 
-                // 策略3：如果还没找到，使用 chapterIndexOrTextId 作为 textId
                 if (!textId && chapterIndexOrTextId !== undefined) {
                     textId = String(chapterIndexOrTextId);
                 }
@@ -135,7 +213,15 @@ class TagParser {
             let newParam = displayText;
             if (bookId) {
                 newParam += `|${bookId}`;
-                if (textId) {
+                if (pageTitle) {
+                    newParam += `|${pageTitle}`;
+                    if (sectionTitle) {
+                        newParam += `|${sectionTitle}`;
+                    }
+                    if (number) {
+                        newParam += `|${number}`;
+                    }
+                } else if (textId) {
                     newParam += `|${textId}`;
                     if (sectionTitle) {
                         newParam += `|${sectionTitle}`;
@@ -144,7 +230,7 @@ class TagParser {
                         newParam += `|${number}`;
                     }
                 } else {
-                    // 没有找到textId，保持原样
+                    // 没有找到页面标题或textId，保持原样
                     if (chapterIndexOrTextIdStr) newParam += `|${chapterIndexOrTextIdStr}`;
                     if (sectionTitle) newParam += `|${sectionTitle}`;
                     if (number) newParam += `|${number}`;
@@ -183,6 +269,7 @@ class TagParser {
     }
 }
 
+export { TagParser };
 export const tagParser = new TagParser();
 const tag = tagParser.parse.bind(tagParser);
 

@@ -11,17 +11,17 @@ const removeBOM = (content: string): string => {
     return content;
 };
 
-const processBookTags = (obj: any): any => {
+const processBookTags = (obj: any, isZh: boolean = true): any => {
     if (typeof obj === 'string') {
-        return tagParser.parse(obj);
+        return tagParser.parse(obj, isZh);
     } else if (typeof obj === 'number') {
         return obj;
     } else if (Array.isArray(obj)) {
-        return obj.map(item => processBookTags(item));
+        return obj.map(item => processBookTags(item, isZh));
     } else if (typeof obj === 'object' && obj !== null) {
         const result: any = {};
         for (const key of Object.keys(obj)) {
-            result[key] = processBookTags(obj[key]);
+            result[key] = processBookTags(obj[key], isZh);
         }
         return result;
     }
@@ -198,23 +198,210 @@ const numberToChinese = (num: number): string => {
     return num.toString();
 };
 
+const hasChapterPrefixZh = (name: string): boolean => {
+    return name.startsWith('第') && name.includes('章');
+};
+
+const hasAppendixPrefixZh = (name: string): boolean => {
+    return name.startsWith('附录');
+};
+
+const hasChapterPrefixEn = (name: string): boolean => {
+    return name.startsWith('Chapter');
+};
+
+const hasAppendixPrefixEn = (name: string): boolean => {
+    return name.startsWith('Appendix');
+};
+
+const buildParentPrefix = (ordinal?: { type?: string; identifier?: number | string }, isChinese: boolean = true, parentName?: string): string => {
+    if (!ordinal?.type || ordinal.identifier === undefined) {
+        return '';
+    }
+
+    const type = ordinal.type;
+    const identifier = ordinal.identifier;
+
+    if (parentName) {
+        if (isChinese) {
+            if (parentName.startsWith('第') && parentName.includes('章')) {
+                return '';
+            }
+            if (parentName.startsWith('附录')) {
+                return '';
+            }
+        } else {
+            if (parentName.startsWith('Chapter')) {
+                return '';
+            }
+            if (parentName.startsWith('Appendix')) {
+                return '';
+            }
+        }
+    }
+
+    if (type === 'chapter') {
+        if (typeof identifier === 'number') {
+            if (identifier === 0) return '';
+            const chineseNum = numberToChinese(identifier);
+            return isChinese ? `第${chineseNum}章：` : `Chapter ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            return isChinese ? `附录${identifier}：` : `Appendix ${identifier}: `;
+        }
+    } else if (type === 'appendix') {
+        if (typeof identifier === 'number') {
+            if (identifier === 0) return '';
+            const chineseNum = numberToChinese(identifier);
+            return isChinese ? `附录${chineseNum}：` : `Appendix ${identifier}: `;
+        } else if (identifier !== null && identifier !== '') {
+            return isChinese ? `附录${identifier}：` : `Appendix ${identifier}: `;
+        }
+    }
+
+    return '';
+};
+
+const buildPagePrefix = (type: string | undefined, identifier: number | string | undefined, nameZh: string, nameEn: string): { zhPrefix: string; enPrefix: string } => {
+    let zhPrefix = '';
+    let enPrefix = '';
+
+    if (type === 'chapter' && identifier !== undefined) {
+        const parsedIdentifier = typeof identifier === 'string' ? parseInt(identifier, 10) : identifier;
+        const isNumeric = typeof parsedIdentifier === 'number' && !isNaN(parsedIdentifier);
+        
+        if (isNumeric) {
+            if (parsedIdentifier === 0) {
+                return { zhPrefix: '', enPrefix: '' };
+            }
+            if (hasChapterPrefixZh(nameZh)) {
+                zhPrefix = '';
+            } else {
+                const chineseNum = numberToChinese(parsedIdentifier);
+                zhPrefix = `第${chineseNum}章：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Chapter ${parsedIdentifier}: `;
+            }
+        } else if (identifier !== null && identifier !== '') {
+            if (nameZh.startsWith('附录')) {
+                zhPrefix = '';
+            } else {
+                zhPrefix = `附录${identifier}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${identifier}: `;
+            }
+        }
+    } else if (type === 'appendix' && identifier !== undefined) {
+        const parsedIdentifier = typeof identifier === 'string' ? parseInt(identifier, 10) : identifier;
+        const isNumeric = typeof parsedIdentifier === 'number' && !isNaN(parsedIdentifier);
+        
+        if (isNumeric) {
+            if (parsedIdentifier === 0) {
+                return { zhPrefix: '', enPrefix: '' };
+            }
+            if (nameZh.startsWith('附录')) {
+                zhPrefix = '';
+            } else {
+                const chineseNum = numberToChinese(parsedIdentifier);
+                zhPrefix = `附录${chineseNum}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${parsedIdentifier}: `;
+            }
+        } else if (identifier !== null && identifier !== '') {
+            if (nameZh.startsWith('附录')) {
+                zhPrefix = '';
+            } else {
+                zhPrefix = `附录${identifier}：`;
+            }
+            if (hasAppendixPrefixEn(nameEn)) {
+                enPrefix = '';
+            } else {
+                enPrefix = `Appendix ${identifier}: `;
+            }
+        }
+    }
+
+    return { zhPrefix, enPrefix };
+};
+
 const getDisplayNameWithPrefix = (enName: string, zhName: string, ordinal: any): { en: string, zh: string } => {
     let displayEn = enName;
     let displayZh = zhName;
 
-    if (ordinal?.type === 'chapter' && ordinal.identifier !== undefined) {
-        const identifier = ordinal.identifier;
-        if (typeof identifier === 'number') {
-            const chineseNum = numberToChinese(identifier);
-            displayEn = `Chapter ${identifier}: ${enName}`;
-            displayZh = `第${chineseNum}章：${zhName}`;
+    const type = ordinal?.type;
+    const identifier = ordinal?.identifier;
+
+    if (type === 'chapter' && identifier !== undefined) {
+        // 尝试将 identifier 解析为数字
+        const parsedIdentifier = typeof identifier === 'string' ? parseInt(identifier, 10) : identifier;
+        const isNumeric = typeof parsedIdentifier === 'number' && !isNaN(parsedIdentifier);
+        
+        if (isNumeric) {
+            if (parsedIdentifier === 0) {
+                return { en: enName, zh: zhName };
+            }
+            if (hasChapterPrefixZh(zhName)) {
+                displayZh = zhName;
+            } else {
+                const chineseNum = numberToChinese(parsedIdentifier);
+                displayZh = `第${chineseNum}章：${zhName}`;
+            }
+            if (hasChapterPrefixEn(enName)) {
+                displayEn = enName;
+            } else {
+                displayEn = `Chapter ${parsedIdentifier}: ${enName}`;
+            }
+        } else if (identifier !== null && identifier !== '') {
+            if (hasAppendixPrefixZh(zhName)) {
+                displayZh = zhName;
+            } else {
+                displayZh = `附录${identifier}：${zhName}`;
+            }
+            if (hasAppendixPrefixEn(enName)) {
+                displayEn = enName;
+            } else {
+                displayEn = `Appendix ${identifier}: ${enName}`;
+            }
         }
-    } else if (ordinal?.type === 'appendix' && ordinal.identifier !== undefined) {
-        const identifier = ordinal.identifier;
-        if (typeof identifier === 'number') {
-            const chineseNum = numberToChinese(identifier);
-            displayEn = `Appendix ${identifier}: ${enName}`;
-            displayZh = `附录${chineseNum}：${zhName}`;
+    } else if (type === 'appendix' && identifier !== undefined) {
+        // 尝试将 identifier 解析为数字
+        const parsedIdentifier = typeof identifier === 'string' ? parseInt(identifier, 10) : identifier;
+        const isNumeric = typeof parsedIdentifier === 'number' && !isNaN(parsedIdentifier);
+        
+        if (isNumeric) {
+            if (parsedIdentifier === 0) {
+                return { en: enName, zh: zhName };
+            }
+            if (hasAppendixPrefixZh(zhName)) {
+                displayZh = zhName;
+            } else {
+                const chineseNum = numberToChinese(parsedIdentifier);
+                displayZh = `附录${chineseNum}：${zhName}`;
+            }
+            if (hasAppendixPrefixEn(enName)) {
+                displayEn = enName;
+            } else {
+                displayEn = `Appendix ${parsedIdentifier}: ${enName}`;
+            }
+        } else if (identifier !== null && identifier !== '') {
+            if (hasAppendixPrefixZh(zhName)) {
+                displayZh = zhName;
+            } else {
+                displayZh = `附录${identifier}：${zhName}`;
+            }
+            if (hasAppendixPrefixEn(enName)) {
+                displayEn = enName;
+            } else {
+                displayEn = `Appendix ${identifier}: ${enName}`;
+            }
         }
     }
 
@@ -238,6 +425,216 @@ const findSectionById = (data: any[], targetId: string): any | null => {
     };
 
     return findById(data);
+};
+
+interface ChapterHierarchy {
+    id: string;
+    nameZh?: string;
+    nameEn?: string;
+    ordinal?: {
+        type?: string;
+        identifier?: number | string;
+    };
+}
+
+const getParentChapters = (contents: any[], targetId: string): ChapterHierarchy[] => {
+    const pathArray: ChapterHierarchy[] = [];
+    const findInContents = (entries: any[], targetId: string): boolean => {
+        for (const item of entries) {
+            if (item.id === targetId) {
+                return true;
+            }
+            const children = item.contents || item.headers;
+            if (children && Array.isArray(children)) {
+                pathArray.push({
+                    id: item.id,
+                    nameZh: item.displayName?.zh || item.zh_name || item.name,
+                    nameEn: item.displayName?.en || item.name,
+                    ordinal: item.ordinal,
+                });
+                if (findInContents(children, targetId)) {
+                    return true;
+                }
+                pathArray.pop();
+            }
+        }
+        return false;
+    };
+
+    findInContents(contents, targetId);
+    return pathArray;
+};
+
+const collectSectionTitles = (entry: any, bookId: string, zhPageTitle: string, enPageTitle: string): void => {
+    if (!entry || typeof entry !== 'object') return;
+    
+    // 收集 name 字段
+    if (entry.name && typeof entry.name === 'string') {
+        sectionTextIdMap.setSectionTitleToPageTitle(bookId, entry.name, zhPageTitle, enPageTitle);
+    }
+    
+    // 收集 title 字段
+    if (entry.title && typeof entry.title === 'string') {
+        sectionTextIdMap.setSectionTitleToPageTitle(bookId, entry.title, zhPageTitle, enPageTitle);
+    }
+    
+    // 递归遍历数组字段（只遍历 entries 字段，不处理其他嵌套对象）
+    if (Array.isArray(entry.entries)) {
+        for (const item of entry.entries) {
+            collectSectionTitles(item, bookId, zhPageTitle, enPageTitle);
+        }
+    }
+};
+
+const buildFullSectionTitleMap = async (bookId: string, bookContent: { zh: any[] | null; en: any[] | null }, contents: any[]): Promise<void> => {
+    const processEntry = (entry: any, parentZhTitle: string, parentEnTitle: string) => {
+        if (!entry || typeof entry !== 'object') return;
+        
+        const enName = extractEnNameFromEntry(entry);
+        const zhName = extractZhNameFromEntry(entry);
+        const sectionId = entry.id || '';
+        
+        // 构建章节前缀
+        const ordinal = entry.ordinal || {};
+        const { zhPrefix, enPrefix } = buildPagePrefix(ordinal.type, ordinal.identifier, zhName, enName);
+        
+        // 构建完整的页面标题
+        let fullNameZh = zhPrefix + zhName;
+        let fullNameEn = enPrefix + enName;
+        
+        // 如果有父标题，添加层级路径
+        if (parentZhTitle && fullNameZh) {
+            fullNameZh = `${parentZhTitle}/${fullNameZh}`;
+        }
+        if (parentEnTitle && fullNameEn) {
+            fullNameEn = `${parentEnTitle}/${fullNameEn}`;
+        }
+        
+        // 只有当条目是独立页面（alonepage: true）或章节（chapter）时，才收集内容中的 name/title 字段
+        const isChapter = ordinal.type === 'chapter';
+        const isAlonePage = entry.alonepage === true;
+        
+        if ((isChapter || isAlonePage) && sectionId) {
+            const sectionZh = findSectionById(bookContent.zh || [], sectionId);
+            const sectionEn = findSectionById(bookContent.en || [], sectionId);
+            
+            if (sectionZh) {
+                collectSectionTitles(sectionZh, bookId, fullNameZh, fullNameEn);
+            }
+            if (sectionEn && (!sectionZh || JSON.stringify(sectionZh) !== JSON.stringify(sectionEn))) {
+                collectSectionTitles(sectionEn, bookId, fullNameZh, fullNameEn);
+            }
+        }
+        
+        // 递归处理子章节
+        if (entry.headers && Array.isArray(entry.headers)) {
+            for (const header of entry.headers) {
+                processEntry(header, fullNameZh, fullNameEn);
+            }
+        }
+    };
+    
+    // 遍历所有目录条目
+    for (const entry of contents) {
+        processEntry(entry, '', '');
+    }
+};
+
+const collectAllSectionTitlesFromContent = async (bookId: string, bookContent: { zh: any[] | null; en: any[] | null }, contents: any[]): Promise<void> => {
+    // 遍历目录结构来建立 name/title 到完整页面标题的映射
+    const processContentEntry = (entry: any, parentZhTitle: string, parentEnTitle: string) => {
+        if (!entry || typeof entry !== 'object') return;
+        
+        const enName = extractEnNameFromEntry(entry);
+        const zhName = extractZhNameFromEntry(entry);
+        const sectionId = entry.id || '';
+        
+        // 构建章节前缀
+        const ordinal = entry.ordinal || {};
+        const { zhPrefix, enPrefix } = buildPagePrefix(ordinal.type, ordinal.identifier, zhName, enName);
+        
+        // 构建完整的页面标题
+        let fullNameZh = zhPrefix + zhName;
+        let fullNameEn = enPrefix + enName;
+        
+        // 如果有父标题，添加层级路径
+        if (parentZhTitle && fullNameZh) {
+            fullNameZh = `${parentZhTitle}/${fullNameZh}`;
+        }
+        if (parentEnTitle && fullNameEn) {
+            fullNameEn = `${parentEnTitle}/${fullNameEn}`;
+        }
+        
+        // 收集当前章节内容中的 name/title 字段
+        if (sectionId) {
+            const sectionZh = findSectionById(bookContent.zh || [], sectionId);
+            const sectionEn = findSectionById(bookContent.en || [], sectionId);
+            
+            if (sectionZh) {
+                collectSectionTitles(sectionZh, bookId, fullNameZh, fullNameEn);
+            }
+            if (sectionEn && (!sectionZh || JSON.stringify(sectionZh) !== JSON.stringify(sectionEn))) {
+                collectSectionTitles(sectionEn, bookId, fullNameZh, fullNameEn);
+            }
+        }
+        
+        // 递归处理子章节
+        if (entry.headers && Array.isArray(entry.headers)) {
+            for (const header of entry.headers) {
+                processContentEntry(header, fullNameZh, fullNameEn);
+            }
+        }
+    };
+    
+    // 遍历所有目录条目
+    for (const entry of contents) {
+        processContentEntry(entry, '', '');
+    }
+};
+
+const collectAllFileTitles = async (bookId: string): Promise<void> => {
+    const outputDir = './output/book';
+    const bookDir = path.join(outputDir, bookId);
+    
+    try {
+        const files = await fs.readdir(bookDir);
+        for (const file of files) {
+            if (!file.endsWith('.json')) continue;
+            
+            const filePath = path.join(bookDir, file);
+            const content = await fs.readFile(filePath, 'utf-8');
+            const data = JSON.parse(content);
+            
+            // 获取页面标题（这是子页面自己的标题）
+            const zhPageTitle = data.displayName?.zh || '';
+            const enPageTitle = data.displayName?.en || '';
+            
+            if (!zhPageTitle && !enPageTitle) continue;
+            
+            // 获取父章节标题（从 zh 或 en 字段中的 name 获取）
+            let zhFullTitle = zhPageTitle;
+            let enFullTitle = enPageTitle;
+            
+            if (data.zh?.name) {
+                zhFullTitle = data.zh.name;
+            } else if (data.en?.name) {
+                enFullTitle = data.en.name;
+            }
+            
+            // 如果名称已经包含父路径（如 "第四章：创建冒险/范例冒险"），直接使用
+            if (!zhFullTitle.includes('/') && data.zh?.name) {
+                zhFullTitle = data.zh.name;
+            }
+            if (!enFullTitle.includes('/') && data.en?.name) {
+                enFullTitle = data.en.name;
+            }
+            
+            // 收集文件中所有的 name 和 title 字段
+            collectSectionTitles(data, bookId, zhFullTitle, enFullTitle);
+        }
+    } catch (e) {
+        // 目录不存在或读取失败，跳过
+    }
 };
 
 interface ProcessedSection {
@@ -284,7 +681,9 @@ const processContentEntry = async (
     nameToIdMap: Map<string, string>,
     enData: any[],
     zhData: any[],
-    chapterIndex?: number
+    chapterIndex?: number,
+    parentZhTitle: string = '',
+    parentEnTitle: string = ''
 ): Promise<ProcessedSection | null> => {
     const enName = extractEnNameFromEntry(entry);
     const zhName = extractZhNameFromEntry(entry);
@@ -312,6 +711,19 @@ const processContentEntry = async (
         const type = sectionEn?.type || sectionZh?.type || 'section';
 
         let enContent = sectionEn ? { ...sectionEn, entries: [...sectionEn.entries] } : null;
+        // 构建完整的页面标题（包含父章节路径）
+        const ordinal = entry.ordinal || {};
+        const { zhPrefix, enPrefix } = buildPagePrefix(ordinal.type, ordinal.identifier, zhName, enName);
+        let fullZhTitle = zhPrefix + zhName;
+        let fullEnTitle = enPrefix + enName;
+        
+        if (parentZhTitle && fullZhTitle) {
+            fullZhTitle = `${parentZhTitle}/${fullZhTitle}`;
+        }
+        if (parentEnTitle && fullEnTitle) {
+            fullEnTitle = `${parentEnTitle}/${fullEnTitle}`;
+        }
+        
         let zhContent = sectionZh ? { ...sectionZh, entries: [...sectionZh.entries] } : null;
 
         const headerSubpageMap = new Map<string, string>();
@@ -326,7 +738,10 @@ const processContentEntry = async (
                         outputDir,
                         nameToIdMap,
                         enData,
-                        zhData
+                        zhData,
+                        undefined,
+                        fullZhTitle,
+                        fullEnTitle
                     );
 
                     if (headerProcessed?.subpageId && header.id) {
@@ -349,10 +764,18 @@ const processContentEntry = async (
         if (enContent) {
             enContent.entries = processEntriesWithTitleFork(enContent.entries);
         }
-
+        
+        // 在处理标签之前，收集当前章节内容中的所有 name/title 字段到页面标题的映射
+        if (zhContent) {
+            collectSectionTitles(zhContent, bookId, fullZhTitle, fullEnTitle);
+        }
+        if (enContent) {
+            collectSectionTitles(enContent, bookId, fullZhTitle, fullEnTitle);
+        }
+        
         // 处理内容中的 {@book} 标签
-        const processedZhContent = processBookTags(zhContent);
-        const processedEnContent = processBookTags(enContent);
+        const processedZhContent = processBookTags(zhContent, true);
+        const processedEnContent = processBookTags(enContent, false);
 
         const fileData = {
             dataType,
@@ -537,6 +960,15 @@ const processSingleBook = async (
             if (zhName && zhName !== enName) {
                 sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
             }
+            
+            // 构建页面前缀（复刻 generateBookPages.ts 的逻辑）
+            const { zhPrefix, enPrefix } = buildPagePrefix(entry.ordinal?.type, entry.ordinal?.identifier, zhName, enName);
+            
+            // 构建完整的页面名称
+            const fullNameZh = zhPrefix + zhName;
+            const fullNameEn = enPrefix + enName;
+            
+            sectionTextIdMap.setPageTitle(bookId, chapterIndex, fullNameZh, fullNameEn);
 
             // 处理子章节
             if (entry.headers && Array.isArray(entry.headers)) {
@@ -550,10 +982,40 @@ const processSingleBook = async (
                         if (headerZhName && headerZhName !== headerEnName) {
                             sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerZhName);
                         }
+                        
+                        // 为子章节建立页面标题映射（父章节标题 + "/" + 子章节标题）
+                        const headerOrdinal = header.ordinal || {};
+                        const { zhPrefix: headerZhPrefix, enPrefix: headerEnPrefix } = buildPagePrefix(
+                            headerOrdinal?.type, 
+                            headerOrdinal?.identifier, 
+                            headerZhName, 
+                            headerEnName
+                        );
+                        
+                        const headerFullNameZh = `${fullNameZh}/${headerZhPrefix}${headerZhName}`;
+                        const headerFullNameEn = `${fullNameEn}/${headerEnPrefix}${headerEnName}`;
+                        
+                        // 使用子页面标题方法，key 是子章节的显示名称
+                        sectionTextIdMap.setSubpageTitle(bookId, chapterIndex, headerZhName || headerEnName || '', headerFullNameZh, headerFullNameEn);
+                        
+                        // 遍历子章节内容，收集所有 name 和 title 字段
+                        const headerSection = sectionId ? findSectionById(bookContent.zh || [], headerSectionId) || findSectionById(bookContent.en || [], headerSectionId) : null;
+                        if (headerSection) {
+                            collectSectionTitles(headerSection, bookId, headerFullNameZh, headerFullNameEn);
+                        }
                     }
                 }
             }
+            
+            // 遍历当前章节内容，收集所有 name 和 title 字段
+            const currentSection = sectionId ? findSectionById(bookContent.zh || [], sectionId) || findSectionById(bookContent.en || [], sectionId) : null;
+            if (currentSection) {
+                collectSectionTitles(currentSection, bookId, fullNameZh, fullNameEn);
+            }
         }
+        
+        // 在处理阶段之前，遍历所有目录条目和章节内容，建立完整的 name/title 到页面标题的映射
+        await buildFullSectionTitleMap(bookId, bookContent, contentData.contents);
     }
 
     // 处理阶段：处理内容并写入文件
@@ -663,6 +1125,9 @@ const processSingleBook = async (
                 }
             }
         }
+        
+        // 处理阶段完成后，遍历输出目录下的所有 json 文件，收集 name/title 字段到页面标题的映射
+        await collectAllFileTitles(bookId);
     }
 };
 
