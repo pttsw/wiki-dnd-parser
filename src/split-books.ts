@@ -76,7 +76,7 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = -1, parentT
         const entryConfig = ENTRIES_WITH_ENUMERATED_TITLES_LOOKUP[currentType];
         
         if (currentType === 'entries') {
-            if (processedEntry.name != null || processedEntry.title != null) {
+            if (depth < 2 && (processedEntry.name != null || processedEntry.title != null)) {
                 processedEntry.title_fork = depth + 2;
                 if ('ENG_name' in processedEntry) {
                     processedEntry.ENG_title = processedEntry.ENG_name;
