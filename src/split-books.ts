@@ -4,6 +4,22 @@ import config from './config.js';
 import { escapeFileName, sectionTextIdMap } from './exporters/shared.js';
 import { tagParser } from './contentGen.js';
 
+interface TextEntry {
+    id: string;
+    name_en: string;
+    name_zh: string;
+    link: string;
+}
+
+const textEntriesByBook: Record<string, TextEntry[]> = {};
+
+const addTextEntry = (bookId: string, id: string, name_en: string, name_zh: string, link: string) => {
+    if (!textEntriesByBook[bookId]) {
+        textEntriesByBook[bookId] = [];
+    }
+    textEntriesByBook[bookId].push({ id, name_en, name_zh, link });
+};
+
 const removeBOM = (content: string): string => {
     if (content.startsWith('\uFEFF')) {
         return content.slice(1);
@@ -699,6 +715,7 @@ const processContentEntry = async (
     parentZhTitle: string = '',
     parentEnTitle: string = ''
 ): Promise<ProcessedSection | null> => {
+    
     const enName = extractEnNameFromEntry(entry);
     const zhName = extractZhNameFromEntry(entry);
     const nameForId = enName || zhName;
@@ -817,6 +834,9 @@ const processContentEntry = async (
         await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
        // console.log(`  生成: ${filePath}`);
 
+        
+        collectTextEntriesFromSection(bookId, sectionId, zhName, enName, zhContent?.entries || [], enContent?.entries || [], fullZhTitle || fullEnTitle || sectionId);
+
         return {
             id: sectionId,
             subpageId: finalId,
@@ -876,6 +896,43 @@ const processContentEntry = async (
     }
 };
 
+const collectTextEntriesFromSection = (
+    bookId: string,
+    sectionId: string,
+    zhName: string,
+    enName: string,
+    zhEntries: any[],
+    enEntries: any[],
+    pageTitle: string
+) => {
+    addTextEntry(bookId, sectionId, enName, zhName, pageTitle);
+
+    const collectFromEntries = (entries: any[], parentId: string = '') => {
+        if (!Array.isArray(entries)) return;
+
+        for (const entry of entries) {
+            if (!entry || typeof entry !== 'object') continue;
+
+            const entryId = entry.id || '';
+            const entryEnName = entry.ENG_name || entry.name || '';
+            const entryZhName = entry.title || entry.name || '';
+
+            if (entryId) {
+                const fullId = parentId ? `${parentId}.${entryId}` : entryId;
+                addTextEntry(bookId, fullId, entryEnName, entryZhName, pageTitle);
+            }
+
+            if (Array.isArray(entry.entries)) {
+                const newParentId = entryId ? (parentId ? `${parentId}.${entryId}` : entryId) : parentId;
+                collectFromEntries(entry.entries, newParentId);
+            }
+        }
+    };
+
+    collectFromEntries(zhEntries);
+    collectFromEntries(enEntries);
+};
+
 const writeSectionFile = async (
     sectionId: string,
     zhEntries: any[],
@@ -929,6 +986,9 @@ const writeSectionFile = async (
     const filePath = path.join(bookOutputDir, preferredFileName);
 
     await fs.writeFile(filePath, JSON.stringify(fileData, null, 2), 'utf-8');
+
+    const pageTitle = zhName || enName || sectionId;
+    collectTextEntriesFromSection(bookId, sectionId, zhName, enName, zhEntries, enEntries, pageTitle);
 };
 
 const processSingleBook = async (
@@ -954,7 +1014,7 @@ const processSingleBook = async (
         return;
     }
 
-    // 预处理阶段：先建立完整的章节映射
+    // 合并阶段：一次遍历完成预处理、处理和文本条目收集
     for (let chapterIndex = 0; chapterIndex < contentData.contents.length; chapterIndex++) {
         const entry = contentData.contents[chapterIndex];
         const enName = extractEnNameFromEntry(entry);
@@ -967,19 +1027,25 @@ const processSingleBook = async (
         }
 
         if (sectionId) {
+            // 预处理：建立章节映射
             sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, enName);
             if (zhName && zhName !== enName) {
                 sectionTextIdMap.addMapping(bookId, sectionId, chapterIndex, zhName);
             }
             
-            // 构建页面前缀（复刻 generateBookPages.ts 的逻辑）
+            // 构建页面前缀和完整页面名称
             const { zhPrefix, enPrefix } = buildPagePrefix(entry.ordinal?.type, entry.ordinal?.identifier, zhName, enName);
-            
-            // 构建完整的页面名称
             const fullNameZh = zhPrefix + zhName;
             const fullNameEn = enPrefix + enName;
-            
             sectionTextIdMap.setPageTitle(bookId, chapterIndex, fullNameZh, fullNameEn);
+
+            // 获取章节内容（只查找一次，复用多次）
+            const currentSection = findSectionById(bookContent.zh || [], sectionId) || findSectionById(bookContent.en || [], sectionId);
+            
+            // 预处理：收集当前章节的 name/title 映射
+            if (currentSection) {
+                collectSectionTitles(currentSection, bookId, fullNameZh, fullNameEn);
+            }
 
             // 处理子章节
             if (entry.headers && Array.isArray(entry.headers)) {
@@ -989,12 +1055,13 @@ const processSingleBook = async (
                     const headerSectionId = header.id || '';
 
                     if (headerSectionId) {
+                        // 预处理：建立子章节映射
                         sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerEnName);
                         if (headerZhName && headerZhName !== headerEnName) {
                             sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerZhName);
                         }
                         
-                        // 为子章节建立页面标题映射（父章节标题 + "/" + 子章节标题）
+                        // 构建子章节完整页面名称
                         const headerOrdinal = header.ordinal || {};
                         const { zhPrefix: headerZhPrefix, enPrefix: headerEnPrefix } = buildPagePrefix(
                             headerOrdinal?.type, 
@@ -1002,96 +1069,95 @@ const processSingleBook = async (
                             headerZhName, 
                             headerEnName
                         );
-                        
                         const headerFullNameZh = `${fullNameZh}/${headerZhPrefix}${headerZhName}`;
                         const headerFullNameEn = `${fullNameEn}/${headerEnPrefix}${headerEnName}`;
-                        
-                        // 使用子页面标题方法，key 是子章节的显示名称
                         sectionTextIdMap.setSubpageTitle(bookId, chapterIndex, headerZhName || headerEnName || '', headerFullNameZh, headerFullNameEn);
                         
-                        // 遍历子章节内容，收集所有 name 和 title 字段
-                        const headerSection = sectionId ? findSectionById(bookContent.zh || [], headerSectionId) || findSectionById(bookContent.en || [], headerSectionId) : null;
+                        // 预处理：收集子章节的 name/title 映射
+                        const headerSection = findSectionById(bookContent.zh || [], headerSectionId) || findSectionById(bookContent.en || [], headerSectionId);
                         if (headerSection) {
                             collectSectionTitles(headerSection, bookId, headerFullNameZh, headerFullNameEn);
+                        }
+
+                        // 处理阶段：处理子章节内容
+                        if (header.alonepage) {
+                            await processContentEntry(
+                                header,
+                                bookId,
+                                bookType,
+                                outputDir,
+                                nameToIdMap,
+                                bookContent.en || [],
+                                bookContent.zh || [],
+                                chapterIndex,
+                                fullNameZh,
+                                fullNameEn
+                            );
+                        } else {
+                            const processedHeader = await processContentEntry(
+                                header,
+                                bookId,
+                                bookType,
+                                outputDir,
+                                nameToIdMap,
+                                bookContent.en || [],
+                                bookContent.zh || [],
+                                chapterIndex,
+                                fullNameZh,
+                                fullNameEn
+                            );
                         }
                     }
                 }
             }
-            
-            // 遍历当前章节内容，收集所有 name 和 title 字段
-            const currentSection = sectionId ? findSectionById(bookContent.zh || [], sectionId) || findSectionById(bookContent.en || [], sectionId) : null;
-            if (currentSection) {
-                collectSectionTitles(currentSection, bookId, fullNameZh, fullNameEn);
-            }
-        }
-        
-        // 在处理阶段之前，遍历所有目录条目和章节内容，建立完整的 name/title 到页面标题的映射
-        await buildFullSectionTitleMap(bookId, bookContent, contentData.contents);
-    }
 
-    // 处理阶段：处理内容并写入文件
-    for (let chapterIndex = 0; chapterIndex < contentData.contents.length; chapterIndex++) {
-        const entry = contentData.contents[chapterIndex];
-        const enName = extractEnNameFromEntry(entry);
-        const zhName = extractZhNameFromEntry(entry);
-        const nameForId = enName || zhName;
-        let sectionId = entry.id || '';
-
-        if (!sectionId && nameForId) {
-            sectionId = nameToIdMap.get(nameForId) || nameToIdMap.get(removeChapterPrefix(nameForId)) || '';
-        }
-
-        if (entry.alonepage && sectionId) {
-            await processContentEntry(
-                entry,
-                bookId,
-                bookType,
-                outputDir,
-                nameToIdMap,
-                bookContent.en || [],
-                bookContent.zh || [],
-                chapterIndex
-            );
-        } else if (sectionId) {
-            const processed = await processContentEntry(
-                entry,
-                bookId,
-                bookType,
-                outputDir,
-                nameToIdMap,
-                bookContent.en || [],
-                bookContent.zh || [],
-                chapterIndex
-            );
-
-            if (processed) {
-                await writeSectionFile(
-                    sectionId,
-                    processed.zhEntries,
-                    processed.enEntries,
-                    enName,
-                    zhName,
-                    entry.ordinal,
+            // 处理阶段：处理当前章节内容
+            if (entry.alonepage) {
+                await processContentEntry(
+                    entry,
                     bookId,
                     bookType,
                     outputDir,
+                    nameToIdMap,
                     bookContent.en || [],
                     bookContent.zh || [],
                     chapterIndex
                 );
+            } else {
+                const processed = await processContentEntry(
+                    entry,
+                    bookId,
+                    bookType,
+                    outputDir,
+                    nameToIdMap,
+                    bookContent.en || [],
+                    bookContent.zh || [],
+                    chapterIndex
+                );
+
+                if (processed) {
+                    await writeSectionFile(
+                        sectionId,
+                        processed.zhEntries,
+                        processed.enEntries,
+                        enName,
+                        zhName,
+                        entry.ordinal,
+                        bookId,
+                        bookType,
+                        outputDir,
+                        bookContent.en || [],
+                        bookContent.zh || [],
+                        chapterIndex
+                    );
+                }
             }
         } else {
-           //  console.log(`  处理没有 ID 的章节: ${enName || zhName}`);
+            // 处理没有 ID 的章节的子章节
             if (entry.headers && Array.isArray(entry.headers)) {
                 for (const header of entry.headers) {
-                    const headerEnName = extractEnNameFromEntry(header);
-                    const headerZhName = extractZhNameFromEntry(header);
                     const headerSectionId = header.id || '';
-
-                    if (!headerSectionId) {
-                       // console.log(`    警告: 无法找到子章节 ID，跳过: ${headerEnName || headerZhName}`);
-                        continue;
-                    }
+                    if (!headerSectionId) continue;
 
                     if (header.alonepage) {
                         await processContentEntry(
@@ -1121,8 +1187,8 @@ const processSingleBook = async (
                                 headerSectionId,
                                 processed.zhEntries,
                                 processed.enEntries,
-                                headerEnName,
-                                headerZhName,
+                                extractEnNameFromEntry(header),
+                                extractZhNameFromEntry(header),
                                 header.ordinal,
                                 bookId,
                                 bookType,
@@ -1136,10 +1202,10 @@ const processSingleBook = async (
                 }
             }
         }
-        
-        // 处理阶段完成后，遍历输出目录下的所有 json 文件，收集 name/title 字段到页面标题的映射
-        await collectAllFileTitles(bookId);
     }
+
+    // 建立完整的 name/title 到页面标题的映射（只执行一次）
+    await buildFullSectionTitleMap(bookId, bookContent, contentData.contents);
 };
 
 const loadBooksJson = async (): Promise<{ en: any[]; zh: any[] }> => {
@@ -1188,66 +1254,6 @@ const loadAdventuresJson = async (): Promise<{ en: any[]; zh: any[] }> => {
     }
     
     return { en: enData, zh: zhData };
-};
-
-const main = async () => {
-    try {
-        console.log('[splitBooks] 开始分割书籍和冒险');
-
-        const outputDir = './output';
-
-        // 从原始 books.json 和 adventures.json 中读取书籍和冒险列表
-        const { en: enBooks, zh: zhBooks } = await loadBooksJson();
-        const { en: enAdventures, zh: zhAdventures } = await loadAdventuresJson();
-
-        const bookIds = new Set<string>();
-        const adventureIds = new Set<string>();
-
-        // 从原始数据中收集书籍ID
-        for (const book of [...enBooks, ...zhBooks]) {
-            if (book.id) {
-                bookIds.add(book.id);
-            }
-        }
-
-        
-        // 从原始数据中收集冒险ID
-        for (const adventure of [...enAdventures, ...zhAdventures]) {
-            if (adventure.id) {
-                adventureIds.add(adventure.id);
-            }
-        }
-
-
-        // 也检查生成的内容目录作为后备
-        for (const dir of ['config/contents', 'output/contents/book', 'output/contents/adventure']) {
-            try {
-                const files = await fs.readdir(dir);
-                for (const file of files) {
-                    if (!file.endsWith('.json')) continue;
-                    const id = file.replace('.json', '');
-                    if (dir.includes('/adventure')) {
-                        adventureIds.add(id);
-                    } else {
-                        bookIds.add(id);
-                    }
-                }
-            } catch (e) {
-                continue;
-            }
-        }
-
-        // 生成 adventure namelist
-        await generateAdventureNameList(outputDir);
-
-        console.log('[splitBooks] 完成');
-    } catch (e) {
-        console.error('[splitBooks] 致命错误:', e);
-        if (e instanceof Error) {
-            console.error('[splitBooks] 错误堆栈:', e.stack);
-        }
-        process.exit(1);
-    }
 };
 
 const generateAdventureNameList = async (outputDir: string) => {
@@ -1327,6 +1333,36 @@ const generateAdventureNameList = async (outputDir: string) => {
         }
     } catch (e) {
         console.error('[splitBooks] 生成 adventure namelist 失败:', e);
+        if (e instanceof Error) {
+            console.error('[splitBooks] 错误堆栈:', e.stack);
+        }
+    }
+};
+
+const generateTextNameList = async (outputDir: string) => {
+    try {
+        console.log('[splitBooks] 开始生成 textnamelist.json');
+        // console.log(`[splitBooks] 当前收集到的条目数: ${JSON.stringify(Object.keys(textEntriesByBook).map(k => `${k}: ${textEntriesByBook[k].length}`))}`);
+
+        const namelistDir = path.join(outputDir, 'namelist');
+        await fs.mkdir(namelistDir, { recursive: true });
+
+        const output = {
+            type: 'text',
+            data: textEntriesByBook
+        };
+
+        const outputPath = path.join(namelistDir, 'textnamelist.json');
+        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
+        console.log(`[splitBooks] 已生成 textnamelist.json 文件：${outputPath}`);
+
+        let totalEntries = 0;
+        for (const bookId of Object.keys(textEntriesByBook)) {
+            totalEntries += textEntriesByBook[bookId].length;
+        }
+        console.log(`[splitBooks] textnamelist 完成 (${Object.keys(textEntriesByBook).length} 个出版物，${totalEntries} 个条目)`);
+    } catch (e) {
+        console.error('[splitBooks] 生成 textnamelist.json 失败:', e);
         if (e instanceof Error) {
             console.error('[splitBooks] 错误堆栈:', e.stack);
         }
@@ -1434,6 +1470,9 @@ export const splitBooks = async () => {
 
         // 生成 adventure namelist
         await generateAdventureNameList(outputDir);
+
+        // 生成 textnamelist.json
+        await generateTextNameList(outputDir);
         
         // 打印章节映射统计
         // console.log('[splitBooks] 章节映射统计:');
