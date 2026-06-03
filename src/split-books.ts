@@ -46,7 +46,7 @@ const ENTRIES_WITH_ENUMERATED_TITLES_LOOKUP = Object.fromEntries(
     ENTRIES_WITH_ENUMERATED_TITLES.map(it => [it.type, it])
 );
 
-const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentType?: string): any[] => {
+const processEntriesWithTitleFork = (entries: any[], depth: number = -1, parentType?: string): any[] => {
     if (!Array.isArray(entries)) return entries;
     
     return entries.map((entry) => {
@@ -59,7 +59,19 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
         
         const entryConfig = ENTRIES_WITH_ENUMERATED_TITLES_LOOKUP[currentType];
         
-        if (entryConfig && entry.name != null) {
+        if (currentType === 'entries') {
+            if (processedEntry.name != null || processedEntry.title != null) {
+                processedEntry.title_fork = depth + 2;
+                if ('ENG_name' in processedEntry) {
+                    processedEntry.ENG_title = processedEntry.ENG_name;
+                    delete processedEntry.ENG_name;
+                }
+                if ('name' in processedEntry) {
+                    processedEntry.title = processedEntry.name;
+                    delete processedEntry.name;
+                }
+            }
+        } else if (entryConfig) {
             let titleDepth = depth;
             if (entryConfig?.depth !== undefined) {
                 titleDepth = entryConfig.depth;
@@ -70,7 +82,7 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
             }
             titleDepth = Math.min(Math.max(titleDepth, -1), 2);
             
-            if (titleDepth < 2) {
+            if (titleDepth < 2 && processedEntry.name != null) {
                 if ('ENG_name' in processedEntry) {
                     processedEntry.ENG_title = processedEntry.ENG_name;
                     delete processedEntry.ENG_name;
@@ -79,7 +91,7 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
                     processedEntry.title = processedEntry.name;
                     delete processedEntry.name;
                 }
-                processedEntry.title_fork = titleDepth + 1;
+                processedEntry.title_fork = titleDepth + 2;
             }
         }
         
@@ -91,6 +103,8 @@ const processEntriesWithTitleFork = (entries: any[], depth: number = 0, parentTy
             } else if (entryConfig?.depth !== undefined) {
                 nextDepth = entryConfig.depth;
             } else if (entryConfig?.depthIncrement) {
+                nextDepth = depth + 1;
+            } else if (currentType === 'entries') {
                 nextDepth = depth + 1;
             }
             
@@ -885,11 +899,8 @@ const writeSectionFile = async (
     const page = sectionEn?.page || sectionZh?.page || 0;
     const type = sectionEn?.type || sectionZh?.type || 'section';
 
-    const processedZhEntries = processEntriesWithTitleFork(zhEntries);
-    const processedEnEntries = processEntriesWithTitleFork(enEntries);
-    
-    const enContent = { entries: processedEnEntries };
-    const zhContent = { entries: processedZhEntries };
+    const enContent = { entries: enEntries };
+    const zhContent = { entries: zhEntries };
 
     // 处理内容中的 {@book} 标签
     const processedZhContent = processBookTags(zhContent);
