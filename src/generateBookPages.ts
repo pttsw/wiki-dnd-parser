@@ -521,6 +521,39 @@ const processAdventure = async (adventureDir: string, bookId: string): Promise<{
     return processBook(adventureDir, bookId, true);
 };
 
+const generatePublicationHomepages = async (): Promise<void> => {
+    const homepageDir = './output_page/出版物首页';
+    await fs.mkdir(homepageDir, { recursive: true });
+
+    for (const [bookId, config] of bookConfigs) {
+        const bookName = getBookName(bookId);
+        const nameZh = bookName.zh || bookId;
+        const nameEn = bookName.en || bookId;
+
+        if (nameZh) {
+            const zhFilePath = path.join(homepageDir, `${sanitizeFileSegment(nameZh)}.wiki`);
+            const zhContent = `{{出版物首页|${bookId}}}\n`;
+            
+            if (!writtenFiles.has(zhFilePath)) {
+                await fs.writeFile(zhFilePath, zhContent, 'utf-8');
+                writtenFiles.set(zhFilePath, zhContent);
+            }
+        }
+
+        if (nameEn && nameEn !== nameZh) {
+            const enFilePath = path.join(homepageDir, `${sanitizeFileSegment(nameEn)}.wiki`);
+            const enContent = `#重定向[[${nameZh || nameEn}]]\n`;
+            
+            if (!writtenFiles.has(enFilePath)) {
+                await fs.writeFile(enFilePath, enContent, 'utf-8');
+                writtenFiles.set(enFilePath, enContent);
+            }
+        }
+    }
+
+    console.error(`生成出版物首页完成，共 ${bookConfigs.size} 个出版物`);
+};
+
 const generateAll = async (): Promise<{
     totalZh: number;
     totalEn: number;
@@ -579,6 +612,8 @@ const generateAll = async (): Promise<{
     } catch (error) {
         console.error(`读取冒险目录失败: ${error}`);
     }
+
+    await generatePublicationHomepages();
 
     return {
         totalZh,

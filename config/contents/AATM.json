@@ -15,7 +15,7 @@
     "order": 8,
     "source": "AATM",
     "cover": {
-        "path": "covers-AATM.png",
+        "path": "covers-AATM.webp",
         "type": "internal"
     },
     "published": "2023-10-17",

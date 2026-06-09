@@ -36,8 +36,14 @@ const loadIndexedClassData = async () => {
             subclassFeature: [] as Record<string, any>[],
         };
 
-        for (const fileName of Object.values(indexMap)) {
+        for (const [className, fileName] of Object.entries(indexMap)) {
             const data = await readJson<Record<string, any>>(path.join(baseDir, 'class', fileName));
+            for (const cls of data.class || []) {
+                cls._className = className;
+            }
+            for (const sub of data.subclass || []) {
+                sub._className = className;
+            }
             out.class.push(...(data.class || []));
             out.subclass.push(...(data.subclass || []));
             out.classFeature.push(...(data.classFeature || []));
@@ -312,17 +318,19 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const classWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of classOutput) {
+        const className = item._className || 'other';
         const sourceId = item.mainSource.source;
-        const sourceDir = path.join(classOutputDir, sourceId);
+        const sourceDir = path.join(classOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
 
         const baseName = escapeFileName(mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id));
         const preferredFileName = `${baseName}.json`;
         
-        if (!classWrittenFileNames.has(sourceId)) {
-            classWrittenFileNames.set(sourceId, new Set<string>());
+        const key = `${className}|${sourceId}`;
+        if (!classWrittenFileNames.has(key)) {
+            classWrittenFileNames.set(key, new Set<string>());
         }
-        const usedNames = classWrittenFileNames.get(sourceId)!;
+        const usedNames = classWrittenFileNames.get(key)!;
         
         const fileName = resolveCaseInsensitiveOutputFileName(usedNames, preferredFileName, item.id);
         const filePath = path.join(sourceDir, fileName);
@@ -330,22 +338,24 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     }
 
     // 输出 subclass 文件
-    const subclassOutputDir = path.join('./output', 'subclass');
+    const subclassOutputDir = path.join('./output', 'class');
     await fs.mkdir(subclassOutputDir, { recursive: true });
     const subclassWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of subclassOutput) {
+        const className = item._className || item.className || 'other';
         const sourceId = item.mainSource.source;
-        const sourceDir = path.join(subclassOutputDir, sourceId);
+        const sourceDir = path.join(subclassOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
 
         const baseName = escapeFileName(mwUtil.getMwTitle(item.displayName.en || item.displayName.zh || item.id));
         const preferredFileName = `${baseName}.json`;
         
-        if (!subclassWrittenFileNames.has(sourceId)) {
-            subclassWrittenFileNames.set(sourceId, new Set<string>());
+        const key = `${className}|${sourceId}`;
+        if (!subclassWrittenFileNames.has(key)) {
+            subclassWrittenFileNames.set(key, new Set<string>());
         }
-        const usedNames = subclassWrittenFileNames.get(sourceId)!;
+        const usedNames = subclassWrittenFileNames.get(key)!;
         
         const fileName = resolveCaseInsensitiveOutputFileName(usedNames, preferredFileName, item.id);
         const filePath = path.join(sourceDir, fileName);

@@ -15,7 +15,7 @@
     "order": 7,
     "source": "BGG",
     "cover": {
-        "path": "covers-BGG.png",
+        "path": "covers-BGG.webp",
         "type": "internal"
     },
     "published": "2023-08-15",
