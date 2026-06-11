@@ -133,6 +133,19 @@ const buildEntityBase = (
     const enOut = { ...split.en };
     const zhOut = { ...split.zh };
 
+    delete common.source;
+    delete common.page;
+    delete common.classSource;
+    delete common._className;
+    delete enOut.source;
+    delete enOut.page;
+    delete enOut.classSource;
+    delete enOut._className;
+    delete zhOut.source;
+    delete zhOut.page;
+    delete zhOut.classSource;
+    delete zhOut._className;
+
     applyEntriesHtml(enOut, id, 'en');
     applyEntriesHtml(zhOut, id, 'zh');
 
@@ -143,13 +156,11 @@ const buildEntityBase = (
     normalizeReprintedAs(enItem.reprintedAs).forEach(target => relatedVersions.add(target));
     reprintMap.get(id)?.forEach(sourceId => relatedVersions.add(sourceId));
 
-    return {
+    const result: Record<string, any> = {
         dataType: 'class',
         uid: `class_${id}`,
         id,
         ...common,
-        source: enItem.source,
-        page: enItem.page || 0,
         translator,
         displayName: getDisplayName(enItem, zhItem),
         mainSource: {
@@ -162,6 +173,11 @@ const buildEntityBase = (
         zh: Object.keys(zhOut).length > 0 ? zhOut : null,
         en: enOut,
     };
+    delete result.source;
+    delete result.page;
+    delete result.classSource;
+    delete result._className;
+    return result;
 };
 
 const getSubclassCompositeKey = (item: Record<string, any>) =>
@@ -265,17 +281,36 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const id = getDefaultId(enClass);
         const zhClass = classZhMap.get(id);
 
-        const subclasses = subclassEnEntries
-            .filter(
-                item => item.className === enClass.name && item.classSource === enClass.source
-            )
-            .map(item => ({
-                id: getDefaultId(item),
-                name: item.name,
-                shortName: item.shortName || item.name,
-                source: item.source,
-                classSource: item.classSource,
-            }));
+        const classId = `${enClass.name}|${enClass.source}`;
+        const isBasicRules2024 = enClass.basicRules2024 === true;
+
+        const subclassesForClass = subclassEnEntries
+            .filter(item => `${item.className}|${item.classSource}` === classId);
+
+        const subclassMap = new Map<string, any>();
+        for (const subclass of subclassesForClass) {
+            const displayNameEn = subclass.shortName || subclass.name || '';
+            
+            if (!subclassMap.has(displayNameEn)) {
+                subclassMap.set(displayNameEn, subclass);
+            } else {
+                const existing = subclassMap.get(displayNameEn);
+                const existingBasic = existing.basicRules2024 === true;
+                const newBasic = subclass.basicRules2024 === true;
+                
+                if (isBasicRules2024) {
+                    if (newBasic && !existingBasic) {
+                        subclassMap.set(displayNameEn, subclass);
+                    }
+                } else {
+                    if (!newBasic && existingBasic) {
+                        subclassMap.set(displayNameEn, subclass);
+                    }
+                }
+            }
+        }
+
+        const classes = Array.from(subclassMap.values()).map(sub => getDefaultId(sub));
 
         classOutput.push({
             ...buildEntityBase(
@@ -285,10 +320,46 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 classReprintMap,
                 classFluffStore.getFull(id)
             ),
-            subclasses,
+            classes,
         });
     }
 
+    // 构建 subclassFeature 映射表
+    const buildSubclassFeatureMap = () => {
+        const map = new Map<string, Record<string, any>>();
+        
+        const allFeatures = [...classData.en.subclassFeature, ...classData.zh.subclassFeature];
+        
+        for (const feature of allFeatures) {
+            const featureName = feature.name || feature.ENG_name || '';
+            const className = feature.className || '';
+            const classSource = feature.classSource || feature.source || '';
+            const subclassShortName = feature.subclassShortName || feature.subclassName || '';
+            const subclassSource = feature.subclassSource || feature.source || '';
+            const level = feature.level || 0;
+            
+            if (!featureName || !className || !subclassShortName) continue;
+            
+            const keys = [];
+            keys.push(`${featureName}|${className}|${classSource}|${subclassShortName}|${subclassSource}|${level}`);
+            keys.push(`${featureName}|${className}|${classSource}|${subclassShortName}|${subclassSource}||${level}`);
+            keys.push(`${featureName}|${className}|${classSource}|${subclassShortName}||${subclassSource}|${level}`);
+            keys.push(`${featureName}|${className}||${subclassShortName}|${subclassSource}|${level}`);
+            keys.push(`${featureName}|${className}|${classSource}|${subclassShortName}||${level}`);
+            keys.push(`${featureName}|${className}||${subclassShortName}||${level}`);
+            
+            for (const key of keys) {
+                if (!map.has(key)) {
+                    map.set(key, feature);
+                }
+            }
+        }
+        
+        return map;
+    };
+    
+    const subclassFeatureMap = buildSubclassFeatureMap();
+    
     // 生成 subclass 数据
     const subclassOutput: Record<string, any>[] = [];
     for (const enSubclass of subclassEnEntries) {
@@ -297,14 +368,30 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
 
         const superiorId = `${enSubclass.className}|${enSubclass.classSource}`;
 
+        const entityBase = buildEntityBase(
+            enSubclass,
+            zhSubclass,
+            subclassEnMap,
+            subclassReprintMap,
+            subclassFluffStore.getFull(id)
+        );
+        
+        // 替换 subclassFeatures 中的 ID 为完整对象
+        if (entityBase.zh && entityBase.zh.subclassFeatures) {
+            entityBase.zh.subclassFeatures = entityBase.zh.subclassFeatures.map((featureId: string) => {
+                const feature = subclassFeatureMap.get(featureId);
+                return feature || featureId;
+            });
+        }
+        if (entityBase.en && entityBase.en.subclassFeatures) {
+            entityBase.en.subclassFeatures = entityBase.en.subclassFeatures.map((featureId: string) => {
+                const feature = subclassFeatureMap.get(featureId);
+                return feature || featureId;
+            });
+        }
+
         subclassOutput.push({
-            ...buildEntityBase(
-                enSubclass,
-                zhSubclass,
-                subclassEnMap,
-                subclassReprintMap,
-                subclassFluffStore.getFull(id)
-            ),
+            ...entityBase,
             superiorfork: buildSuperiorfork({
                 superior: superiorId,
                 fork: 1,
@@ -318,7 +405,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const classWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of classOutput) {
-        const className = item._className || 'other';
+        const className = (item.displayName.en || item.id.split('|')[0] || 'other').toLowerCase();
         const sourceId = item.mainSource.source;
         const sourceDir = path.join(classOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
@@ -343,7 +430,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const subclassWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of subclassOutput) {
-        const className = item._className || item.className || 'other';
+        const className = item.superiorfork?.superior?.split('|')[0]?.toLowerCase() || 'other';
         const sourceId = item.mainSource.source;
         const sourceDir = path.join(subclassOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });

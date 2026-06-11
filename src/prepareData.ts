@@ -589,7 +589,7 @@ export const createOutputFolders = async (generatePages: boolean) => {
         } catch (error) {
             // output 目录不存在，跳过
         }
-        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'contents', 'book', 'adventure'];
+        const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'contents', 'book', 'adventure', 'class'];
         for (const dir of dirs) {
             const dirPath = path.join('./output', dir);
             try {
