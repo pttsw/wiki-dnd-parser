@@ -2302,6 +2302,8 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
         // 建立从childId到所有可能parentId列表的映射
         const parentsByChild = new Map<string, string[]>();
+        
+        // 从 itemGroup 中收集 parent-child 关系
         for (const group of en.itemGroup || []) {
             const parentId = this.getId(group);
             for (const childId of group.items || []) {
@@ -2314,6 +2316,24 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                     parentsByChild.set(processedChildId, []);
                 }
                 parentsByChild.get(processedChildId)!.push(parentId);
+            }
+        }
+        
+        // 从普通 item 中收集 parent-child 关系（处理有 items 字段的物品）
+        for (const item of en.item || []) {
+            if ('items' in item && Array.isArray(item.items)) {
+                const parentId = this.getId(item);
+                for (const childId of item.items) {
+                    // 为没有来源后缀的物品添加|DMG后缀，确保格式一致
+                    let processedChildId = childId;
+                    if (typeof processedChildId === 'string' && !processedChildId.includes('|')) {
+                        processedChildId = `${processedChildId}|DMG`;
+                    }
+                    if (!parentsByChild.has(processedChildId)) {
+                        parentsByChild.set(processedChildId, []);
+                    }
+                    parentsByChild.get(processedChildId)!.push(parentId);
+                }
             }
         }
 
@@ -2534,6 +2554,26 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             };
 
             this.db.set(id, itemData);
+            
+            // 如果该物品也是基础物品，更新 baseItemMgr 中的 superiorfork
+            const baseItem = this.baseItems.db.get(id);
+            if (baseItem && superiorfork) {
+                baseItem.superiorfork = superiorfork;
+            }
+        }
+        
+        // 遍历 parentsByChild 映射，更新 baseItemMgr.db 中所有有父物品的基础物品的 superiorfork
+        for (const [childId, parents] of parentsByChild) {
+            const baseItem = this.baseItems.db.get(childId);
+            if (baseItem && !baseItem.superiorfork) {
+                const origin = selectBestParent(parents);
+                const superior = getTopSuperior(childId);
+                const fork = getForkDepth(childId);
+                const superiorfork = buildSuperiorfork({ origin, superior, fork });
+                if (superiorfork) {
+                    baseItem.superiorfork = superiorfork;
+                }
+            }
         }
     }
     async generateFiles() {
