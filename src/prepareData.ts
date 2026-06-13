@@ -4791,81 +4791,94 @@ let isnavpillIds = new Set<string>();
         // 生成出版物目录和分割出版物（仅在非page模式下）
         let contentsResult = { bookCount: 0, adventureCount: 0, copiedCount: 0 };
         if (!generatePages) {
-            // 调用 generate-contents.ts
-            try {
-                console.log('[prepareData] 开始生成出版物目录...');
-                contentsResult = await generateContents();
-            } catch (error) {
-                console.error('[prepareData] 生成出版物目录失败:', error);
-            }
-            
-            // 调用 split-books.ts
-            try {
-                console.log('[prepareData] 开始分割扩展和模组...');
-                await splitBooks();
-                sectionTextIdMap.printStats();
-            } catch (error) {
-                console.error('[prepareData] 分割扩展和模组失败:', error);
-            }
-        }
-
-        // 加载 tbui-nav-pills 配置
-        try {
-            tbuiNavPillsConfig = await readJson(path.join('config', 'tbui-nav-pills.json'));
-            printProgress('tbui-nav-pills 配置已加载');
-        } catch (error) {
-            printProgress('未找到 tbui-nav-pills.json，将跳过 navpills 功能');
-        }
-
-        const [bookFiles, featFiles, itemBaseFiles, itemFiles, magicVariantFiles, itemFluffFiles] =
-            await Promise.all([
-                loadBilingualFile<BookFile>('books.json'),
-                loadBilingualFile<FeatFile>('feats.json'),
-                loadBilingualFile<ItemBaseFile>('items-base.json'),
-                loadBilingualFile<ItemFile>('items.json'),
-                loadBilingualFile<MagicVariantFile>('magicvariants.json'),
-                loadBilingualFile<ItemFluffFile>('fluff-items.json'),
+            // 并行执行：生成目录和分割书籍
+            console.log('[prepareData] 开始生成出版物目录和分割扩展/模组...');
+            const [contentsRes, _] = await Promise.all([
+                (async () => {
+                    try {
+                        return await generateContents();
+                    } catch (error) {
+                        console.error('[prepareData] 生成出版物目录失败:', error);
+                        return { bookCount: 0, adventureCount: 0, copiedCount: 0 };
+                    }
+                })(),
+                (async () => {
+                    try {
+                        await splitBooks();
+                    } catch (error) {
+                        console.error('[prepareData] 分割扩展和模组失败:', error);
+                    }
+                })()
             ]);
-        printProgress('基础 JSON 已加载');
+            contentsResult = contentsRes;
+            sectionTextIdMap.printStats();
+            printProgress('目录生成和书籍分割完成');
+        }
 
-        const [spellFiles, spellFluffFiles, bestiaryFiles, bestiaryFluffFiles] = await Promise.all([
-            loadIndexedSpellData(),
-            loadIndexedSpellFluffData(),
-            loadIndexedBestiaryData(),
-            loadIndexedBestiaryFluffData(),
+        // 并行加载配置和数据文件（在分割完成后执行，减少内存压力）
+        const [
+            tbuiConfigResult,
+            bookFiles, 
+            featFiles, 
+            itemBaseFiles, 
+            itemFiles, 
+            magicVariantFiles, 
+            itemFluffFiles,
+            indexedData
+        ] = await Promise.all([
+            (async (): Promise<TbuiNavPillsConfig> => {
+                try {
+                    const config = await readJson(path.join('config', 'tbui-nav-pills.json'));
+                    printProgress('tbui-nav-pills 配置已加载');
+                    return config as TbuiNavPillsConfig;
+                } catch (error) {
+                    printProgress('未找到 tbui-nav-pills.json，将跳过 navpills 功能');
+                    return {};
+                }
+            })(),
+            loadBilingualFile<BookFile>('books.json'),
+            loadBilingualFile<FeatFile>('feats.json'),
+            loadBilingualFile<ItemBaseFile>('items-base.json'),
+            loadBilingualFile<ItemFile>('items.json'),
+            loadBilingualFile<MagicVariantFile>('magicvariants.json'),
+            loadBilingualFile<ItemFluffFile>('fluff-items.json'),
+            (async () => {
+                const [spellFiles, spellFluffFiles, bestiaryFiles, bestiaryFluffFiles] = await Promise.all([
+                    loadIndexedSpellData(),
+                    loadIndexedSpellFluffData(),
+                    loadIndexedBestiaryData(),
+                    loadIndexedBestiaryFluffData(),
+                ]);
+                return { spellFiles, spellFluffFiles, bestiaryFiles, bestiaryFluffFiles };
+            })()
         ]);
+        
+        tbuiNavPillsConfig = tbuiConfigResult;
+        printProgress('基础 JSON 已加载');
+        
         await spellMgr.loadSources(path.join(config.DATA_EN_DIR, 'spells/sources.json'));
-        printProgress(
-            `json 索引已加载`
-        );
+        printProgress('json 索引已加载');
 
+        // 加载数据到各个管理器
         itemFluffMgr.loadData(itemFluffFiles.zh, itemFluffFiles.en);
-
         bookMgr.loadData(bookFiles.zh, bookFiles.en);
-
         featMgr.loadData(featFiles.zh, featFiles.en);
-
         itemPropertyMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-
         itemTypeMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-        // 注意：itemTypeCollection.json 将在 baseItemMgr 加载完成后生成
-
         itemMasteryMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-
         baseItemMgr.loadData(itemBaseFiles.zh, itemBaseFiles.en);
-
+        
         // 在 baseItemMgr 加载完成后，收集基础物品列表并生成 itemTypeCollection.json
         itemTypeMgr.collectBaseItems(baseItemMgr);
 
         itemMgr.loadData(itemFiles.zh, itemFiles.en);
-
         magicVariantMgr.loadData(magicVariantFiles.zh, magicVariantFiles.en);
 
-        spellMgr.loadFluff(spellFluffFiles.zh, spellFluffFiles.en);
-        spellMgr.loadData(spellFiles.zh, spellFiles.en);
+        spellMgr.loadFluff(indexedData.spellFluffFiles.zh, indexedData.spellFluffFiles.en);
+        spellMgr.loadData(indexedData.spellFiles.zh, indexedData.spellFiles.en);
 
-        bestiaryMgr.loadFluff(bestiaryFluffFiles.zh, bestiaryFluffFiles.en);
-        bestiaryMgr.loadData(bestiaryFiles.zh, bestiaryFiles.en);
+        bestiaryMgr.loadFluff(indexedData.bestiaryFluffFiles.zh, indexedData.bestiaryFluffFiles.en);
+        bestiaryMgr.loadData(indexedData.bestiaryFiles.zh, indexedData.bestiaryFiles.en);
         
         // 统一收集所有需要添加 navpills 和 isnavpill 的 id
         const navpillsUids = new Set(tbuiNavPillsConfig.uids || []);
@@ -4934,23 +4947,13 @@ let isnavpillIds = new Set<string>();
 
         if (!generatePages) {
             // npm run start: 只生成基础数据到 output 目录
-            await bookMgr.generateFiles();
-            // printProgress(`book 完成 (${bookMgr.db.size})`);
-
-            await featMgr.generateFiles();
-            printProgress(`feat 完成 (${featMgr.db.size})`);
-
-            await itemPropertyMgr.generateFiles();
-            printProgress(`itemProperty 完成 (${itemPropertyMgr.db.size})`);
-
-            await itemMasteryMgr.generateFiles();
-            printProgress(`itemMastery 完成 (${itemMasteryMgr.db.size})`);
-
-            await itemTypeMgr.generateFiles();
-            printProgress(`itemType 完成 (${itemTypeMgr.db.size})`);
-
-            // 并行执行独立导出器
+            // 并行执行所有输出任务：书籍输出与其他类别 JSON 同时运行
             const [
+                bookResult,
+                featResult,
+                itemPropertyResult,
+                itemMasteryResult,
+                itemTypeResult,
                 spellResult,
                 bestiaryResult,
                 itemResult,
@@ -4961,6 +4964,29 @@ let isnavpillIds = new Set<string>();
                 trapResult,
                 classResult
             ] = await Promise.all([
+                // 书籍输出
+                (async () => {
+                    await bookMgr.generateFiles();
+                    return bookMgr.db.size;
+                })(),
+                // 其他类别输出
+                (async () => {
+                    await featMgr.generateFiles();
+                    return featMgr.db.size;
+                })(),
+                (async () => {
+                    await itemPropertyMgr.generateFiles();
+                    return itemPropertyMgr.db.size;
+                })(),
+                (async () => {
+                    await itemMasteryMgr.generateFiles();
+                    return itemMasteryMgr.db.size;
+                })(),
+                (async () => {
+                    await itemTypeMgr.generateFiles();
+                    return itemTypeMgr.db.size;
+                })(),
+                // 独立导出器
                 runSpellExporter(spellMgr),
                 runBestiaryExporter(bestiaryMgr),
                 runItemExporter(baseItemMgr, itemMgr, magicVariantMgr),
@@ -4971,6 +4997,12 @@ let isnavpillIds = new Set<string>();
                 runTrapExporter(),
                 runClassExporter(),
             ]);
+            
+            printProgress(`book 完成 (${bookResult})`);
+            printProgress(`feat 完成 (${featResult})`);
+            printProgress(`itemProperty 完成 (${itemPropertyResult})`);
+            printProgress(`itemMastery 完成 (${itemMasteryResult})`);
+            printProgress(`itemType 完成 (${itemTypeResult})`);
 
             // 生成 Sources.json
             const namelistDir = path.join('./output', 'namelist');
