@@ -150,7 +150,8 @@ const buildEntityBase = (
     applyEntriesHtml(zhOut, id, 'zh');
 
     const translator = extractTranslator(common, enOut, zhOut, zhItem, enItem);
-    appendEnglishShadowFields(zhOut, enOut);
+    // 取消将英文内容添加到 zh 对象中的功能
+    // appendEnglishShadowFields(zhOut, enOut);
 
     const relatedVersions = new Set<string>();
     normalizeReprintedAs(enItem.reprintedAs).forEach(target => relatedVersions.add(target));
@@ -360,6 +361,67 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     
     const subclassFeatureMap = buildSubclassFeatureMap();
     
+    const expandRefSubclassFeatures = (features: any[]): any[] => {
+        const result: any[] = [];
+        
+        for (const item of features) {
+            if (typeof item === 'string') {
+                const feature = subclassFeatureMap.get(item);
+                if (feature) {
+                    const expanded = { ...feature };
+                    const extractedFeatures = extractRefFeaturesFromEntries(expanded);
+                    result.push(expanded);
+                    result.push(...extractedFeatures);
+                } else {
+                    result.push(item);
+                }
+            } else if (item && typeof item === 'object') {
+                if (item.type === 'refSubclassFeature' && item.subclassFeature) {
+                    const feature = subclassFeatureMap.get(item.subclassFeature);
+                    if (feature) {
+                        const expanded = { ...feature };
+                        const extractedFeatures = extractRefFeaturesFromEntries(expanded);
+                        result.push(expanded);
+                        result.push(...extractedFeatures);
+                    } else {
+                        result.push(item);
+                    }
+                } else {
+                    const newItem = { ...item };
+                    const extractedFeatures = extractRefFeaturesFromEntries(newItem);
+                    result.push(newItem);
+                    result.push(...extractedFeatures);
+                }
+            } else {
+                result.push(item);
+            }
+        }
+        
+        return result;
+    };
+    
+    const extractRefFeaturesFromEntries = (feature: any): any[] => {
+        const extracted: any[] = [];
+        
+        if (feature && feature.entries && Array.isArray(feature.entries)) {
+            feature.entries = feature.entries.filter((entry: any) => {
+                if (entry && typeof entry === 'object' && entry.type === 'refSubclassFeature' && entry.subclassFeature) {
+                    const refFeature = subclassFeatureMap.get(entry.subclassFeature);
+                    if (refFeature) {
+                        const expanded = { ...refFeature };
+                        const nestedExtracted = extractRefFeaturesFromEntries(expanded);
+                        extracted.push(expanded);
+                        extracted.push(...nestedExtracted);
+                    }
+                    return false;
+                }
+                return true;
+            });
+        }
+        
+        return extracted;
+    };
+    
     // 生成 subclass 数据
     const subclassOutput: Record<string, any>[] = [];
     for (const enSubclass of subclassEnEntries) {
@@ -378,16 +440,10 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         
         // 替换 subclassFeatures 中的 ID 为完整对象
         if (entityBase.zh && entityBase.zh.subclassFeatures) {
-            entityBase.zh.subclassFeatures = entityBase.zh.subclassFeatures.map((featureId: string) => {
-                const feature = subclassFeatureMap.get(featureId);
-                return feature || featureId;
-            });
+            entityBase.zh.subclassFeatures = expandRefSubclassFeatures(entityBase.zh.subclassFeatures);
         }
         if (entityBase.en && entityBase.en.subclassFeatures) {
-            entityBase.en.subclassFeatures = entityBase.en.subclassFeatures.map((featureId: string) => {
-                const feature = subclassFeatureMap.get(featureId);
-                return feature || featureId;
-            });
+            entityBase.en.subclassFeatures = expandRefSubclassFeatures(entityBase.en.subclassFeatures);
         }
 
         subclassOutput.push({
