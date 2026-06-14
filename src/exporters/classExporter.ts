@@ -128,6 +128,7 @@ const buildEntityBase = (
     const id = getDefaultId(enItem);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
         emptyZhValue: '',
+        forceLocalizedKeys: ['multiclassing'],
     });
     const common = { ...split.common };
     const enOut = { ...split.en };
@@ -276,62 +277,6 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
 
     const subclassReprintMap = buildReprintMap(subclassEnEntries, getDefaultId);
 
-    // 生成 class 数据
-    const classOutput: Record<string, any>[] = [];
-    for (const enClass of classData.en.class) {
-        const id = getDefaultId(enClass);
-        const zhClass = classZhMap.get(id);
-
-        const classId = `${enClass.name}|${enClass.source}`;
-        const isBasicRules2024 = enClass.basicRules2024 === true;
-
-        const sourceMap = new Map<string, Record<string, any>>();
-        for (const entry of classData.en.subclass) {
-            sourceMap.set(getSubclassCompositeKey(entry), entry);
-        }
-        
-        const subclassesForClass = classData.en.subclass
-            .filter(item => `${item.className}|${item.classSource}` === classId)
-            .map(item => resolveSubclassCopy(item, sourceMap));
-
-        const subclassMap = new Map<string, any[]>();
-        for (const subclass of subclassesForClass) {
-            const displayNameEn = subclass.shortName || subclass.name || '';
-            if (!subclassMap.has(displayNameEn)) {
-                subclassMap.set(displayNameEn, []);
-            }
-            subclassMap.get(displayNameEn)!.push(subclass);
-        }
-
-        const classes: string[] = [];
-        for (const [, subclasses] of subclassMap) {
-            if (subclasses.length === 1) {
-                classes.push(getDefaultId(subclasses[0]));
-            } else {
-                const matchedSubclasses = subclasses.filter(sub => {
-                    const subBasic = sub.basicRules2024 === true;
-                    return subBasic === isBasicRules2024;
-                });
-                if (matchedSubclasses.length > 0) {
-                    classes.push(getDefaultId(matchedSubclasses[0]));
-                } else {
-                    classes.push(getDefaultId(subclasses[0]));
-                }
-            }
-        }
-
-        classOutput.push({
-            ...buildEntityBase(
-                enClass,
-                zhClass,
-                classEnMap,
-                classReprintMap,
-                classFluffStore.getFull(id)
-            ),
-            classes,
-        });
-    }
-
     // 构建 subclassFeature 映射表
     const buildSubclassFeatureMap = () => {
         const map = new Map<string, Record<string, any>>();
@@ -366,7 +311,63 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         return map;
     };
     
+    // 构建 classFeature 映射表
+    const buildClassFeatureMap = () => {
+        const map = new Map<string, Record<string, any>>();
+        
+        const allFeatures = [...classData.en.classFeature, ...classData.zh.classFeature];
+        
+        for (const feature of allFeatures) {
+            const featureName = feature.name || feature.ENG_name || '';
+            const className = feature.className || '';
+            const classSource = feature.classSource || feature.source || '';
+            const level = feature.level || 0;
+            
+            if (!featureName || !className) continue;
+            
+            const keys = [];
+            keys.push(`${featureName}|${className}|${classSource}|${level}`);
+            keys.push(`${featureName}|${className}|${classSource}||${level}`);
+            keys.push(`${featureName}|${className}||${level}`);
+            
+            for (const key of keys) {
+                if (!map.has(key)) {
+                    map.set(key, feature);
+                }
+            }
+        }
+        
+        return map;
+    };
+    
     const subclassFeatureMap = buildSubclassFeatureMap();
+    const classFeatureMap = buildClassFeatureMap();
+    
+    const expandClassFeatures = (features: any[]): any[] => {
+        const result: any[] = [];
+        
+        for (const item of features) {
+            if (typeof item === 'string') {
+                const feature = classFeatureMap.get(item);
+                if (feature) {
+                    const expanded = { ...feature };
+                    result.push(expanded);
+                } else {
+                    result.push(item);
+                }
+            } else if (item && typeof item === 'object') {
+                if (item.classFeature && item.gainSubclassFeature === true) {
+                    result.push(item);
+                } else {
+                    result.push(item);
+                }
+            } else {
+                result.push(item);
+            }
+        }
+        
+        return result;
+    };
     
     const expandRefSubclassFeatures = (features: any[]): any[] => {
         const result: any[] = [];
@@ -429,6 +430,72 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         return extracted;
     };
     
+    // 生成 class 数据
+    const classOutput: Record<string, any>[] = [];
+    for (const enClass of classData.en.class) {
+        const id = getDefaultId(enClass);
+        const zhClass = classZhMap.get(id);
+
+        const classId = `${enClass.name}|${enClass.source}`;
+        const isBasicRules2024 = enClass.basicRules2024 === true;
+
+        const sourceMap = new Map<string, Record<string, any>>();
+        for (const entry of classData.en.subclass) {
+            sourceMap.set(getSubclassCompositeKey(entry), entry);
+        }
+        
+        const subclassesForClass = classData.en.subclass
+            .filter(item => `${item.className}|${item.classSource}` === classId)
+            .map(item => resolveSubclassCopy(item, sourceMap));
+
+        const subclassMap = new Map<string, any[]>();
+        for (const subclass of subclassesForClass) {
+            const displayNameEn = subclass.shortName || subclass.name || '';
+            if (!subclassMap.has(displayNameEn)) {
+                subclassMap.set(displayNameEn, []);
+            }
+            subclassMap.get(displayNameEn)!.push(subclass);
+        }
+
+        const classes: string[] = [];
+        for (const [, subclasses] of subclassMap) {
+            if (subclasses.length === 1) {
+                classes.push(getDefaultId(subclasses[0]));
+            } else {
+                const matchedSubclasses = subclasses.filter(sub => {
+                    const subBasic = sub.basicRules2024 === true;
+                    return subBasic === isBasicRules2024;
+                });
+                if (matchedSubclasses.length > 0) {
+                    classes.push(getDefaultId(matchedSubclasses[0]));
+                } else {
+                    classes.push(getDefaultId(subclasses[0]));
+                }
+            }
+        }
+
+        const classEntityBase = buildEntityBase(
+            enClass,
+            zhClass,
+            classEnMap,
+            classReprintMap,
+            classFluffStore.getFull(id)
+        );
+        
+        // 替换 classFeatures 中的 ID 为完整对象
+        if (classEntityBase.zh && classEntityBase.zh.classFeatures) {
+            classEntityBase.zh.classFeatures = expandClassFeatures(classEntityBase.zh.classFeatures);
+        }
+        if (classEntityBase.en && classEntityBase.en.classFeatures) {
+            classEntityBase.en.classFeatures = expandClassFeatures(classEntityBase.en.classFeatures);
+        }
+        
+        classOutput.push({
+            ...classEntityBase,
+            classes,
+        });
+    }
+
     // 生成 subclass 数据
     const subclassOutput: Record<string, any>[] = [];
     for (const enSubclass of subclassEnEntries) {
