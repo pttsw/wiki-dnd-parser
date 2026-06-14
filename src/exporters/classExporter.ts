@@ -285,33 +285,40 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const classId = `${enClass.name}|${enClass.source}`;
         const isBasicRules2024 = enClass.basicRules2024 === true;
 
-        const subclassesForClass = subclassEnEntries
-            .filter(item => `${item.className}|${item.classSource}` === classId);
+        const sourceMap = new Map<string, Record<string, any>>();
+        for (const entry of classData.en.subclass) {
+            sourceMap.set(getSubclassCompositeKey(entry), entry);
+        }
+        
+        const subclassesForClass = classData.en.subclass
+            .filter(item => `${item.className}|${item.classSource}` === classId)
+            .map(item => resolveSubclassCopy(item, sourceMap));
 
-        const subclassMap = new Map<string, any>();
+        const subclassMap = new Map<string, any[]>();
         for (const subclass of subclassesForClass) {
             const displayNameEn = subclass.shortName || subclass.name || '';
-            
             if (!subclassMap.has(displayNameEn)) {
-                subclassMap.set(displayNameEn, subclass);
+                subclassMap.set(displayNameEn, []);
+            }
+            subclassMap.get(displayNameEn)!.push(subclass);
+        }
+
+        const classes: string[] = [];
+        for (const [, subclasses] of subclassMap) {
+            if (subclasses.length === 1) {
+                classes.push(getDefaultId(subclasses[0]));
             } else {
-                const existing = subclassMap.get(displayNameEn);
-                const existingBasic = existing.basicRules2024 === true;
-                const newBasic = subclass.basicRules2024 === true;
-                
-                if (isBasicRules2024) {
-                    if (newBasic && !existingBasic) {
-                        subclassMap.set(displayNameEn, subclass);
-                    }
+                const matchedSubclasses = subclasses.filter(sub => {
+                    const subBasic = sub.basicRules2024 === true;
+                    return subBasic === isBasicRules2024;
+                });
+                if (matchedSubclasses.length > 0) {
+                    classes.push(getDefaultId(matchedSubclasses[0]));
                 } else {
-                    if (!newBasic && existingBasic) {
-                        subclassMap.set(displayNameEn, subclass);
-                    }
+                    classes.push(getDefaultId(subclasses[0]));
                 }
             }
         }
-
-        const classes = Array.from(subclassMap.values()).map(sub => getDefaultId(sub));
 
         classOutput.push({
             ...buildEntityBase(
