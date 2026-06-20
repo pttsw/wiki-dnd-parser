@@ -55,7 +55,7 @@
   - 如果数据不在 `./input/.../data`，请手动调整 `src/config.ts`。
 - 目录清单会被 `createOutputFolders` 重置，请避免把其他文件放在 `./output` 下。
 
-输出产物
+json 输出产物（`npm run start`）：
 
 - `output/collection/bookCollection.json`
 - `output/collection/featCollection.json`

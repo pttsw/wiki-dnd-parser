@@ -185,6 +185,10 @@ const loadBookContentFile = async (bookId: string, type: 'book' | 'adventure'): 
     const enPath = path.join(config.DATA_EN_DIR, type, fileName);
     const zhPath = path.join(config.DATA_ZH_DIR, type, fileName);
 
+    // console.log(`[loadBookContentFile] 加载 ${type} ${bookId}:`);
+    // console.log(`[loadBookContentFile] 英文路径: ${enPath}`);
+    // console.log(`[loadBookContentFile] 中文路径: ${zhPath}`);
+
     let enData: any[] | null = null;
     let zhData: any[] | null = null;
 
@@ -192,16 +196,18 @@ const loadBookContentFile = async (bookId: string, type: 'book' | 'adventure'): 
         const enContent = await fs.readFile(enPath, 'utf-8');
         const parsed = JSON.parse(enContent).data;
         enData = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        // console.log(`[loadBookContentFile] 英文数据加载成功，共 ${enData.length} 条`);
     } catch (e) {
-        // 英文数据不存在，跳过
+        // console.log(`[loadBookContentFile] 英文数据加载失败: ${e}`);
     }
 
     try {
         const zhContent = await fs.readFile(zhPath, 'utf-8');
         const parsed = JSON.parse(zhContent).data;
         zhData = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        // console.log(`[loadBookContentFile] 中文数据加载成功，共 ${zhData.length} 条`);
     } catch (e) {
-        // 中文数据不存在，跳过
+        // console.log(`[loadBookContentFile] 中文数据加载失败: ${e}`);
     }
 
     return { zh: zhData, en: enData };
@@ -418,6 +424,10 @@ const processContentEntry = async (
     const sectionEn = sectionId ? findSectionById(enData, sectionId) : null;
     const sectionZh = sectionId ? findSectionById(zhData, sectionId) : null;
 
+    // console.log(`[processContentEntry] 处理章节 ${sectionId}|${bookId}:`);
+    // console.log(`[processContentEntry] sectionEn 找到: ${sectionEn !== null}`);
+    // console.log(`[processContentEntry] sectionZh 找到: ${sectionZh !== null}`);
+
     const finalId = `${sectionId}|${bookId}`;
 
     if (entry.alonepage) {
@@ -426,7 +436,7 @@ const processContentEntry = async (
         const page = sectionEn?.page || sectionZh?.page || 0;
         const type = sectionEn?.type || sectionZh?.type || 'section';
 
-        let enContent = sectionEn ? { ...sectionEn, entries: [...sectionEn.entries] } : null;
+        let enContent = sectionEn ? { ...sectionEn, entries: [...sectionEn.entries] } : { entries: [] };
         const ordinal = entry.ordinal || {};
         const { zhPrefix, enPrefix } = buildPagePrefix(ordinal.type, ordinal.identifier, zhName, enName);
         let fullZhTitle = zhPrefix + zhName;
@@ -439,12 +449,14 @@ const processContentEntry = async (
             fullEnTitle = `${parentEnTitle}/${fullEnTitle}`;
         }
         
-        let zhContent = sectionZh ? { ...sectionZh, entries: [...sectionZh.entries] } : null;
+        let zhContent = sectionZh ? { ...sectionZh, entries: [...sectionZh.entries] } : { entries: [] };
 
         const headerSubpageMap = new Map<string, string>();
 
         if (entry.headers && Array.isArray(entry.headers)) {
+            // console.log(`[processContentEntry] 章节 ${sectionId} 有 ${entry.headers.length} 个子章节`);
             for (const header of entry.headers) {
+                // console.log(`[processContentEntry] 子章节 ID: ${header.id}, alonepage: ${header.alonepage}`);
                 if (header.alonepage) {
                     const headerProcessed = await processContentEntry(
                         header,
@@ -776,10 +788,12 @@ const processSingleBook = async (
             }
 
             if (entry.headers && Array.isArray(entry.headers)) {
+                // console.log(`[processSingleBook] 章节 ${entry.id} 有 ${entry.headers.length} 个子章节`);
                 for (const header of entry.headers) {
                     const headerEnName = extractEnNameFromEntry(header);
                     const headerZhName = extractZhNameFromEntry(header);
                     const headerSectionId = header.id || '';
+                    // console.log(`[processSingleBook] 子章节: ${headerSectionId}, alonepage: ${header.alonepage}`);
 
                     if (headerSectionId) {
                         sectionTextIdMap.addMapping(bookId, headerSectionId, chapterIndex, headerEnName);
