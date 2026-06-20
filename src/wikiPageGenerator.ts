@@ -11,6 +11,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONFIG_CONTENTS_DIR = path.join(__dirname, '..', 'config', 'contents');
 
+interface WikiClassData {
+    id: string;
+    dataType: string;
+    displayName: {
+        zh?: string | null;
+        en?: string | null;
+    };
+    mainSource: {
+        source: string;
+        page: number;
+    };
+    superiorfork?: {
+        fork?: number;
+        superior?: string;
+    };
+    basicRules2024?: boolean;
+    zh?: {
+        name?: string;
+    };
+    en?: {
+        name?: string;
+    };
+}
+
 type SourceNameEntry = {
     zh?: string;
     en?: string;
@@ -33,6 +57,7 @@ type WikiPageGeneratorOptions = {
     items: Map<string, WikiItemData>;
     magicVariants: Map<string, WikiItemData>;
     bestiary: Map<string, WikiBestiaryData>;
+    classes: Map<string, WikiClassData>;
     outputRoot?: string;
     logger?: (message: string) => void;
 };
@@ -41,6 +66,7 @@ type WikiPageGenerationResult = {
     spellFiles: number;
     itemFiles: number;
     bestiaryFiles: number;
+    classFiles: number;
     failed: number;
     skippedSelfRedirects: number;
     pageConflicts: number;
@@ -51,9 +77,11 @@ export class WikiPageGenerator {
     private readonly spellsDir: string;
     private readonly itemsDir: string;
     private readonly bestiaryDir: string;
+    private readonly classesDir: string;
     private readonly spells: Map<string, WikiSpellData>;
     private readonly itemIndex: Map<string, WikiItemData> = new Map();
     private readonly bestiaryIndex: Map<string, WikiBestiaryData> = new Map();
+    private readonly classIndex: Map<string, WikiClassData> = new Map();
     private readonly sourceNames: Map<string, SourceNameEntry> = new Map();
     private readonly writtenFiles: Map<string, string> = new Map();
     private readonly logger: (message: string) => void;
@@ -67,29 +95,40 @@ export class WikiPageGenerator {
         this.spellsDir = path.join(this.outputRoot, '法术');
         this.itemsDir = path.join(this.outputRoot, '物品');
         this.bestiaryDir = path.join(this.outputRoot, '怪物');
+        this.classesDir = path.join(this.outputRoot, '职业');
         this.spells = options.spells;
         this.logger = options.logger || (() => {});
         this.options = options;
 
         this.buildItemIndex(options.baseItems, options.items, options.magicVariants);
         this.buildBestiaryIndex(options.bestiary);
+        this.buildClassIndex(options.classes);
+    }
+
+    private buildClassIndex(classes: Map<string, WikiClassData>) {
+        for (const [id, classData] of classes) {
+            this.classIndex.set(id, classData);
+        }
     }
 
     async generateAll(): Promise<WikiPageGenerationResult> {
         await fs.mkdir(this.spellsDir, { recursive: true });
         await fs.mkdir(this.itemsDir, { recursive: true });
         await fs.mkdir(this.bestiaryDir, { recursive: true });
+        await fs.mkdir(this.classesDir, { recursive: true });
 
         await this.buildSourceNameIndex(this.options.books);
 
         const spellFiles = await this.generateSpellPages();
         const itemFiles = await this.generateItemPages();
         const bestiaryFiles = await this.generateBestiaryPages();
+        const classFiles = await this.generateClassPages();
 
         return {
             spellFiles,
             itemFiles,
             bestiaryFiles,
+            classFiles,
             failed: 0,
             skippedSelfRedirects: this.skippedSelfRedirects,
             pageConflicts: this.pageConflicts,
@@ -671,6 +710,146 @@ export class WikiPageGenerator {
         }
 
         return written;
+    }
+
+    private async generateClassPages(): Promise<number> {
+        let written = 0;
+
+        // 首先收集所有主职业的信息，用于子职业生成重定向时查找
+        const mainClassMap = new Map<string, { zhName: string; enName: string; source: string; rulesVersion: string }>();
+
+        // 第一遍：处理主职业，收集信息
+        for (const [id, classData] of this.classIndex) {
+            const fork = classData.superiorfork?.fork ?? 0;
+            if (fork !== 0) continue; // 只处理主职业
+
+            const rulesVersion = classData.basicRules2024 ? '2024' : '2014';
+            const source = classData.mainSource.source;
+            const zhName = classData.displayName?.zh?.trim() || classData.zh?.name?.trim() || '';
+            const enName = classData.displayName?.en?.trim() || classData.en?.name?.trim() || '';
+
+            if (zhName || enName) {
+                mainClassMap.set(id, { zhName, enName, source, rulesVersion });
+            }
+        }
+
+        // 第二遍：生成所有职业页面
+        for (const [id, classData] of this.classIndex) {
+            const fork = classData.superiorfork?.fork ?? 0;
+            const isMainClass = fork === 0;
+            const rulesVersion = classData.basicRules2024 ? '2024' : '2014';
+            const source = classData.mainSource.source;
+            const zhName = classData.displayName?.zh?.trim() || classData.zh?.name?.trim() || '';
+            const enName = classData.displayName?.en?.trim() || classData.en?.name?.trim() || '';
+
+            if (!zhName && !enName) continue;
+
+            if (isMainClass) {
+                // 主职业：生成内容页面
+                const contentDir = path.join(this.classesDir, rulesVersion);
+                await fs.mkdir(contentDir, { recursive: true });
+
+                // 中文版本
+                if (zhName) {
+                    const zhFilePath = path.join(contentDir, `${zhName}.wiki`);
+                    const zhContent = `{{职业卡|${zhName}|${source}|zh}}`;
+                    if (await this.writeClassPage(zhFilePath, zhContent)) {
+                        written++;
+                    }
+                }
+
+                // 英文版本（内容使用英文参数）
+                if (enName && enName !== zhName) {
+                    const enFilePath = path.join(contentDir, `${enName}.wiki`);
+                    const enContent = `{{职业卡|${enName}|${source}|en}}`;
+                    if (await this.writeClassPage(enFilePath, enContent)) {
+                        written++;
+                    }
+                }
+
+                // 生成重定向页面
+                const redirectDir = path.join(this.classesDir, source);
+                await fs.mkdir(redirectDir, { recursive: true });
+
+                // 中文名称重定向：指向中文内容页面
+                if (zhName) {
+                    const zhContentPagePath = `职业/${rulesVersion}/${zhName}`;
+                    const zhRedirectPath = path.join(redirectDir, `${zhName}.wiki`);
+                    const zhRedirectContent = `#重定向 [[${zhContentPagePath}]]`;
+                    if (await this.writeClassPage(zhRedirectPath, zhRedirectContent)) {
+                        written++;
+                    }
+                }
+
+                // 英文名称重定向：指向英文内容页面
+                if (enName && enName !== zhName) {
+                    const enContentPagePath = `职业/${rulesVersion}/${enName}`;
+                    const enRedirectPath = path.join(redirectDir, `${enName}.wiki`);
+                    const enRedirectContent = `#重定向 [[${enContentPagePath}]]`;
+                    if (await this.writeClassPage(enRedirectPath, enRedirectContent)) {
+                        written++;
+                    }
+                }
+            } else {
+                // 子职业：生成重定向页面
+                const superiorId = classData.superiorfork?.superior;
+                if (!superiorId) continue;
+
+                const mainClassInfo = mainClassMap.get(superiorId);
+                if (!mainClassInfo) continue;
+
+                const mainRulesVersion = mainClassInfo.rulesVersion;
+                
+                // 生成重定向页面
+                const redirectDir = path.join(this.classesDir, source);
+                await fs.mkdir(redirectDir, { recursive: true });
+
+                // 中文名称重定向：指向中文主职业页面的锚点
+                if (zhName) {
+                    const mainZhName = mainClassInfo.zhName;
+                    if (mainZhName) {
+                        const zhRedirectTarget = `职业/${mainRulesVersion}/${mainZhName}#${zhName}`;
+                        const zhRedirectPath = path.join(redirectDir, `${zhName}.wiki`);
+                        const zhRedirectContent = `#重定向 [[${zhRedirectTarget}]]`;
+                        if (await this.writeClassPage(zhRedirectPath, zhRedirectContent)) {
+                            written++;
+                        }
+                    }
+                }
+
+                // 英文名称重定向：指向英文主职业页面的锚点
+                if (enName && enName !== zhName) {
+                    const mainEnName = mainClassInfo.enName;
+                    if (mainEnName) {
+                        const enRedirectTarget = `职业/${mainRulesVersion}/${mainEnName}#${enName}`;
+                        const enRedirectPath = path.join(redirectDir, `${enName}.wiki`);
+                        const enRedirectContent = `#重定向 [[${enRedirectTarget}]]`;
+                        if (await this.writeClassPage(enRedirectPath, enRedirectContent)) {
+                            written++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return written;
+    }
+
+    private async writeClassPage(filePath: string, content: string): Promise<boolean> {
+        const normalizedContent = `${content}\n`;
+        const existing = this.writtenFiles.get(filePath);
+
+        if (existing !== undefined) {
+            if (existing !== normalizedContent) {
+                this.pageConflicts += 1;
+                this.logger(`页面冲突，保留首个文件：${filePath}`);
+            }
+            return false;
+        }
+
+        await fs.writeFile(filePath, normalizedContent, 'utf-8');
+        this.writtenFiles.set(filePath, normalizedContent);
+        return true;
     }
 }
 

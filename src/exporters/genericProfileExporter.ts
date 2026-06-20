@@ -218,7 +218,8 @@ const buildEntity = (
     applyEntriesHtml(zhOut, logger, profile.dataType, id, 'zh');
 
     const translator = extractTranslator(common, enOut, zhOut, zhItem, enItem);
-    appendEnglishShadowFields(zhOut, enOut);
+    // 取消将英文内容添加到 zh 对象中的功能
+    // appendEnglishShadowFields(zhOut, enOut);
 
     const relatedVersions = new Set<string>();
     normalizeReprintedAs(enItem.reprintedAs).forEach(target => relatedVersions.add(target));

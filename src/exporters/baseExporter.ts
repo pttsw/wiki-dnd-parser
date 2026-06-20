@@ -123,9 +123,10 @@ const defaultBuildEntity = (
     applyEntriesHtml(zhOut, dataType, id, 'zh');
 
     const translator = extractTranslator(common, enOut, zhOut, zhItem, enItem);
-    if (appendEnglishShadow) {
-        appendEnglishShadowFields(zhOut, enOut);
-    }
+    // 取消将英文内容添加到 zh 对象中的功能
+    // if (appendEnglishShadow) {
+    //     appendEnglishShadowFields(zhOut, enOut);
+    // }
 
     const relatedVersions = new Set<string>();
     normalizeReprintedAs(enItem.reprintedAs).forEach(target => relatedVersions.add(target));

@@ -208,6 +208,8 @@ const resolveSubclassCopy = (
 export interface ClassExporterResult {
     classCount: number;
     subclassCount: number;
+    classes: Record<string, any>[];
+    subclasses: Record<string, any>[];
 }
 
 export const runClassExporter = async (): Promise<ClassExporterResult> => {
@@ -459,18 +461,12 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
 
         const classes: string[] = [];
         for (const [, subclasses] of subclassMap) {
-            if (subclasses.length === 1) {
-                classes.push(getDefaultId(subclasses[0]));
-            } else {
-                const matchedSubclasses = subclasses.filter(sub => {
-                    const subBasic = sub.basicRules2024 === true;
-                    return subBasic === isBasicRules2024;
-                });
-                if (matchedSubclasses.length > 0) {
-                    classes.push(getDefaultId(matchedSubclasses[0]));
-                } else {
-                    classes.push(getDefaultId(subclasses[0]));
-                }
+            const matchedSubclasses = subclasses.filter(sub => {
+                const subBasic = sub.basicRules2024 === true;
+                return subBasic === isBasicRules2024;
+            });
+            if (matchedSubclasses.length > 0) {
+                classes.push(getDefaultId(matchedSubclasses[0]));
             }
         }
 
@@ -583,12 +579,24 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const namelistDir = path.join('./output', 'namelist');
     await fs.mkdir(namelistDir, { recursive: true });
     
-    const classNamelistData = classOutput.map(item => ({
-        id: item.id || '',
-        src: item.mainSource?.source || '',
-        name_en: item.displayName?.en || '',
-        name_zh: item.displayName?.zh || item.displayName?.en || ''
-    }));
+    const classNamelistData = [
+        ...classOutput.map(item => ({
+            id: item.id || '',
+            src: item.mainSource?.source || '',
+            name_en: item.displayName?.en || '',
+            name_zh: item.displayName?.zh || item.displayName?.en || '',
+            basicRules2024: item.basicRules2024 || false,
+            superior: item.superiorfork?.superior || ''
+        })),
+        ...subclassOutput.map(item => ({
+            id: item.id || '',
+            src: item.mainSource?.source || '',
+            name_en: item.displayName?.en || '',
+            name_zh: item.displayName?.zh || item.displayName?.en || '',
+            basicRules2024: item.basicRules2024 || false,
+            superior: item.superiorfork?.superior || ''
+        }))
+    ];
     
     const classOutputNamelist = {
         type: 'class',
@@ -603,8 +611,9 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         id: item.id || '',
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
-        name_zh: item.displayName?.zh || item.displayName?.en || ''
-    }));
+        name_zh: item.displayName?.zh || item.displayName?.en || '',
+        basicRules2024: item.basicRules2024 || false,
+        superior: item.superiorfork?.superior || ''    }));
     
     const subclassOutputNamelist = {
         type: 'subclass',
@@ -615,5 +624,10 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     await fs.writeFile(subclassOutputPath, JSON.stringify(subclassOutputNamelist, null, 2), 'utf-8');
     console.log(`已生成 subclassnamelist.json 文件：${subclassOutputPath}`);
 
-    return { classCount: classOutput.length, subclassCount: subclassOutput.length };
+    return { 
+    classCount: classOutput.length, 
+    subclassCount: subclassOutput.length,
+    classes: classOutput,
+    subclasses: subclassOutput
+};
 };

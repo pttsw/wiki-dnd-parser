@@ -1966,7 +1966,8 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 zhItem as { translator?: string } | undefined,
                 enItem as { translator?: string } | undefined
             );
-            appendEnglishShadowFields(zhOut, enOut);
+            // 取消将英文内容添加到 zh 对象中的功能
+            // appendEnglishShadowFields(zhOut, enOut);
 
             const itemData: WikiItemData = {
                 dataType: 'item',
@@ -2504,7 +2505,8 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 zhItem as { translator?: string } | undefined,
                 enItem as { translator?: string } | undefined
             );
-            appendEnglishShadowFields(zhOut, enOut);
+            // 取消将英文内容添加到 zh 对象中的功能
+            // appendEnglishShadowFields(zhOut, enOut);
             const superiorfork = buildSuperiorfork({ origin, superior, fork });
 
             const itemData: WikiItemData = {
@@ -3091,7 +3093,8 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
 
         // 只有非 inherits 相关的文件才添加英文影子字段
         if (!isInheritsBase && !isInheritsDerived) {
-            appendEnglishShadowFields(zhOut, enOut);
+            // 取消将英文内容添加到 zh 对象中的功能
+            // appendEnglishShadowFields(zhOut, enOut);
         }
 
         const superiorfork = buildSuperiorfork(
@@ -3856,7 +3859,8 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 zhOut.html = '';
             }
             const translator = extractTranslator(common, enOut, zhOut, zhSpell, enSpell);
-            appendEnglishShadowFields(zhOut, enOut);
+            // 取消将英文内容添加到 zh 对象中的功能
+            // appendEnglishShadowFields(zhOut, enOut);
 
             const spellData: WikiSpellData = {
                 dataType: 'spell',
@@ -5091,6 +5095,18 @@ let isnavpillIds = new Set<string>();
             await processGeneratedFiles();
         } else {
             // npm run page: 只生成 wiki 页面到 output_page 目录
+            // 先加载 class 数据
+            const classResult = await runClassExporter();
+            
+            // 合并主职业和子职业数据
+            const classMap = new Map<string, any>();
+            for (const cls of classResult.classes) {
+                classMap.set(cls.id, cls);
+            }
+            for (const sub of classResult.subclasses) {
+                classMap.set(sub.id, sub);
+            }
+            
             const wikiPageGenerator = new WikiPageGenerator({
                 books: bookFiles,
                 spells: spellMgr.db,
@@ -5098,11 +5114,12 @@ let isnavpillIds = new Set<string>();
                 items: itemMgr.db,
                 magicVariants: magicVariantMgr.db,
                 bestiary: bestiaryMgr.db,
+                classes: classMap,
                 logger: message => printProgress(`wikiPage: ${message}`),
             });
             const wikiPageResult = await wikiPageGenerator.generateAll();
             printProgress(
-                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, classFiles=${wikiPageResult.classFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
             );
         }
 
