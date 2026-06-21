@@ -549,6 +549,10 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const classWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of classOutput) {
+        // 特殊处理：Artificer|EFA 强制设置 basicRules2024: true
+        if (item.id === 'Artificer|EFA') {
+            item.basicRules2024 = true;
+        }
         const className = (item.displayName.en || item.id.split('|')[0] || 'other').toLowerCase();
         const sourceId = item.mainSource.source;
         const sourceDir = path.join(classOutputDir, className, sourceId);
@@ -574,6 +578,11 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const subclassWrittenFileNames = new Map<string, Set<string>>();
 
     for (const item of subclassOutput) {
+        // 特殊处理：Artificer|EFA 的子职业强制设置 basicRules2024: true
+        if (item.superiorfork?.superior === 'Artificer|EFA') {
+            item.basicRules2024 = true;
+        }
+        
         const className = item.superiorfork?.superior?.split('|')[0]?.toLowerCase() || 'other';
         const sourceId = item.mainSource.source;
         const sourceDir = path.join(subclassOutputDir, className, sourceId);
@@ -597,23 +606,59 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const namelistDir = path.join('./output', 'namelist');
     await fs.mkdir(namelistDir, { recursive: true });
     
+    // 构建主职业 basicRules2024 映射表（按职业名称匹配，不考虑来源）
+    const classNameBasicRulesMap = new Map<string, boolean>();
+    for (const item of classOutput) {
+        const className = item.id.split('|')[0]; // 提取职业名称（如 "Wizard"）
+        const source = item.id.split('|')[1]; // 提取来源（如 "XPHB"）
+        
+        // 特殊处理：EFA 来源的奇械师（Artificer）强制设置为 basicRules2024
+        let basicRulesValue = item.basicRules2024 || false;
+        if (className === 'Artificer' && source === 'EFA') {
+            basicRulesValue = true;
+        }
+        
+        // 如果该职业名称已经有 true 值，则保持 true
+        const existingValue = classNameBasicRulesMap.get(className) || false;
+        classNameBasicRulesMap.set(className, existingValue || basicRulesValue);
+    }
+    
     const classNamelistData = [
-        ...classOutput.map(item => ({
-            id: item.id || '',
-            src: item.mainSource?.source || '',
-            name_en: item.displayName?.en || '',
-            name_zh: item.displayName?.zh || item.displayName?.en || '',
-            basicRules2024: item.basicRules2024 || false,
-            superior: item.superiorfork?.superior || ''
-        })),
-        ...subclassOutput.map(item => ({
-            id: item.id || '',
-            src: item.mainSource?.source || '',
-            name_en: item.displayName?.en || '',
-            name_zh: item.displayName?.zh || item.displayName?.en || '',
-            basicRules2024: item.basicRules2024 || false,
-            superior: item.superiorfork?.superior || ''
-        }))
+        ...classOutput.map(item => {
+            const className = item.id.split('|')[0];
+            const source = item.id.split('|')[1];
+            
+            // 特殊处理：EFA 来源的奇械师（Artificer）强制设置为 basicRules2024
+            let basicRules2024 = item.basicRules2024 || false;
+            if (className === 'Artificer' && source === 'EFA') {
+                basicRules2024 = true;
+            }
+            
+            return {
+                id: item.id || '',
+                src: item.mainSource?.source || '',
+                name_en: item.displayName?.en || '',
+                name_zh: item.displayName?.zh || item.displayName?.en || '',
+                basicRules2024,
+                superior: item.superiorfork?.superior || ''
+            };
+        }),
+        ...subclassOutput.map(item => {
+            const superiorId = item.superiorfork?.superior || '';
+            const superiorClassName = superiorId.split('|')[0]; // 提取上级职业名称
+            const parentBasicRules2024 = classNameBasicRulesMap.get(superiorClassName) || false;
+            // 如果子职业自身的 basicRules2024 为 true，或者上级职业的 basicRules2024 为 true，则为 true
+            const basicRules2024 = (item.basicRules2024 || false) || parentBasicRules2024;
+            
+            return {
+                id: item.id || '',
+                src: item.mainSource?.source || '',
+                name_en: item.displayName?.en || '',
+                name_zh: item.displayName?.zh || item.displayName?.en || '',
+                basicRules2024,
+                superior: superiorId
+            };
+        })
     ];
     
     const classOutputNamelist = {
