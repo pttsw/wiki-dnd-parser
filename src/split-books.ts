@@ -642,7 +642,7 @@ const writeSectionFile = async (
     const sectionEn = sectionId ? findSectionById(enData, sectionId) : null;
     const sectionZh = sectionId ? findSectionById(zhData, sectionId) : null;
 
-    const dataType = bookType;
+    const dataType = "text";
     const uid = `${bookType}_${sectionId}|${bookId}`;
     const finalId = `${sectionId}|${bookId}`;
     const page = sectionEn?.page || sectionZh?.page || 0;
