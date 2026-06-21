@@ -234,7 +234,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const byId = new Map<string, Record<string, any>>();
         for (const entry of classData.en.subclass) {
             const resolved = resolveSubclassCopy(entry, sourceMap);
-            const id = getDefaultId(resolved);
+            const id = `${resolved.ENG_name || resolved.name}|${resolved.source}|${resolved.classSource || ''}`;
             const previous = byId.get(id);
             if (!previous) {
                 byId.set(id, resolved);
@@ -434,6 +434,24 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     
     // 生成 class 数据
     const classOutput: Record<string, any>[] = [];
+    // 构建职业名称映射表（中文 -> 英文）
+
+    const classNameMap = new Map<string, string>();
+
+    for (const enClass of classData.en.class) {
+
+        const zhClass = classZhMap.get(getDefaultId(enClass));
+
+        if (zhClass) {
+
+            classNameMap.set(zhClass.name, enClass.name);
+
+        }
+
+    }
+
+    
+
     for (const enClass of classData.en.class) {
         const id = getDefaultId(enClass);
         const zhClass = classZhMap.get(id);
@@ -447,7 +465,10 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         }
         
         const subclassesForClass = classData.en.subclass
-            .filter(item => `${item.className}|${item.classSource}` === classId)
+            .filter(item => {
+                const classNameEn = classNameMap.get(item.className) || item.className;
+                return `${classNameEn}|${item.classSource}` === classId;
+            })
             .map(item => resolveSubclassCopy(item, sourceMap));
 
         const subclassMap = new Map<string, any[]>();
@@ -461,12 +482,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
 
         const classes: string[] = [];
         for (const [, subclasses] of subclassMap) {
-            const matchedSubclasses = subclasses.filter(sub => {
-                const subBasic = sub.basicRules2024 === true;
-                return subBasic === isBasicRules2024;
-            });
-            if (matchedSubclasses.length > 0) {
-                classes.push(getDefaultId(matchedSubclasses[0]));
+            if (subclasses.length > 0) {
+                classes.push(getDefaultId(subclasses[0]));
             }
         }
 
@@ -498,7 +515,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         const id = getDefaultId(enSubclass);
         const zhSubclass = subclassZhMap.get(id);
 
-        const superiorId = `${enSubclass.className}|${enSubclass.classSource}`;
+        const superiorClassName = classNameMap.get(enSubclass.className) || enSubclass.className;
+        const superiorId = `${superiorClassName}|${enSubclass.classSource}`;
 
         const entityBase = buildEntityBase(
             enSubclass,
