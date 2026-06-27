@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import config, { mwUtil } from '../config.js';
-import { parseContent } from '../contentGen.js';
+import { parseContent, tagParser } from '../contentGen.js';
 import { buildFluffStore } from './fluff.js';
 import {
     appendEnglishShadowFields,
@@ -98,6 +98,37 @@ const applyEntriesHtml = (
     if (!block || block.entries === undefined) return;
     try {
         if (Array.isArray(block.entries)) {
+            block.entries = block.entries.map((entry: any) => {
+                if (typeof entry === 'string') {
+                    return tagParser.parse(entry, locale === 'zh');
+                } else if (entry && typeof entry === 'object') {
+                    if (entry.type === 'table' && Array.isArray(entry.rows)) {
+                        entry.rows = entry.rows.map((row: any[]) => {
+                            return row.map((cell: any) => {
+                                if (typeof cell === 'string') {
+                                    return tagParser.parse(cell, locale === 'zh');
+                                }
+                                return cell;
+                            });
+                        });
+                    }
+                    if (entry.entries && Array.isArray(entry.entries)) {
+                        entry.entries = entry.entries.map((subEntry: any) => {
+                            if (typeof subEntry === 'string') {
+                                return tagParser.parse(subEntry, locale === 'zh');
+                            }
+                            return subEntry;
+                        });
+                    }
+                    if (typeof entry.entry === 'string') {
+                        entry.entry = tagParser.parse(entry.entry, locale === 'zh');
+                    }
+                    if (typeof entry.name === 'string') {
+                        entry.name = tagParser.parse(entry.name, locale === 'zh');
+                    }
+                }
+                return entry;
+            });
             block.html = parseContent(block.entries);
         } else if (block.entries === '') {
             block.html = '';
@@ -280,12 +311,12 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const subclassReprintMap = buildReprintMap(subclassEnEntries, getDefaultId);
 
     // 构建 subclassFeature 映射表
-    const buildSubclassFeatureMap = () => {
+    const buildSubclassFeatureMap = (lang: 'en' | 'zh') => {
         const map = new Map<string, Record<string, any>>();
         
-        const allFeatures = [...classData.en.subclassFeature, ...classData.zh.subclassFeature];
+        const features = lang === 'en' ? classData.en.subclassFeature : classData.zh.subclassFeature;
         
-        for (const feature of allFeatures) {
+        for (const feature of features) {
             const featureName = feature.name || feature.ENG_name || '';
             const className = feature.className || '';
             const classSource = feature.classSource || feature.source || '';
@@ -312,6 +343,9 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         
         return map;
     };
+    
+    const subclassFeatureEnMap = buildSubclassFeatureMap('en');
+    const subclassFeatureZhMap = buildSubclassFeatureMap('zh');
     
     // 构建 classFeature 映射表
     const buildClassFeatureMap = () => {
@@ -342,7 +376,6 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         return map;
     };
     
-    const subclassFeatureMap = buildSubclassFeatureMap();
     const classFeatureMap = buildClassFeatureMap();
     
     const expandClassFeatures = (features: any[]): any[] => {
@@ -353,14 +386,30 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 const feature = classFeatureMap.get(item);
                 if (feature) {
                     const expanded = { ...feature };
+                    // 递归处理特性的 entries 字段中的 refClassFeature
+                    expandRefClassFeatureInEntries(expanded);
                     result.push(expanded);
                 } else {
                     result.push(item);
                 }
             } else if (item && typeof item === 'object') {
-                if (item.classFeature && item.gainSubclassFeature === true) {
+                if (item.type === 'refClassFeature' && item.classFeature) {
+                    const feature = classFeatureMap.get(item.classFeature);
+                    if (feature) {
+                        const expanded = { ...feature };
+                        // 递归处理特性的 entries 字段中的 refClassFeature
+                        expandRefClassFeatureInEntries(expanded);
+                        result.push(expanded);
+                    } else {
+                        result.push(item);
+                    }
+                } else if (item.classFeature && item.gainSubclassFeature === true) {
+                    // 递归处理条目内的 refClassFeature
+                    expandRefClassFeatureInEntries(item);
                     result.push(item);
                 } else {
+                    // 递归处理条目内的 refClassFeature
+                    expandRefClassFeatureInEntries(item);
                     result.push(item);
                 }
             } else {
@@ -371,15 +420,120 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         return result;
     };
     
-    const expandRefSubclassFeatures = (features: any[]): any[] => {
+    const expandRefClassFeatureInEntries = (item: any): void => {
+        if (!item || typeof item !== 'object') return;
+        
+        // 如果是 options 类型，处理其 entries
+        if (item.type === 'options' && Array.isArray(item.entries)) {
+            item.entries = item.entries.map((entry: any) => {
+                if (entry && typeof entry === 'object') {
+                    if (entry.type === 'refClassFeature' && entry.classFeature) {
+                        const feature = classFeatureMap.get(entry.classFeature);
+                        if (feature) {
+                            const expanded = { ...feature, type: 'refClassFeature' };
+                            expandRefClassFeatureInEntries(expanded);
+                            return expanded;
+                        }
+                    }
+                    expandRefClassFeatureInEntries(entry);
+                }
+                return entry;
+            });
+        }
+        
+        // 处理 entries 字段（包括 type: "entries" 的情况）
+        if (Array.isArray(item.entries)) {
+            item.entries = item.entries.map((entry: any) => {
+                if (entry && typeof entry === 'object') {
+                    if (entry.type === 'refClassFeature' && entry.classFeature) {
+                        const feature = classFeatureMap.get(entry.classFeature);
+                        if (feature) {
+                            const expanded = { ...feature, type: 'refClassFeature' };
+                            expandRefClassFeatureInEntries(expanded);
+                            return expanded;
+                        }
+                    }
+                    expandRefClassFeatureInEntries(entry);
+                }
+                return entry;
+            });
+        }
+        
+        // 递归处理其他可能包含 entries 的字段
+        for (const key of Object.keys(item)) {
+            if (key !== 'entries' && item[key] && typeof item[key] === 'object') {
+                expandRefClassFeatureInEntries(item[key]);
+            }
+        }
+    };
+    
+    const processTagsInFeature = (feature: any, isZh: boolean) => {
+        if (!feature || typeof feature !== 'object') return;
+        
+        if (Array.isArray(feature.entries)) {
+            feature.entries = feature.entries.map((entry: any) => {
+                if (typeof entry === 'string') {
+                    return tagParser.parse(entry, isZh);
+                } else if (entry && typeof entry === 'object') {
+                    if (entry.type === 'table' && Array.isArray(entry.rows)) {
+                        entry.rows = entry.rows.map((row: any[]) => {
+                            return row.map((cell: any) => {
+                                if (typeof cell === 'string') {
+                                    return tagParser.parse(cell, isZh);
+                                }
+                                return cell;
+                            });
+                        });
+                    }
+                    if (entry.entries && Array.isArray(entry.entries)) {
+                        entry.entries = entry.entries.map((subEntry: any) => {
+                            if (typeof subEntry === 'string') {
+                                return tagParser.parse(subEntry, isZh);
+                            }
+                            return subEntry;
+                        });
+                    }
+                    if (typeof entry.entry === 'string') {
+                        entry.entry = tagParser.parse(entry.entry, isZh);
+                    }
+                    if (typeof entry.name === 'string') {
+                        entry.name = tagParser.parse(entry.name, isZh);
+                    }
+                }
+                return entry;
+            });
+        }
+        
+        if (feature.subclassFeatures && Array.isArray(feature.subclassFeatures)) {
+            feature.subclassFeatures = feature.subclassFeatures.map((sf: any) => {
+                if (sf && typeof sf === 'object') {
+                    processTagsInFeature(sf, isZh);
+                }
+                return sf;
+            });
+        }
+        
+        if (feature.classFeatures && Array.isArray(feature.classFeatures)) {
+            feature.classFeatures = feature.classFeatures.map((cf: any) => {
+                if (cf && typeof cf === 'object') {
+                    processTagsInFeature(cf, isZh);
+                }
+                return cf;
+            });
+        }
+    };
+    
+    const expandRefSubclassFeatures = (features: any[], isZh: boolean = false): any[] => {
         const result: any[] = [];
+        const subclassFeatureMap = isZh ? subclassFeatureZhMap : subclassFeatureEnMap;
         
         for (const item of features) {
             if (typeof item === 'string') {
                 const feature = subclassFeatureMap.get(item);
                 if (feature) {
                     const expanded = { ...feature };
-                    const extractedFeatures = extractRefFeaturesFromEntries(expanded);
+                    processTagsInFeature(expanded, isZh);
+                    const extractedFeatures = extractRefFeaturesFromEntries(expanded, isZh);
                     result.push(expanded);
                     result.push(...extractedFeatures);
                 } else {
@@ -390,7 +544,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                     const feature = subclassFeatureMap.get(item.subclassFeature);
                     if (feature) {
                         const expanded = { ...feature };
-                        const extractedFeatures = extractRefFeaturesFromEntries(expanded);
+                        processTagsInFeature(expanded, isZh);
+                        const extractedFeatures = extractRefFeaturesFromEntries(expanded, isZh);
                         result.push(expanded);
                         result.push(...extractedFeatures);
                     } else {
@@ -398,7 +553,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                     }
                 } else {
                     const newItem = { ...item };
-                    const extractedFeatures = extractRefFeaturesFromEntries(newItem);
+                    processTagsInFeature(newItem, isZh);
+                    const extractedFeatures = extractRefFeaturesFromEntries(newItem, isZh);
                     result.push(newItem);
                     result.push(...extractedFeatures);
                 }
@@ -410,8 +566,9 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         return result;
     };
     
-    const extractRefFeaturesFromEntries = (feature: any): any[] => {
+    const extractRefFeaturesFromEntries = (feature: any, isZh: boolean = false): any[] => {
         const extracted: any[] = [];
+        const subclassFeatureMap = isZh ? subclassFeatureZhMap : subclassFeatureEnMap;
         
         if (feature && feature.entries && Array.isArray(feature.entries)) {
             feature.entries = feature.entries.filter((entry: any) => {
@@ -419,7 +576,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                     const refFeature = subclassFeatureMap.get(entry.subclassFeature);
                     if (refFeature) {
                         const expanded = { ...refFeature };
-                        const nestedExtracted = extractRefFeaturesFromEntries(expanded);
+                        processTagsInFeature(expanded, isZh);
+                        const nestedExtracted = extractRefFeaturesFromEntries(expanded, isZh);
                         extracted.push(expanded);
                         extracted.push(...nestedExtracted);
                     }
@@ -528,10 +686,10 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         
         // 替换 subclassFeatures 中的 ID 为完整对象
         if (entityBase.zh && entityBase.zh.subclassFeatures) {
-            entityBase.zh.subclassFeatures = expandRefSubclassFeatures(entityBase.zh.subclassFeatures);
+            entityBase.zh.subclassFeatures = expandRefSubclassFeatures(entityBase.zh.subclassFeatures, true);
         }
         if (entityBase.en && entityBase.en.subclassFeatures) {
-            entityBase.en.subclassFeatures = expandRefSubclassFeatures(entityBase.en.subclassFeatures);
+            entityBase.en.subclassFeatures = expandRefSubclassFeatures(entityBase.en.subclassFeatures, false);
         }
 
         subclassOutput.push({
@@ -606,8 +764,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
     const namelistDir = path.join('./output', 'namelist');
     await fs.mkdir(namelistDir, { recursive: true });
     
-    // 构建主职业 basicRules2024 映射表（按职业名称匹配，不考虑来源）
-    const classNameBasicRulesMap = new Map<string, boolean>();
+    // 构建主职业 basicRules2024 映射表（按完整职业 ID 匹配，如 "Wizard|PHB"）
+    const classBasicRulesMap = new Map<string, boolean>();
     for (const item of classOutput) {
         const className = item.id.split('|')[0]; // 提取职业名称（如 "Wizard"）
         const source = item.id.split('|')[1]; // 提取来源（如 "XPHB"）
@@ -618,9 +776,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
             basicRulesValue = true;
         }
         
-        // 如果该职业名称已经有 true 值，则保持 true
-        const existingValue = classNameBasicRulesMap.get(className) || false;
-        classNameBasicRulesMap.set(className, existingValue || basicRulesValue);
+        // 按完整职业 ID 存储（如 "Wizard|PHB"）
+        classBasicRulesMap.set(item.id, basicRulesValue);
     }
     
     const classNamelistData = [
@@ -645,8 +802,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         }),
         ...subclassOutput.map(item => {
             const superiorId = item.superiorfork?.superior || '';
-            const superiorClassName = superiorId.split('|')[0]; // 提取上级职业名称
-            const parentBasicRules2024 = classNameBasicRulesMap.get(superiorClassName) || false;
+            // 使用完整的上级职业 ID（如 "Wizard|PHB"）来查找 basicRules2024
+            const parentBasicRules2024 = classBasicRulesMap.get(superiorId) || false;
             // 如果子职业自身的 basicRules2024 为 true，或者上级职业的 basicRules2024 为 true，则为 true
             const basicRules2024 = (item.basicRules2024 || false) || parentBasicRules2024;
             

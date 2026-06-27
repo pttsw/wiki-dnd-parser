@@ -26,6 +26,40 @@ interface TagEntry {
     param: string | null;
 }
 
+interface SpellNameEntry {
+    id: string;
+    src: string;
+    name_en: string;
+    name_zh: string;
+}
+
+const spellNameMap: Map<string, string> = new Map();
+
+const loadSpellNameMap = () => {
+    try {
+        const filePath = './output/namelist/spellnamelist.json';
+        if (fsSync.existsSync(filePath)) {
+            const content = fsSync.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(content);
+            if (data.data && Array.isArray(data.data)) {
+                for (const entry of data.data as SpellNameEntry[]) {
+                    if (entry.name_zh && entry.name_en) {
+                        spellNameMap.set(entry.name_zh, entry.name_en);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load spell name map:', error);
+    }
+};
+
+loadSpellNameMap();
+
+const containsChinese = (text: string): boolean => {
+    return /[\u4e00-\u9fa5]/.test(text);
+};
+
 const findPageTitleBySectionTitle = async (bookId: string, sectionTitle: string, isZh: boolean): Promise<string | null> => {
     const outputDir = './output/book';
     const bookDir = join(outputDir, bookId);
@@ -146,6 +180,46 @@ class TagParser {
                 }
                 return result;
             }
+        }
+
+        // 处理{@spell}标签，为没有来源后缀的法术添加|PHB后缀
+        // 如果法术名为中文，额外添加en参数记载英文名
+        if (tag.tagName === '@spell' && tag.param) {
+            const parts = tag.param.split('|');
+            const spellName = parts[0].trim();
+            let source = parts[1]?.trim() || '';
+            let restParams = parts.slice(2);
+            
+            // 检查是否有来源后缀
+            if (!source) {
+                source = 'PHB';
+            }
+            
+            // 检查法术名是否为中文，如果是，查找英文名
+            let englishName = '';
+            if (containsChinese(spellName)) {
+                englishName = spellNameMap.get(spellName) || '';
+            }
+            
+            // 检查是否已经有en=参数
+            const hasEnParam = restParams.some(p => p.startsWith('en='));
+            if (englishName && !hasEnParam) {
+                restParams.push(`en=${englishName}`);
+            }
+            
+            // 构建结果
+            const restStr = restParams.length > 0 ? '|' + restParams.join('|') : '';
+            const result = `{${tag.tagName} ${spellName}|${source}${restStr}}`;
+            
+            // 保存处理后的参数
+            const newParam = `${spellName}|${source}${restStr}`;
+            if (this.allTags.has(tag.tagName)) {
+                this.allTags.get(tag.tagName)!.add(newParam);
+            } else {
+                this.allTags.set(tag.tagName, new Set([newParam]));
+            }
+            
+            return result;
         }
 
         // 处理{@class}标签，将特性位置（等级-索引）转换为特性名称

@@ -544,24 +544,49 @@ export class WikiPageGenerator {
     }
 
     private resolveTopMonster(monster: WikiBestiaryData): WikiBestiaryData {
-        let currentId: string | undefined = this.normalizeMonsterHierarchy(monster).superiorId;
+        const hierarchy = this.normalizeMonsterHierarchy(monster);
+        let currentId: string | undefined = hierarchy.superiorId;
         let topMonster: WikiBestiaryData = monster;
-        let firstNavpillMonster: WikiBestiaryData | undefined = undefined;
+        let lastNavpillMonster: WikiBestiaryData | undefined = undefined;
         
-        while (currentId) {
-            const current = this.bestiaryIndex.get(currentId);
-            if (current) {
-                topMonster = current;
-                if ((current as any).isnavpill && !firstNavpillMonster) {
-                    firstNavpillMonster = current;
+        if ((monster as any).isnavpill) {
+            lastNavpillMonster = monster;
+        }
+        
+        if (hierarchy.originId) {
+            let originId: string | undefined = hierarchy.originId;
+            while (originId) {
+                const originMonster = this.bestiaryIndex.get(originId);
+                if (originMonster) {
+                    if ((originMonster as any).isnavpill) {
+                        lastNavpillMonster = originMonster;
+                        break;
+                    }
+                    const originHierarchy = this.normalizeMonsterHierarchy(originMonster);
+                    originId = originHierarchy.originId;
+                } else {
+                    break;
                 }
-                currentId = this.normalizeMonsterHierarchy(current).superiorId;
-            } else {
-                break;
             }
         }
         
-        return firstNavpillMonster || topMonster;
+        if (!lastNavpillMonster) {
+            while (currentId) {
+                const current = this.bestiaryIndex.get(currentId);
+                if (current) {
+                    topMonster = current;
+                    if ((current as any).isnavpill) {
+                        lastNavpillMonster = current;
+                        break;
+                    }
+                    currentId = this.normalizeMonsterHierarchy(current).superiorId;
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        return lastNavpillMonster || topMonster;
     }
 
     private resolveOriginMonster(monster: WikiBestiaryData): WikiBestiaryData {
