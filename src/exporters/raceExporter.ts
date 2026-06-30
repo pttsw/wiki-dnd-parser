@@ -3,6 +3,7 @@ import path from 'path';
 import config, { mwUtil } from '../config.js';
 import { parseContent, tagParser } from '../contentGen.js';
 import { buildFluffStore } from './fluff.js';
+import { buildFoundryStore } from './foundry.js';
 import {
     appendEnglishShadowFields,
     buildAllSources,
@@ -52,6 +53,21 @@ const loadRaceFluffData = async () => {
         zh: {
             raceFluff: zh.raceFluff || [],
             subraceFluff: zh.subraceFluff || [],
+        },
+    };
+};
+
+const loadRaceFoundryData = async () => {
+    const [en, zh] = await Promise.all([
+        readJson<Record<string, any>>(path.join(config.DATA_EN_DIR, 'foundry-races.json')),
+        readJson<Record<string, any>>(path.join(config.DATA_ZH_DIR, 'foundry-races.json')),
+    ]);
+    return {
+        en: {
+            race: en.race || [],
+        },
+        zh: {
+            race: zh.race || [],
         },
     };
 };
@@ -285,13 +301,15 @@ export interface RaceExporterResult {
 }
 
 export const runRaceExporter = async (): Promise<RaceExporterResult> => {
-    const [raceData, fluffData] = await Promise.all([
+    const [raceData, fluffData, foundryData] = await Promise.all([
         loadRaceData(),
         loadRaceFluffData(),
+        loadRaceFoundryData(),
     ]);
 
     const raceFluffStore = buildFluffStore(fluffData.zh.raceFluff, fluffData.en.raceFluff);
     const subraceFluffStore = buildFluffStore(fluffData.zh.subraceFluff, fluffData.en.subraceFluff);
+    const raceFoundryStore = buildFoundryStore(foundryData.zh.race, foundryData.en.race);
 
     const raceEnMap = new Map<string, Record<string, any>>(raceData.en.race.map((item: Record<string, any>) => [getDefaultId(item), item]));
     const raceZhMap = new Map<string, Record<string, any>>(raceData.zh.race.map((item: Record<string, any>) => [getDefaultId(item), item]));
@@ -413,6 +431,7 @@ export const runRaceExporter = async (): Promise<RaceExporterResult> => {
         raceOutput.push({
             ...raceEntityBase,
             races,
+            foundry: raceFoundryStore.getFull(id),
         });
     }
 
@@ -439,6 +458,7 @@ export const runRaceExporter = async (): Promise<RaceExporterResult> => {
                 superior: superiorId,
                 fork: 1,
             }),
+            foundry: raceFoundryStore.getFull(id),
         });
     }
 

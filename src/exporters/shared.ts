@@ -29,12 +29,7 @@ export const getDefaultId = (item?: { ENG_name?: string; name?: string; source?:
 export const parseReprintedAsSources = (
     reprintedAs?: (string | { uid: string; tag?: string })[]
 ): { source: string; page: number }[] => {
-    if (!reprintedAs) return [];
-    return reprintedAs.map(entry => {
-        const str = typeof entry === 'string' ? entry : entry.uid;
-        const source = str.split('|').pop() || '';
-        return { source, page: 0 };
-    });
+    return [];
 };
 
 export const normalizeReprintedAs = (
@@ -304,22 +299,18 @@ export const buildAllSources = (
     ids: string[],
     entryMap: Map<string, Record<string, any>>
 ) => {
-    const sources: { source: string; page: number }[] = [];
-    const seen = new Set<string>();
+    const sourceMap = new Map<string, number>();
 
     const addSource = (source: string, page: number) => {
         if (!source) return;
-        const key = `${source}|${page}`;
-        if (seen.has(key)) return;
-        seen.add(key);
-        sources.push({ source, page });
+        if (!sourceMap.has(source) || page > sourceMap.get(source)!) {
+            sourceMap.set(source, page);
+        }
     };
 
     for (const relatedId of ids) {
         const relatedEntry = entryMap.get(relatedId);
         if (!relatedEntry) {
-            const fallbackSource = relatedId.split('|').pop();
-            if (fallbackSource) addSource(fallbackSource, 0);
             continue;
         }
 
@@ -328,7 +319,7 @@ export const buildAllSources = (
         }
     }
 
-    return sources;
+    return [...sourceMap.entries()].map(([source, page]) => ({ source, page }));
 };
 
 export class SectionTextIdMap {
