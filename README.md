@@ -66,11 +66,11 @@ json 输出产物（`npm run start`）：
 - `output/item/{来源}/*.json`（基础物品与物品，按来源分文件夹）
 - `output/spell/{来源}/*.json`
 - `output/bestiary/{来源}/*.json`
-- `output/race/{来源}/*.json`
+- `output/race/{母种族}/{来源}/*.json`
 - `output/background/{来源}/*.json`
 - `output/trap/{来源}/*.json`
 - `output/hazard/{来源}/*.json`
-- `output/class/{来源}/*.json`
+- `output/class/{母职业}/{来源}/*.json`
 - `output/subclass/{来源}/*.json`
 - `output/adventure/{来源}/*.json`
 - `output/namelist/*.json`（名字列表）
@@ -104,6 +104,7 @@ Wiki 文件名格式：**中文名.wiki**（按来源分文件夹存放）
 4. 运行 `npm run start` 生成 `./output`。
 5. 查看 `output/logs.json` 与 `output/idMgr.xlsx` 定位缺失翻译或 ID 不匹配。
 6. 确认没有错误后，运行 `npm run page` 生成 `./output_page`。
+7. 运行 `npm run listFiles` 可查看`./output`与`./output_page`输出文件列表。
 
 运行日志格式
 各类型完成时输出统一格式日志：`[prepareData] {类型} 完成 ({数量})`
