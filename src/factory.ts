@@ -1318,7 +1318,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
         for (const enItem of enItems) {
             const id = this.getId(enItem);
 
-            const zhItem = zhItems.find(i => this.getId(i) === id);
+            const zhItem = zhMap.get(id);
             if (!zhItem) {
                 logger.log('ItemMgr', `${id}: 未找到中文版本的物品：${enItem.name} `);
             }
@@ -1593,7 +1593,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         // 第二遍：生成数据
         for (const enItem of this.raw.en) {
             const id = this.getId(enItem);
-            const zhItem = this.raw.zh.find(i => this.getId(i) === id);
+            const zhItem = zhMap.get(id);
             if (!zhItem) {
                 logger.log('MagicVariantMgr', `${id}: 未找到中文版本的变体物品：${enItem.name} `);
             }
@@ -1868,7 +1868,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         // 第二遍：生成数据
         for (const enSpell of this.raw.en) {
             const id = this.getId(enSpell);
-            const zhSpell = this.raw.zh.find(s => this.getId(s) === id);
+            const zhSpell = zhMap.get(id);
             const fluffEn = this.fluff.en.get(id);
             const fluffZh = this.fluff.zh.get(id);
             const toFluffContent = (

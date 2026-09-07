@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -801,26 +801,29 @@ const processBonusReplacements = (itemData: any): any => {
     return itemData;
 };
 
-export const createOutputFolders = async (generatePages: boolean) => {
-    console.log(`createOutputFolders 被调用，generatePages: ${generatePages}`);
+export const createOutputFolders = async (generatePages: boolean, clean: boolean = false) => {
+    console.log(`createOutputFolders 被调用，generatePages: ${generatePages}, clean: ${clean}`);
     if (!generatePages) {
-        // npm run start: 创建/清空 output 目录，保留 contents、book、adventure 文件夹
+        // npm run start: 默认不清理 output 目录，仅创建缺失的文件夹
+        // 如果指定 --clean 参数，则清空并重建
         console.log('创建 output 目录...');
-        try {
-            await fs.access('./output');
-            // 只删除需要重新生成的文件夹，保留 contents、book、adventure
-            const dirsToClear = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'race', 'class', 'feat'];
-            for (const dir of dirsToClear) {
-                const dirPath = path.join('./output', dir);
-                try {
-                    await fs.access(dirPath);
-                    await fs.rm(dirPath, { recursive: true, force: true });
-                } catch (error) {
-                    // 目录不存在，跳过
+        if (clean) {
+            try {
+                await fs.access('./output');
+                // 只删除需要重新生成的文件夹，保留 contents、book、adventure
+                const dirsToClear = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'race', 'class', 'feat'];
+                for (const dir of dirsToClear) {
+                    const dirPath = path.join('./output', dir);
+                    try {
+                        await fs.access(dirPath);
+                        await fs.rm(dirPath, { recursive: true, force: true });
+                    } catch (error) {
+                        // 目录不存在，跳过
+                    }
                 }
+            } catch (error) {
+                // output 目录不存在，跳过
             }
-        } catch (error) {
-            // output 目录不存在，跳过
         }
         const dirs = ['collection', 'item', 'spell', 'generated', 'bestiary', 'namelist', 'contents', 'book', 'adventure', 'class', 'race', 'feat'];
         for (const dir of dirs) {
@@ -1409,7 +1412,7 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
 
         for (const enFeat of en.feat) {
             const id = this.getId(enFeat);
-            const zhFeat = zh.feat.find(f => this.getId(f) === id);
+            const zhFeat = zhMap.get(id);
 
             const relatedVersions = new Set<string>();
             normalizeReprintedAs(enFeat.reprintedAs).forEach(t => relatedVersions.add(t));
@@ -2213,7 +2216,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
         // 第二遍：生成数据
         for (const enItem of en.baseitem) {
             const id = this.getId(enItem);
-            const zhItem = zh.baseitem.find(i => this.getId(i) === id);
+            const zhItem = zhMap.get(id);
             if (!zhItem) {
                 logger.log('BaseItemMgr', `未找到中文版本的物品：${enItem.name} (${id})`);
             }
@@ -2781,7 +2784,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
             const superior = getTopSuperior(id);
             const fork = getForkDepth(id);
 
-            const zhItem = zhItems.find(i => this.getId(i) === id);
+            const zhItem = zhMap.get(id);
             if (!zhItem) {
                 logger.log('ItemMgr', `${id}: 未找到中文版本的物品：${enItem.name} `);
             }
@@ -3750,7 +3753,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         // 第二遍：生成数据
         for (const enItem of this.raw.en) {
             const id = this.getId(enItem);
-            const zhItem = this.raw.zh.find(i => this.getId(i) === id);
+            const zhItem = zhMap.get(id);
             if (!zhItem) {
                 logger.log('MagicVariantMgr', `${id}: 未找到中文版本的变体物品：${enItem.name} `);
             }
@@ -4255,7 +4258,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
         // 第二遍：生成数据
         for (const enSpell of this.raw.en) {
             const id = this.getId(enSpell);
-            const zhSpell = this.raw.zh.find(s => this.getId(s) === id);
+            const zhSpell = zhMap.get(id);
             const fluffEn = this.fluff.en.get(id);
             const fluffZh = this.fluff.zh.get(id);
             const toFluffContent = (
@@ -4356,19 +4359,42 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
 
     async generateFiles() {
         const outputDir = './output/spell';
+        const writeTasks: { filePath: string; content: string; trackPath: string; sourceId: string; uid: string }[] = [];
+        const dirsToCreate = new Set<string>();
 
         for (const [id, spellData] of this.db) {
             const sourceId = escapeFileName(spellData.mainSource.source);
             const sourceDir = path.join(outputDir, sourceId);
-            await fs.mkdir(sourceDir, { recursive: true });
+            dirsToCreate.add(sourceDir);
 
             const baseName = escapeFileName(mwUtil.getMwTitle(
                 spellData.displayName.en || spellData.displayName.zh || id
             ));
             const fileName = `${baseName}.json`;
             const filePath = path.join(sourceDir, fileName);
-            await fs.writeFile(filePath, JSON.stringify(spellData, null, 2), 'utf-8');
-            trackOutputFile(`spell/${sourceId}/${fileName}`, 'spell', sourceId, id);
+
+            writeTasks.push({
+                filePath,
+                content: JSON.stringify(spellData, null, 2),
+                trackPath: `spell/${sourceId}/${fileName}`,
+                sourceId,
+                uid: id,
+            });
+        }
+
+        // 预创建所有目录
+        for (const dir of dirsToCreate) {
+            await fs.mkdir(dir, { recursive: true });
+        }
+
+        // 分批并行写入文件（每批 100 个）
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < writeTasks.length; i += BATCH_SIZE) {
+            const batch = writeTasks.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(task =>
+                fs.writeFile(task.filePath, task.content, 'utf-8')
+                    .then(() => trackOutputFile(task.trackPath, 'spell', task.sourceId, task.uid))
+            ));
         }
     }
 }
@@ -5335,11 +5361,12 @@ let isnavpillIds = new Set<string>();
         // 解析命令行参数
         const args = process.argv.slice(2);
         const generatePages = args.includes('--page');
-        console.log(`命令行参数: ${args}, generatePages: ${generatePages}`);
+        const cleanOutput = args.includes('--clean');
+        console.log(`命令行参数: ${args}, generatePages: ${generatePages}, cleanOutput: ${cleanOutput}`);
         
         const startedAt = Date.now();
         printProgress('开始准备数据');
-        await createOutputFolders(generatePages);
+        await createOutputFolders(generatePages, cleanOutput);
         printProgress('输出目录已重建');
         
         // 加载 input/replace-logs.json

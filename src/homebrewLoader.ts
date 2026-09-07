@@ -72,6 +72,12 @@ const fileCache: Record<'en' | 'zh', Map<string, Record<string, any>>> = {
     zh: new Map(),
 };
 
+// loadAllHomebrewFiles 缓存：locale + keys 排序后作为 key
+const allHomebrewFilesCache: Record<'en' | 'zh', Map<string, Record<string, any>[]>> = {
+    en: new Map(),
+    zh: new Map(),
+};
+
 const readJsonCached = async (locale: 'en' | 'zh', filePath: string): Promise<Record<string, any> | null> => {
     const cached = fileCache[locale].get(filePath);
     if (cached) return cached;
@@ -128,8 +134,27 @@ export const loadHomebrewByKeys = async (
     }
 
     // 并行读取分类目录（每个目录只读一次，提取所有所需键）
+    // 优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
     await Promise.all([...dirToKeys.entries()].map(async ([dir, keysInDir]) => {
         const dirPath = path.join(baseDir, dir);
+        // 检查是否存在 _all.json（getCnRepo:homebrew 阶段合并的产物）
+        const allJsonPath = path.join(dirPath, '_all.json');
+        try {
+            await fs.access(allJsonPath);
+            const data = await readJsonCached(locale, allJsonPath);
+            if (data) {
+                for (const key of keysInDir) {
+                    if (Array.isArray(data[key])) {
+                        for (const item of data[key]) {
+                            keyToData[key].push(item);
+                        }
+                    }
+                }
+            }
+            return;
+        } catch {
+            // _all.json 不存在，读取该目录下所有独立 JSON 文件
+        }
         let files: string[];
         try {
             files = await fs.readdir(dirPath);
@@ -137,7 +162,7 @@ export const loadHomebrewByKeys = async (
             return;
         }
         await Promise.all(files.map(async (file) => {
-            if (!file.endsWith('.json')) return;
+            if (!file.endsWith('.json') || file === '_all.json') return;
             const data = await readJsonCached(locale, path.join(dirPath, file));
             if (!data) return;
             for (const key of keysInDir) {
@@ -171,6 +196,11 @@ export const loadAllHomebrewFiles = async (
     locale: 'en' | 'zh',
     keys: string[]
 ): Promise<Record<string, any>[]> => {
+    // 缓存 key：keys 排序后拼接
+    const cacheKey = [...keys].sort().join(',');
+    const cached = allHomebrewFilesCache[locale].get(cacheKey);
+    if (cached) return cached;
+
     const baseDir = locale === 'en' ? config.HOMEBREW_EN_DIR : config.HOMEBREW_ZH_DIR;
 
     // 收集分类目录
@@ -185,6 +215,18 @@ export const loadAllHomebrewFiles = async (
 
     for (const dir of dirsSet) {
         const dirPath = path.join(baseDir, dir);
+        // 优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
+        const allJsonPath = path.join(dirPath, '_all.json');
+        try {
+            await fs.access(allJsonPath);
+            const data = await readJsonCached(locale, allJsonPath);
+            if (data && keys.some(k => Array.isArray(data[k]) && data[k].length > 0)) {
+                result.push(data);
+            }
+            continue;
+        } catch {
+            // _all.json 不存在
+        }
         let files: string[];
         try {
             files = await fs.readdir(dirPath);
@@ -192,7 +234,7 @@ export const loadAllHomebrewFiles = async (
             continue;
         }
         for (const file of files) {
-            if (!file.endsWith('.json')) continue;
+            if (!file.endsWith('.json') || file === '_all.json') continue;
             const data = await readJsonCached(locale, path.join(dirPath, file));
             if (data && keys.some(k => Array.isArray(data[k]) && data[k].length > 0)) {
                 result.push(data);
@@ -200,6 +242,7 @@ export const loadAllHomebrewFiles = async (
         }
     }
 
+    allHomebrewFilesCache[locale].set(cacheKey, result);
     return result;
 };
 
