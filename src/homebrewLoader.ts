@@ -313,6 +313,87 @@ export const loadHomebrewCategoryFiles = async (
     return loadAllHomebrewFiles(locale, [category]);
 };
 
+// ==================== Homebrew source tracking ====================
+
+/**
+ * 记录所有 homebrew 数据中的 source 标识符集合。
+ * 在 mergeHomebrewBilingual 和直接合并 homebrew 数据时自动填充。
+ * 用于在输出文件时添加 ishomebrew 标记。
+ */
+export const homebrewSources = new Set<string>();
+
+/**
+ * 收集 homebrew 数据中所有条目的 source 标识符。
+ * 排除官方数据中已有的 source，以确保只标记真正的 homebrew 来源。
+ * @param homebrewData homebrew 数据（键为数据类别，值为条目数组）
+ * @param officialData 官方数据（可选，用于排除官方已有的 source）
+ */
+const collectHomebrewSources = (
+    homebrewData: Record<string, any[]>,
+    officialData?: Record<string, any>
+): void => {
+    const officialSources = new Set<string>();
+    if (officialData) {
+        for (const key of Object.keys(officialData)) {
+            if (Array.isArray(officialData[key])) {
+                for (const item of officialData[key]) {
+                    if (item.source) officialSources.add(item.source);
+                }
+            }
+        }
+    }
+    for (const key of Object.keys(homebrewData)) {
+        if (Array.isArray(homebrewData[key])) {
+            for (const item of homebrewData[key]) {
+                if (item.source && !officialSources.has(item.source)) {
+                    homebrewSources.add(item.source);
+                }
+            }
+        }
+    }
+};
+
+/**
+ * 判断给定的 source 标识符是否为 homebrew 来源。
+ * 在 homebrew 模式下，如果 source 不在官方数据来源中，则视为 homebrew 来源。
+ */
+export const isHomebrewSource = (source: string): boolean => {
+    if (!isHomebrewMode) return false;
+    return homebrewSources.has(source);
+};
+
+/**
+ * 向 homebrewSources 集合中添加来源标识符。
+ * 用于在 prepareData.ts 等模块中直接合并 homebrew 数据时标记来源。
+ * @param source 来源标识符
+ */
+export const addHomebrewSource = (source: string): void => {
+    if (isHomebrewMode && source) {
+        homebrewSources.add(source);
+    }
+};
+
+/**
+ * 批量收集 homebrew 数据中的来源标识符并添加到 homebrewSources 集合。
+ * 用于 prepareData.ts 中直接合并 homebrew 数据的场景。
+ * @param homebrewData homebrew 数据（键为数据类别，值为条目数组）
+ * @param officialData 官方数据（可选，用于排除官方已有的 source）
+ */
+export const collectHomebrewItemSources = (
+    homebrewData: Record<string, any[]>,
+    officialData?: Record<string, any>
+): void => {
+    if (!isHomebrewMode) return;
+    collectHomebrewSources(homebrewData, officialData);
+};
+
+/**
+ * 清理 homebrewSources 集合（用于测试或重新加载）。
+ */
+export const clearHomebrewSources = (): void => {
+    homebrewSources.clear();
+};
+
 // ==================== Merge helpers ====================
 
 export const mergeHomebrewData = (
@@ -341,6 +422,9 @@ export const mergeHomebrewBilingual = async <T extends Record<string, any>>(
         loadHomebrewByKeys('en', categories),
         loadHomebrewByKeys('zh', categories),
     ]);
+
+    // 收集 homebrew 来源标识符
+    collectHomebrewSources(enHb, enData as Record<string, any>);
 
     const en = Object.keys(enHb).length > 0 ? mergeHomebrewData(enData, enHb) as T : enData;
     const zh = Object.keys(zhHb).length > 0 ? mergeHomebrewData(zhData, zhHb) as T : zhData;

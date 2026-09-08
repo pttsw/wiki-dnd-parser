@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -88,7 +88,7 @@ import { runFeatExporter } from './exporters/featExporter.js';
 import { escapeFileName, loadSubraceReplacementByNameMap, sectionTextIdMap, SubraceReplacement } from './exporters/shared.js';
 import { generateContents } from './generate-contents.js';
 import { splitBooks } from './split-books.js';
-import { isHomebrewMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP } from './homebrewLoader.js';
+import { isHomebrewMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource } from './homebrewLoader.js';
 
 interface InputChangedArray {
     name: string;
@@ -269,7 +269,8 @@ async function generateCollectionNameList(type: string, items: any[], outputDir:
             id: item.id || '',
             src: item.mainSource?.source || '',
             name_en: item.displayName?.en || '',
-            name_zh: item.displayName?.zh || item.displayName?.en || ''
+            name_zh: item.displayName?.zh || item.displayName?.en || '',
+            ishomebrew: !!item.ishomebrew
         }));
         
         const output = {
@@ -1488,6 +1489,7 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
                 dataType: 'feat',
                 uid: `feat_${id}`,
                 id: id,
+                ishomebrew: isHomebrewSource(enFeat.source),
                 ...common,
                 translator,
                 displayName: {
@@ -2337,6 +2339,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
+                ishomebrew: isHomebrewSource(enItem.source),
                 basicRules2024: !!((enItem as any).basicRules2024 || (enItem as any).edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -2905,6 +2908,7 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 dataType: 'item',
                 uid: `item_${id} `,
                 id: id,
+                ishomebrew: isHomebrewSource(enItem.source),
                 basicRules2024: !!((enItem as any).basicRules2024 || (enItem as any).edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -3532,6 +3536,7 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             dataType: 'item',
             uid: `item_${opts.id}`,
             id: opts.id,
+            ishomebrew: isHomebrewSource(opts.source),
             basicRules2024: !!(enItem.basicRules2024 || enItem.edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
             ...common,
             translator,
@@ -4314,6 +4319,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 dataType: 'spell',
                 uid: `spell_${id}`,
                 id: id,
+                ishomebrew: isHomebrewSource(enSpell.source),
                 basicRules2024: !!((enSpell as any).basicRules2024 || (enSpell as any).edition === 'one' || (typeof enSpell.source === 'string' && enSpell.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -4622,6 +4628,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 dataType: 'bestiary',
                 uid: `bestiary_${id}`,
                 id,
+                ishomebrew: isHomebrewSource(enMonster.source),
                 basicRules2024: !!(enMonster.basicRules2024 || enMonster.edition === 'one' || (typeof enMonster.source === 'string' && enMonster.source.startsWith('X'))),
                 ...common,
                 referenceSources,
@@ -4689,6 +4696,7 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 dataType: 'bestiary',
                 uid: `bestiary_${id}`,
                 id,
+                ishomebrew: isHomebrewSource(source),
                 basicRules2024: !!(typeof source === 'string' && source.startsWith('X')),
                 ...common,
                 referenceSources: [],
@@ -5249,6 +5257,8 @@ const loadIndexedSpellData = async (): Promise<{ en: SpellFile; zh: SpellFile }>
             loadHomebrewByKeys('en', ['spell']),
             loadHomebrewByKeys('zh', ['spell']),
         ]);
+        // 收集 homebrew 来源标识符
+        if (enHb.spell) collectHomebrewItemSources(enHb);
         if (enHb.spell) en.spell.push(...enHb.spell);
         if (zhHb.spell) zh.spell.push(...zhHb.spell);
     }
@@ -5311,6 +5321,8 @@ const loadIndexedBestiaryData = async (): Promise<{ en: MonsterFile; zh: Monster
             loadHomebrewByKeys('en', ['monster']),
             loadHomebrewByKeys('zh', ['monster']),
         ]);
+        // 收集 homebrew 来源标识符
+        if (enHb.monster) collectHomebrewItemSources(enHb);
         if (enHb.monster) en.monster.push(...enHb.monster);
         if (zhHb.monster) zh.monster.push(...zhHb.monster);
     }

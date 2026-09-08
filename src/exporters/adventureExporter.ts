@@ -22,6 +22,7 @@ export const runAdventureExporter = async (): Promise<AdventureExporterResult> =
         src: string;
         name_en: string;
         name_zh: string;
+        ishomebrew: boolean;
     }> = [];
 
     let adventureDir: string;
@@ -75,7 +76,8 @@ export const runAdventureExporter = async (): Promise<AdventureExporterResult> =
                         id: data.id,
                         src: data.source,
                         name_en: data.displayName?.en || '',
-                        name_zh: data.displayName?.zh || data.displayName?.en || ''
+                        name_zh: data.displayName?.zh || data.displayName?.en || '',
+                        ishomebrew: !!data.ishomebrew
                     });
                 }
             } catch {

@@ -843,6 +843,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 src: item.mainSource?.source || '',
                 name_en: item.displayName?.en || '',
                 name_zh: item.displayName?.zh || item.displayName?.en || '',
+                ishomebrew: !!item.ishomebrew,
                 basicRules2024,
                 superior: item.superiorfork?.superior || ''
             };
@@ -859,6 +860,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 src: item.mainSource?.source || '',
                 name_en: item.displayName?.en || '',
                 name_zh: item.displayName?.zh || item.displayName?.en || '',
+                ishomebrew: !!item.ishomebrew,
                 basicRules2024,
                 superior: superiorId
             };
@@ -879,6 +881,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || item.displayName?.en || '',
+        ishomebrew: !!item.ishomebrew,
         basicRules2024: item.basicRules2024 || false,
         superior: item.superiorfork?.superior || ''    }));
     

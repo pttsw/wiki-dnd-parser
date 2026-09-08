@@ -29,7 +29,8 @@ const generateItemNameList = async (
         id: item.id || '',
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
-        name_zh: item.displayName?.zh || item.displayName?.en || ''
+        name_zh: item.displayName?.zh || item.displayName?.en || '',
+        ishomebrew: !!item.ishomebrew
     }));
 
     const output = {
