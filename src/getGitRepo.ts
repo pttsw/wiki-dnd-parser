@@ -1010,14 +1010,71 @@ const cloneHomebrewRepo = async (
     await safeRmdir(targetDir);
     await fs.mkdir(path.dirname(targetDir), { recursive: true });
 
-    // 使用 --depth 1 浅克隆（不额外过滤，确保完整可用）
-    // 设置 5 分钟超时，避免网络问题导致永久阻塞
-    const cloneArgs = ['clone', '--depth', '1', repoUrl, targetDir];
+    // 使用 partial clone + sparse checkout 只拉取需要的数据文件
+    // --filter=blob:none 只下载元数据（树对象），不下载文件内容（blob）
+    // --no-checkout 先不检出文件，等 sparse-checkout 配置完成后再检出
+    // 注意：不使用 cwd 参数，直接使用相对路径（相对于项目根目录），避免路径嵌套
+    const cloneArgs = ['clone', '--depth', '1', '--filter=blob:none', '--no-checkout', repoUrl, targetDir];
     console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
     execSync(`git ${cloneArgs.join(' ')}`, {
         stdio: 'inherit',
         env: execOptions.env,
-        cwd: path.dirname(targetDir),
+        timeout: 300000, // 5 分钟超时
+    });
+
+    console.log(`[${getTimestamp()}] 元数据下载完成，配置 sparse-checkout 排除不需要的文件...`);
+
+    // 配置 sparse checkout 排除不需要的文件和目录
+    // 使用 --no-cone 模式支持排除模式（! 前缀）
+    // 只拉取 .json 文件，排除 _img、_doc、_font、_node、_test 等非数据目录和文件
+    const sparseCheckoutPatterns = [
+        '/*',                    // 包含根目录下所有内容
+        '!/_img/**',             // 排除 _img 目录
+        '!/_doc/**',             // 排除 _doc 目录
+        '!/_font/**',            // 排除 _font 目录
+        '!/_node/**',            // 排除 _node 目录
+        '!/_test/**',            // 排除 _test 目录
+        '!.editorconfig',        // 排除配置文件
+        '!.gitattributes',
+        '!.gitignore',
+        '!README.md',
+        '!package.json',
+        '!package-lock.json',
+        '!*.md',                 // 排除所有 markdown 文件
+        '!*.png',                // 排除所有图片文件
+        '!*.jpg',
+        '!*.jpeg',
+        '!*.gif',
+        '!*.svg',
+        '!*.ico',
+        '!*.woff',               // 排除字体文件
+        '!*.woff2',
+        '!*.ttf',
+        '!*.eot',
+        '!*.zip',                // 排除压缩包
+        '!*.tar.gz',
+    ];
+
+    // 直接写入 sparse-checkout 配置文件（兼容所有 Git 版本）
+    const gitInfoDir = path.join(targetDir, '.git', 'info');
+    fsSync.mkdirSync(gitInfoDir, { recursive: true });
+    fsSync.writeFileSync(
+        path.join(gitInfoDir, 'sparse-checkout'),
+        sparseCheckoutPatterns.join('\n') + '\n',
+        'utf-8'
+    );
+
+    // 启用 sparse checkout
+    execSync(`git -C "${targetDir}" config core.sparseCheckout true`, {
+        stdio: 'pipe',
+        env: execOptions.env,
+    });
+
+    // 检出文件（仅下载被 sparse-checkout 允许的文件的 blob，大幅减少下载量）
+    console.log(`[${getTimestamp()}] 检出文件（仅下载需要的数据，跳过 _img/_doc/_font 等非数据文件）...`);
+    execSync(`git -C "${targetDir}" checkout HEAD`, {
+        stdio: 'inherit',
+        env: execOptions.env,
         timeout: 300000, // 5 分钟超时
     });
 
@@ -1206,8 +1263,8 @@ const getHomebrewRepoData = async (
         const isHomebrew = process.argv.includes('--homebrew');
 
         if (isHomebrew) {
-            const enHomebrewDir = path.join(enRoot, 'homebrew');
-            const zhHomebrewDir = path.join(zhRoot, 'homebrew');
+            const enHomebrewDir = config.HOMEBREW_EN_DIR;
+            const zhHomebrewDir = config.HOMEBREW_ZH_DIR;
 
             console.log(`[${getTimestamp()}] === Homebrew 模式 ===`);
             await getHomebrewRepoData(

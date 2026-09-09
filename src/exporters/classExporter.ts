@@ -748,6 +748,29 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         });
     }
 
+    // 构建官方职业名称列表（小写），用于将"翻版/变体"归入官方职业文件夹
+    const officialClassNames = new Set<string>();
+    for (const enClass of classData.en.class) {
+        if (enClass.name) {
+            officialClassNames.add(enClass.name.toLowerCase());
+        }
+    }
+
+    // 判断一个职业名称是否是官方职业的翻版/变体，如果是则返回对应的官方职业名
+    const getTargetFolder = (className: string): string => {
+        for (const officialName of officialClassNames) {
+            // 完全匹配官方职业名（如 "barbarian"）
+            if (className === officialName) return officialName;
+            // 匹配 "alternate X" 模式（如 "alternate barbarian"）
+            if (className.startsWith('alternate ' + officialName)) return officialName;
+            // 匹配 "X rework" 或 "X reworked" 模式（如 "barbarian rework"）
+            if (className.startsWith(officialName + ' rework')) return officialName;
+            // 匹配 "X (MultiClass)" 等括号后缀模式
+            if (className.startsWith(officialName + ' (')) return officialName;
+        }
+        return className; // 非翻版，使用原名称作为文件夹名
+    };
+
     // 输出 class 文件
     const classOutputDir = path.join('./output', 'class');
     await fs.mkdir(classOutputDir, { recursive: true });
@@ -758,7 +781,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         if (item.id === 'Artificer|EFA') {
             item.basicRules2024 = true;
         }
-        const className = (item.displayName.en || item.id.split('|')[0] || 'other').toLowerCase();
+        const rawClassName = (item.displayName.en || item.id.split('|')[0] || 'other').toLowerCase();
+        const className = getTargetFolder(rawClassName);
         const sourceId = escapeFileName(item.mainSource.source);
         const sourceDir = path.join(classOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });
@@ -788,7 +812,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
             item.basicRules2024 = true;
         }
 
-        const className = item.superiorfork?.superior?.split('|')[0]?.toLowerCase() || 'other';
+        const rawClassName = item.superiorfork?.superior?.split('|')[0]?.toLowerCase() || 'other';
+        const className = getTargetFolder(rawClassName);
         const sourceId = escapeFileName(item.mainSource.source);
         const sourceDir = path.join(subclassOutputDir, className, sourceId);
         await fs.mkdir(sourceDir, { recursive: true });

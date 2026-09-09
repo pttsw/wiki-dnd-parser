@@ -3,6 +3,7 @@ import path from 'path';
 import config from './config.js';
 
 export const isHomebrewMode = process.argv.includes('--homebrew');
+export const isPartneredMode = process.argv.includes('--partnered');
 
 /**
  * 官方数据文件名 → homebrew 数据键的映射。
@@ -90,6 +91,83 @@ const readJsonCached = async (locale: 'en' | 'zh', filePath: string): Promise<Re
     }
 };
 
+// ==================== Partnered 模式逻辑 ====================
+
+/**
+ * 合作方 source 标识符缓存（按 locale）。
+ * 从 collection/ 文件中提取所有带有 partnered: true 的 source.json 值。
+ */
+const partneredSourceCache: Record<string, Set<string> | null> = {
+    en: null,
+    zh: null,
+};
+
+/**
+ * 从 collection/ 目录中构建合作方 source 标识符集合。
+ * 扫描 collection/ 下所有 JSON 文件，提取 _meta.sources 中 partnered: true 的 source.json 值。
+ */
+const buildPartneredSourceSet = async (locale: 'en' | 'zh'): Promise<Set<string>> => {
+    if (partneredSourceCache[locale]) return partneredSourceCache[locale]!;
+
+    const baseDir = locale === 'en' ? config.HOMEBREW_EN_DIR : config.HOMEBREW_ZH_DIR;
+    const collectionDir = path.join(baseDir, 'collection');
+    const partneredSet = new Set<string>();
+
+    try {
+        const files = await fs.readdir(collectionDir);
+        await Promise.all(files.map(async (file) => {
+            if (!file.endsWith('.json')) return;
+            const data = await readJsonCached(locale, path.join(collectionDir, file));
+            if (!data) return;
+            const sources = data._meta?.sources;
+            if (!Array.isArray(sources)) return;
+            for (const source of sources) {
+                if (source.partnered === true && source.json) {
+                    partneredSet.add(source.json);
+                }
+            }
+        }));
+    } catch {
+        // collection 目录可能不存在，忽略
+    }
+
+    partneredSourceCache[locale] = partneredSet;
+    return partneredSet;
+};
+
+/**
+ * 判断 JSON 数据是否包含第三方合作（partnered）来源标记。
+ * 检查逻辑（按优先级）：
+ *   1. 数据本身有 _meta.sources[].partnered === true
+ *   2. 数据本身无 _meta，但数据项中的 source 字段匹配 partneredSources 集合
+ *      （适用于 spell/、item/ 等纯数据文件，其 partnered 信息在 collection/ 文件中）
+ */
+const hasPartneredMeta = (data: Record<string, any> | null, partneredSources?: Set<string>): boolean => {
+    if (!data) return false;
+
+    // 检查 1：数据自身的 _meta.sources
+    const sources = data._meta?.sources;
+    if (Array.isArray(sources) && sources.some((s: any) => s.partnered === true)) {
+        return true;
+    }
+
+    // 检查 2：通过数据项中的 source 字段匹配合作方来源集合
+    if (partneredSources && partneredSources.size > 0) {
+        for (const key of Object.keys(data)) {
+            if (key === '_meta' || key.startsWith('$')) continue;
+            if (Array.isArray(data[key])) {
+                for (const item of data[key]) {
+                    if (item.source && partneredSources.has(item.source)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+};
+
 // ==================== Public API ====================
 
 /**
@@ -134,10 +212,38 @@ export const loadHomebrewByKeys = async (
     }
 
     // 并行读取分类目录（每个目录只读一次，提取所有所需键）
-    // 优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
+    // 支持两种模式：
+    //   普通模式：优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
+    //   partnered 模式：跳过 _all.json，逐文件读取并按 _meta.sources[].partnered 过滤
     await Promise.all([...dirToKeys.entries()].map(async ([dir, keysInDir]) => {
         const dirPath = path.join(baseDir, dir);
-        // 检查是否存在 _all.json（getCnRepo:homebrew 阶段合并的产物）
+
+        if (isPartneredMode) {
+            // partnered 模式：跳过 _all.json，逐文件读取并过滤
+            // 从 collection/ 中构建合作方 source 标识符集合
+            const partneredSources = await buildPartneredSourceSet(locale);
+            let files: string[];
+            try {
+                files = await fs.readdir(dirPath);
+            } catch {
+                return;
+            }
+            await Promise.all(files.map(async (file) => {
+                if (!file.endsWith('.json') || file === '_all.json') return;
+                const data = await readJsonCached(locale, path.join(dirPath, file));
+                if (!data || !hasPartneredMeta(data, partneredSources)) return;
+                for (const key of keysInDir) {
+                    if (Array.isArray(data[key])) {
+                        for (const item of data[key]) {
+                            keyToData[key].push(item);
+                        }
+                    }
+                }
+            }));
+            return;
+        }
+
+        // 普通模式：优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
         const allJsonPath = path.join(dirPath, '_all.json');
         try {
             await fs.access(allJsonPath);
@@ -215,7 +321,27 @@ export const loadAllHomebrewFiles = async (
 
     for (const dir of dirsSet) {
         const dirPath = path.join(baseDir, dir);
-        // 优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
+
+        if (isPartneredMode) {
+            // partnered 模式：跳过 _all.json，逐文件读取并按 partnered 过滤
+            const partneredSources = await buildPartneredSourceSet(locale);
+            let files: string[];
+            try {
+                files = await fs.readdir(dirPath);
+            } catch {
+                continue;
+            }
+            for (const file of files) {
+                if (!file.endsWith('.json') || file === '_all.json') continue;
+                const data = await readJsonCached(locale, path.join(dirPath, file));
+                if (data && hasPartneredMeta(data, partneredSources) && keys.some(k => Array.isArray(data[k]) && data[k].length > 0)) {
+                    result.push(data);
+                }
+            }
+            continue;
+        }
+
+        // 普通模式：优先读取 _all.json（合并文件），不存在则读取单个 JSON 文件
         const allJsonPath = path.join(dirPath, '_all.json');
         try {
             await fs.access(allJsonPath);
