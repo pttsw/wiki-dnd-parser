@@ -1,227 +1,8 @@
-import { execSync } from 'child_process';
 import fs from 'fs/promises';
-import * as fsSync from 'fs';
+import { execSync } from 'child_process';
 import path from 'path';
-import { Readable } from 'stream';
-import { finished } from 'stream/promises';
-import { createUnzip } from 'zlib';
 import config from './config.js';
 import { resolveCopiesInBothDirectories, resolveCopiesInHomebrewDirectories } from './copyResolver.js';
-
-// ==================== Homebrew 数据重组：全类别目录 ====================
-
-/**
- * 数据键名 → 类别目录名的映射。
- * 未列出的键（如 card, citation, sense 等）无对应目录，保留在原文件中。
- * 
- * 重组逻辑：遍历所有目录下的 JSON 文件，检查每个键是否映射到其他目录。
- * 若键的目标目录与当前文件所在目录不同，则将数据移动到目标目录的对应文件中。
- * 解决 homebrew 数据中各类别目录下参杂其他类别数据的问题。
- */
-const KEY_TO_DIR: Record<string, string> = {
-    // 直接对应
-    'action': 'action',
-    'adventure': 'adventure',
-    'adventureData': 'adventure',
-    'background': 'background',
-    'backgroundFluff': 'background',
-    'baseitem': 'baseitem',
-    'book': 'book',
-    'bookData': 'book',
-    'boon': 'boon',
-    'charoption': 'charoption',
-    'class': 'class',
-    'classFeature': 'class',
-    'classFluff': 'class',
-    'condition': 'condition',
-    'conditionFluff': 'condition',
-    'cult': 'cult',
-    'deck': 'deck',
-    'deity': 'deity',
-    'disease': 'disease',
-    'diseaseFluff': 'disease',
-    'encounter': 'encounter',
-    'encounterData': 'encounter',
-    'feat': 'feat',
-    'featFluff': 'feat',
-    'hazard': 'hazard',
-    'item': 'item',
-    'itemEntry': 'item',
-    'itemFluff': 'item',
-    'itemGroup': 'item',
-    'itemMastery': 'item',
-    'itemProperty': 'item',
-    'itemType': 'item',
-    'itemTypeAdditionalEntries': 'item',
-    'language': 'language',
-    'languageFluff': 'language',
-    'legendaryGroup': 'creature',
-    'magicvariant': 'magicvariant',
-    'makebrewCreatureTrait': 'makebrew',
-    'monster': 'creature',
-    'monsterFluff': 'creature',
-    'object': 'object',
-    'objectFluff': 'object',
-    'optionalfeature': 'optionalfeature',
-    'optionalfeatureFluff': 'optionalfeature',
-    'race': 'race',
-    'raceFluff': 'race',
-    'recipe': 'recipe',
-    'recipeFluff': 'recipe',
-    'reward': 'reward',
-    'rewardFluff': 'reward',
-    'spell': 'spell',
-    'spellFluff': 'spell',
-    'subclass': 'subclass',
-    'subclassFeature': 'subclass',
-    'subclassFluff': 'subclass',
-    'subrace': 'subrace',
-    'table': 'table',
-    'trap': 'trap',
-    'variantrule': 'variantrule',
-    'vehicle': 'vehicle',
-    'vehicleFluff': 'vehicle',
-    'vehicleUpgrade': 'vehicle',
-};
-
-/**
- * 全类别数据重组：遍历 homebrew 所有类别目录下的 JSON 文件，
- * 将其中不属于当前目录的数组数据剪切到正确的类别目录。
- * 
- * 覆盖所有类别目录（action, background, class, creature, spell, item, race,
- * subrace, table, trap, variantrule, vehicle, encounter, feat, language,
- * optionalfeature, subclass 等），不仅限于 collection 目录。
- * 
- * 解决 homebrew 数据中各类别目录下参杂其他类别数据的问题，
- * 确保每个类别目录下只包含该类型的数据。
- * 
- * @param homebrewDir homebrew 根目录（en 或 zh）
- */
-const reorganizeAllHomebrewData = async (homebrewDir: string): Promise<void> => {
-    // 扫描所有子目录
-    let dirNames: string[];
-    try {
-        const entries = await fs.readdir(homebrewDir, { withFileTypes: true });
-        dirNames = entries.filter((e: any) => e.isDirectory()).map((e: any) => e.name);
-    } catch {
-        console.log(`[${getTimestamp()}] homebrew 目录不存在，跳过重组: ${homebrewDir}`);
-        return;
-    }
-
-    if (dirNames.length === 0) {
-        console.log(`[${getTimestamp()}] 无子目录，跳过重组: ${homebrewDir}`);
-        return;
-    }
-
-    // 收集所有目录下的 JSON 文件: { filePath, dirName, fileName, data }
-    const allFiles: any[] = [];
-
-    for (const dir of dirNames) {
-        const dirPath = path.join(homebrewDir, dir);
-        let files: string[];
-        try {
-            files = await fs.readdir(dirPath);
-        } catch {
-            continue;
-        }
-
-        const jsonFiles = files.filter((f: string) => f.endsWith('.json'));
-        for (const file of jsonFiles) {
-            const filePath = path.join(dirPath, file);
-            try {
-                const content = await fs.readFile(filePath, 'utf-8');
-                const data = JSON.parse(content);
-                allFiles.push({ filePath, dirName: dir, fileName: file, data });
-            } catch {
-                // 跳过不可读的文件
-            }
-        }
-    }
-
-    // 第一遍扫描：收集需要移动的键
-    const moves: Array<{ source: any; targetDir: string; key: string; array: any[] }> = [];
-    const keysToRemove = new Map<any, string[]>();
-
-    for (const fileData of allFiles) {
-        const { data, dirName } = fileData;
-        const keys = Object.keys(data);
-
-        for (const key of keys) {
-            // 跳过元数据、特殊键名和非数组
-            if (key.startsWith('_') || key.startsWith('$') || key.startsWith('foundry')) continue;
-            if (!Array.isArray(data[key])) continue;
-            if (data[key].length === 0) continue;
-
-            const targetDir = KEY_TO_DIR[key];
-            if (!targetDir) continue;           // 无对应目录，保留在原位
-            if (targetDir === dirName) continue; // 已在正确目录，跳过
-
-            // 需要移动此键的数据到目标目录
-            moves.push({ source: fileData, targetDir, key, array: data[key] });
-            if (!keysToRemove.has(fileData)) keysToRemove.set(fileData, []);
-            keysToRemove.get(fileData)!.push(key);
-        }
-    }
-
-    if (moves.length === 0) {
-        console.log(`[${getTimestamp()}] 所有数据已在正确目录，无需重组 (${homebrewDir})`);
-        return;
-    }
-
-    // 按目标 (targetDir, fileName) 分组，以便合并到同一文件
-    const movesByTarget = new Map<string, Array<{ key: string; array: any[] }>>();
-
-    for (const move of moves) {
-        const targetKey = `${move.targetDir}/${move.source.fileName}`;
-        if (!movesByTarget.has(targetKey)) {
-            movesByTarget.set(targetKey, []);
-        }
-        movesByTarget.get(targetKey)!.push({ key: move.key, array: move.array });
-    }
-
-    // 写入目标文件（合并已有数据）
-    for (const [targetKey, keyArrays] of movesByTarget) {
-        const [targetDir, ...fileNameParts] = targetKey.split('/');
-        const fileName = fileNameParts.join('/');
-        const targetDirPath = path.join(homebrewDir, targetDir);
-        const targetFilePath = path.join(targetDirPath, fileName);
-
-        await fs.mkdir(targetDirPath, { recursive: true });
-
-        let targetData: any = {};
-        try {
-            const existingContent = await fs.readFile(targetFilePath, 'utf-8');
-            targetData = JSON.parse(existingContent);
-        } catch {
-            // 目标文件不存在，使用空对象
-        }
-
-        for (const { key, array } of keyArrays) {
-            if (Array.isArray(targetData[key])) {
-                targetData[key].push(...array);
-            } else {
-                targetData[key] = array;
-            }
-        }
-
-        await fs.writeFile(targetFilePath, JSON.stringify(targetData, null, 2), 'utf-8');
-    }
-
-    // 从源文件中删除已移动的键
-    for (const [fileData, keys] of keysToRemove) {
-        for (const key of keys) {
-            delete fileData.data[key];
-        }
-        await fs.writeFile(fileData.filePath, JSON.stringify(fileData.data, null, 2), 'utf-8');
-    }
-
-    const totalMoved = moves.reduce((sum, m) => sum + m.array.length, 0);
-    const sourceDirs = [...new Set(moves.map(m => m.source.dirName))];
-    const targetDirs = [...new Set(moves.map(m => m.targetDir))];
-    console.log(`[${getTimestamp()}] 全类别数据重组完成: 扫描 ${dirNames.length} 个目录，` +
-        `从 ${sourceDirs.join(', ')} 移动 ${moves.length} 个键 ` +
-        `到 ${targetDirs.join(', ')}，共 ${totalMoved} 条数据`);
-};
 
 interface ChangedArray {
     name: string;
@@ -482,76 +263,66 @@ const generateReplaceLogs = async (repoDir: string, zhDir: string, enDir: string
             stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
         
+        const previousCommit = execSync('git rev-parse HEAD~1', {
+            cwd: repoDir,
+            encoding: 'utf-8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        }).trim();
+        
         replaceLogs.commit = getCommitInfo(latestCommit, repoDir);
+        replaceLogs.previousCommit = getCommitInfo(previousCommit, repoDir);
         
-        let previousCommit = '';
-        try {
-            previousCommit = execSync('git rev-parse HEAD~1', {
-                cwd: repoDir,
-                encoding: 'utf-8',
-                stdio: ['ignore', 'pipe', 'ignore']
-            }).trim();
-        } catch {
-            console.log(`[${getTimestamp()}]   depth=1，跳过 previous commit 对比`);
-        }
+        const diffOutput = execSync(`git diff ${previousCommit} ${latestCommit} --name-status`, {
+            cwd: repoDir,
+            encoding: 'utf-8',
+            stdio: ['ignore', 'pipe', 'ignore']
+        });
         
-        if (previousCommit) {
-            replaceLogs.previousCommit = getCommitInfo(previousCommit, repoDir);
+        const lines = diffOutput.trim().split('\n');
+        
+        for (const line of lines) {
+            const [status, filePath] = line.split('\t');
+            if (!filePath) continue;
             
-            const diffOutput = execSync(`git diff ${previousCommit} ${latestCommit} --name-status`, {
-                cwd: repoDir,
-                encoding: 'utf-8',
-                stdio: ['ignore', 'pipe', 'ignore']
-            });
+            const jsonMatch = filePath.match(/(data|data-bak)\/(.+\.json)/);
+            if (!jsonMatch) continue;
             
-            const lines = diffOutput.trim().split('\n');
+            const locale = jsonMatch[1] === 'data' ? 'zh' : 'en';
             
-            for (const line of lines) {
-                const [status, filePath] = line.split('\t');
-                if (!filePath) continue;
-                
-                const jsonMatch = filePath.match(/(data|data-bak)\/(.+\.json)/);
-                if (!jsonMatch) continue;
-                
-                const locale = jsonMatch[1] === 'data' ? 'zh' : 'en';
-                
-                let changedArrays: ChangedArray[] = [];
-                
-                if (status !== 'D') {
-                    try {
-                        const newContent = await fs.readFile(path.join(repoDir, filePath), 'utf-8');
-                        let oldContent = '';
-                        if (status !== 'A') {
-                            try {
-                                oldContent = execSync(`git show ${previousCommit}:${filePath}`, {
-                                    cwd: repoDir,
-                                    encoding: 'utf-8',
-                                    stdio: ['ignore', 'pipe', 'ignore']
-                                }).trim();
-                            } catch {
-                                oldContent = '';
-                            }
+            let changedArrays: ChangedArray[] = [];
+            
+            if (status !== 'D') {
+                try {
+                    const newContent = await fs.readFile(path.join(repoDir, filePath), 'utf-8');
+                    let oldContent = '';
+                    if (status !== 'A') {
+                        try {
+                            oldContent = execSync(`git show ${previousCommit}:${filePath}`, {
+                                cwd: repoDir,
+                                encoding: 'utf-8',
+                                stdio: ['ignore', 'pipe', 'ignore']
+                            }).trim();
+                        } catch {
+                            oldContent = '';
                         }
-                        const changedArraysResult = analyzeJsonDiff(oldContent, newContent);
-                        changedArrays = changedArraysResult;
-                    } catch {
-                        changedArrays = [{ name: 'content', type: 'modified' }];
                     }
+                    const changedArraysResult = analyzeJsonDiff(oldContent, newContent);
+                    changedArrays = changedArraysResult;
+                } catch {
+                    changedArrays = [{ name: 'content', type: 'modified' }];
                 }
-                
-                let fileStatus: 'added' | 'modified' | 'deleted' = 'modified';
-                if (status === 'A') fileStatus = 'added';
-                if (status === 'D') fileStatus = 'deleted';
-                
-                replaceLogs.changedFiles.push({
-                    filePath: jsonMatch[2],
-                    locale,
-                    status: fileStatus,
-                    changedArrays
-                });
             }
-        } else {
-            console.log(`[${getTimestamp()}]   depth=1，无法计算 diff，跳过变更文件列表`);
+            
+            let fileStatus: 'added' | 'modified' | 'deleted' = 'modified';
+            if (status === 'A') fileStatus = 'added';
+            if (status === 'D') fileStatus = 'deleted';
+            
+            replaceLogs.changedFiles.push({
+                filePath: jsonMatch[2],
+                locale,
+                status: fileStatus,
+                changedArrays
+            });
         }
     } catch (error) {
         console.warn(`[${getTimestamp()}] 生成 replace-logs.json 失败:`, error);
@@ -690,112 +461,14 @@ const buildProxyEnv = () => {
 };
 
 /**
- * 克隆单个仓库，将指定子目录复制到目标路径。
- */
-const cloneAndCopy = async (
-    repoUrl: string,
-    tempDir: string,
-    subdirMappings: { source: string; target: string }[],
-    execOptions: { stdio: 'inherit'; env: NodeJS.ProcessEnv },
-    branch?: string,
-    onBeforeCleanup?: (tempDir: string) => Promise<void>
-) => {
-    console.log(`[${getTimestamp()}] 正在克隆仓库: ${repoUrl}`);
-    
-    // 清理临时目录
-    const safeRmdir = async (dir: string, retries = 3) => {
-        try {
-            execSync(`taskkill /f /im git.exe 2>nul`, { stdio: 'pipe' });
-        } catch {}
-        for (let i = 0; i < retries; i++) {
-            try {
-                await fs.rm(dir, { recursive: true, force: true });
-                return true;
-            } catch (err: any) {
-                if ((err.code === 'EBUSY' || err.code === 'ENOENT') && i < retries - 1) {
-                    await new Promise(r => setTimeout(r, 1000));
-                } else if (err.code !== 'ENOENT') {
-                    throw err;
-                } else {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-    
-    await safeRmdir(tempDir);
-    
-    // 克隆仓库
-    const cloneArgs = [
-        'clone',
-        '--depth',
-        '1',
-        ...(branch ? ['--branch', branch] : []),
-        repoUrl,
-        tempDir,
-    ];
-    console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
-    execSync(`git ${cloneArgs.join(' ')} 2>&1`, { stdio: 'pipe', env: execOptions.env, timeout: 600000 });
-    console.log(`[${getTimestamp()}] 克隆完成！`);
-    
-    // fetch 额外 commit 用于 diff
-    console.log(`[${getTimestamp()}] 获取额外 commit 用于 diff 对比...`);
-    execSync(`git -C ${tempDir} fetch --depth 2 2>&1`, { stdio: 'pipe', env: execOptions.env, timeout: 600000 });
-    console.log(`[${getTimestamp()}] 获取完成！`);
-    
-    // 验证仓库完整性
-    console.log(`[${getTimestamp()}] 验证仓库完整性...`);
-    try {
-        const headCommit = execSync(`git -C ${tempDir} rev-parse HEAD 2>&1`, { stdio: 'pipe' });
-        console.log(`[${getTimestamp()}] HEAD: ${headCommit.toString().trim()}`);
-    } catch (e) {
-        console.error(`[${getTimestamp()}] 仓库不完整，尝试修复...`);
-        await safeRmdir(tempDir);
-        execSync(`git ${cloneArgs.join(' ')} 2>&1`, { stdio: 'pipe', env: execOptions.env, timeout: 600000 });
-    }
-    console.log(`[${getTimestamp()}] 仓库验证通过！`);
-    
-    // 复制子目录到目标路径
-    for (const mapping of subdirMappings) {
-        const sourcePath = path.join(tempDir, mapping.source);
-        const targetPath = mapping.target;
-        const sourceExists = await fs.access(sourcePath).then(() => true).catch(() => false);
-        
-        if (sourceExists) {
-            await fs.mkdir(path.dirname(targetPath), { recursive: true });
-            await fs.rm(targetPath, { recursive: true, force: true });
-            await fs.cp(sourcePath, targetPath, { recursive: true });
-            console.log(`[${getTimestamp()}]   复制 ${mapping.source} → ${targetPath}`);
-        } else {
-            console.warn(`[${getTimestamp()}] 警告: 找不到源目录 ${sourcePath}`);
-        }
-    }
-    
-    // 清理前的回调（如生成 replace-logs）
-    if (onBeforeCleanup) {
-        await onBeforeCleanup(tempDir);
-    }
-    
-    // 清理临时目录
-    try {
-        await safeRmdir(tempDir);
-        console.log(`[${getTimestamp()}] 临时目录已清理`);
-    } catch (rmErr) {
-        console.warn(`[${getTimestamp()}] 警告: 无法清理临时目录 ${tempDir}，忽略错误继续执行...`);
-    }
-};
-
-/**
- * 分别克隆中英文仓库，将数据复制到目标路径。
- * @param zhRepoUrl 中文数据仓库地址
- * @param enRepoUrl 英文数据仓库地址（含 data 和 js）
+ * 将特定repo的data/data-bak/js目录克隆到目标路径。
+ * @param repoUrl 仓库地址，例如 https://github.com/tjliqy/5etools-mirror-2.github.io.git
  * @param targetPaths 目标路径，例如 { zh: '<DATA_ZH_DIR父目录>', en: '<DATA_EN_DIR父目录>' }
  * @param branch 分支名（可选），默认使用仓库默认分支
+ * @returns
  */
 const getRepoData = async (
-    zhRepoUrl: string,
-    enRepoUrl: string,
+    repoUrl: string,
     targetPaths: { zh: string; en: string },
     branch?: string
 ) => {
@@ -809,53 +482,145 @@ const getRepoData = async (
         );
     }
     const execOptions = { stdio: 'inherit' as const, env: proxy.env };
+    console.log(`[${getTimestamp()}] 正在克隆仓库: ${repoUrl}${branchText}`);
+    const tempDir = './temp-git-clone';
+
+    // 安全删除目录，带重试
+    const safeRmdir = async (dir: string, retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+            try {
+                await fs.rm(dir, { recursive: true, force: true });
+                return true;
+            } catch (err: any) {
+                if (err.code === 'EBUSY' && i < retries - 1) {
+                    // console.log(`[${getTimestamp()}] 目录繁忙，等待重试...`);
+                    await new Promise(r => setTimeout(r, 1000));
+                } else {
+                    throw err;
+                }
+            }
+        }
+        return false;
+    };
 
     try {
-        // 1. 克隆中文仓库（tjliqy/mirror）→ data/ → input/5e-cn/data
-        console.log(`[${getTimestamp()}] === 克隆中文数据仓库 ===`);
-        await cloneAndCopy(
-            zhRepoUrl,
-            './temp-git-clone-zh',
-            [{ source: 'data', target: path.join(targetPaths.zh, 'data') }],
-            execOptions,
-            branch,
-            // 清理前生成 replace-logs.json
-            async (tempDir: string) => {
-                console.log(`[${getTimestamp()}] 生成 replace-logs.json...`);
-                await generateReplaceLogs(tempDir, config.DATA_ZH_DIR, config.DATA_EN_DIR);
-            }
-        );
+        console.log(`[${getTimestamp()}] 清理临时目录...`);
+        // 移除临时目录
+        await safeRmdir(tempDir);
+
+        console.log(`[${getTimestamp()}] 开始克隆仓库...`);
+        // 使用 --depth 2 来获取最近两次提交，以便比较差异
+        const cloneArgs = [
+            'clone',
+            '--depth',
+            '2',
+            ...(branch ? ['--branch', branch] : []),
+            repoUrl,
+            tempDir,
+        ];
+        console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
+        execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+        console.log(`[${getTimestamp()}] 克隆完成！`);
         
-        // 2. 克隆英文仓库（5etools-src）→ data/ → input/5e-en/data, js/ → input/5e-en/js
-        console.log(`[${getTimestamp()}] === 克隆英文数据仓库 ===`);
-        await cloneAndCopy(
-            enRepoUrl,
-            './temp-git-clone-en',
-            [
-                { source: 'data', target: path.join(targetPaths.en, 'data') },
-                { source: 'js', target: path.join(targetPaths.en, 'js') },
-            ],
-            execOptions,
-            branch
-        );
+        // 生成 replace-logs.json
+        console.log(`[${getTimestamp()}] 生成 replace-logs.json...`);
+        await generateReplaceLogs(tempDir, config.DATA_ZH_DIR, config.DATA_EN_DIR);
         
-        // 验证关键文件是否存在
+        // 检查目录结构
+        const tempContent = await fs.readdir(tempDir, { withFileTypes: true });
+        // console.log(`[${getTimestamp()}] 临时目录内容:`);
+        for (const entry of tempContent) {
+            // console.log(`[${getTimestamp()}]   - ${entry.name} (${entry.isDirectory() ? '目录' : '文件'})`);
+        }
+
+        // console.log(`[${getTimestamp()}] 移动数据文件到目标目录...`);
+        // 将tempDir的data/data-bak目录移动到目标路径的data子目录（使用rename方法更快），然后删除tempDir
+        const zhSourcePath = path.join(tempDir, 'data');
+        const enSourcePath = path.join(tempDir, 'data-bak');
+        const jsSourcePath = path.join(tempDir, 'js');
         const zhTargetPath = path.join(targetPaths.zh, 'data');
         const enTargetPath = path.join(targetPaths.en, 'data');
+        const zhJsTargetPath = path.join(targetPaths.zh, 'js');
+        const enJsTargetPath = path.join(targetPaths.en, 'js');
+        
+        // 确保目标目录存在
+        await fs.mkdir(targetPaths.zh, { recursive: true });
+        await fs.mkdir(targetPaths.en, { recursive: true });
+        
+        // 检查源文件是否存在
+        const zhExists = await fs.access(zhSourcePath).then(() => true).catch(() => false);
+        const enExists = await fs.access(enSourcePath).then(() => true).catch(() => false);
+        const jsExists = await fs.access(jsSourcePath).then(() => true).catch(() => false);
+        
+        // console.log(`[${getTimestamp()}] 源文件检查 - data: ${zhExists}, data-bak: ${enExists}, js: ${jsExists}`);
+        
+        if (zhExists) {
+            await fs.rm(zhTargetPath, { recursive: true, force: true });
+            await fs.cp(zhSourcePath, zhTargetPath, { recursive: true });
+            // console.log(`[${getTimestamp()}] 中文数据已复制到: ${zhTargetPath}`);
+            
+            // 验证复制结果
+            const zhTargetContent = await fs.readdir(zhTargetPath);
+            // console.log(`[${getTimestamp()}] 中文目标目录内容: ${zhTargetContent.join(', ')}`);
+        } else {
+            console.warn(`[${getTimestamp()}] 警告: 找不到中文数据源目录: ${zhSourcePath}`);
+        }
+        
+        if (enExists) {
+            await fs.rm(enTargetPath, { recursive: true, force: true });
+            await fs.cp(enSourcePath, enTargetPath, { recursive: true });
+            // console.log(`[${getTimestamp()}] 英文数据已复制到: ${enTargetPath}`);
+            
+            // 验证复制结果
+            const enTargetContent = await fs.readdir(enTargetPath);
+            // console.log(`[${getTimestamp()}] 英文目标目录内容: ${enTargetContent.join(', ')}`);
+        } else {
+            console.warn(`[${getTimestamp()}] 警告: 找不到英文数据源目录: ${enSourcePath}`);
+        }
+        
+        if (jsExists) {
+            await fs.rm(zhJsTargetPath, { recursive: true, force: true });
+            await fs.rm(enJsTargetPath, { recursive: true, force: true });
+            await fs.cp(jsSourcePath, zhJsTargetPath, { recursive: true });
+            await fs.cp(jsSourcePath, enJsTargetPath, { recursive: true });
+            // console.log(`[${getTimestamp()}] JS文件已复制`);
+        } else {
+            console.warn(`[${getTimestamp()}] 警告: 找不到JS源目录: ${jsSourcePath}`);
+        }
+        
+        // 验证关键文件是否存在
         const zhBooksPath = path.join(zhTargetPath, 'books.json');
         const enBooksPath = path.join(enTargetPath, 'books.json');
+        const zhBestiaryIndexPath = path.join(zhTargetPath, 'bestiary', 'index.json');
+        const enBestiaryIndexPath = path.join(enTargetPath, 'bestiary', 'index.json');
+        
+        // console.log(`[${getTimestamp()}] 验证关键文件:`);
         const zhBooksExists = await fs.access(zhBooksPath).then(() => true).catch(() => false);
         const enBooksExists = await fs.access(enBooksPath).then(() => true).catch(() => false);
+        const zhBestiaryIndexExists = await fs.access(zhBestiaryIndexPath).then(() => true).catch(() => false);
+        const enBestiaryIndexExists = await fs.access(enBestiaryIndexPath).then(() => true).catch(() => false);
         
-        if (zhBooksExists && enBooksExists) {
-            console.log(`[${getTimestamp()}] 数据克隆成功: zh=${zhTargetPath}, en=${enTargetPath}`);
-        } else {
-            console.warn(`[${getTimestamp()}] 警告: 部分关键文件缺失 - zh/books.json: ${zhBooksExists}, en/books.json: ${enBooksExists}`);
+        // console.log(`[${getTimestamp()}]   - zh/books.json: ${zhBooksExists}`);
+        // console.log(`[${getTimestamp()}]   - en/books.json: ${enBooksExists}`);
+        // console.log(`[${getTimestamp()}]   - zh/bestiary/index.json: ${zhBestiaryIndexExists}`);
+        // console.log(`[${getTimestamp()}]   - en/bestiary/index.json: ${enBestiaryIndexExists}`);
+        
+        // 尝试删除临时目录，但即使失败也继续执行
+        try {
+            await safeRmdir(tempDir);
+            console.log(`[${getTimestamp()}] 临时目录已清理`);
+        } catch (rmErr) {
+            console.warn(`[${getTimestamp()}] 警告: 无法清理临时目录 ${tempDir}，忽略错误继续执行...`);
         }
+        
+        console.log(
+            `[${getTimestamp()}] 数据克隆成功: zh=${zhTargetPath}, en=${enTargetPath}, js=(${zhJsTargetPath}, ${enJsTargetPath})`
+        );
     } catch (error) {
         // 即使克隆过程出错，也尝试处理 _copy
         console.error(`[${getTimestamp()}] 克隆过程中出错: ${error}`);
         console.log(`[${getTimestamp()}] 继续尝试处理 _copy...`);
+        // 不再抛出错误，让程序继续执行
     }
 };
 
@@ -954,210 +719,54 @@ const HOMEBREW_SPARSE_PATTERNS = [
 ];
 
 /**
- * 检查目录是否包含有效的 homebrew JSON 数据。
- * 如果目录存在（即使为空），也视为有效，避免重复克隆。
+ * 克隆单个 homebrew 仓库到目标目录，使用稀疏签出跳过不需要的目录和文件。
  */
-const hasValidHomebrewData = async (dir: string): Promise<boolean> => {
-    try {
-        await fs.access(dir);
-        return true; // 目录存在即视为有效，避免重复克隆
-    } catch {
-        return false;
-    }
-};
-
 const cloneHomebrewRepo = async (
     repoUrl: string,
     targetDir: string,
     execOptions: { stdio: 'inherit'; env: NodeJS.ProcessEnv }
 ) => {
-    // 检查是否已有有效数据，如有则跳过克隆
-    if (await hasValidHomebrewData(targetDir)) {
-        console.log(`[${getTimestamp()}] ${targetDir} 已存在有效数据，跳过克隆`);
-        return;
-    }
-
     console.log(`[${getTimestamp()}] 正在克隆 homebrew 仓库: ${repoUrl}`);
 
-    // 先清理 index.lock 和残留的 git 进程
-    try {
-        execSync(`taskkill /f /im git.exe 2>nul`, { stdio: 'pipe' });
-    } catch {
-        // 忽略清理失败
-    }
-
-    // 安全删除目标目录（忽略所有错误，包括权限问题）
-    const safeRmdir = async (dir: string) => {
-        try {
-            await fs.rm(dir, { recursive: true, force: true });
-        } catch {
-            // 回退方案：使用系统命令删除
+    // 安全删除目标目录
+    const safeRmdir = async (dir: string, retries = 3) => {
+        for (let i = 0; i < retries; i++) {
             try {
-                execSync(`rmdir /s /q "${dir}" 2>nul`, { stdio: 'pipe' });
-            } catch {
-                // 忽略所有错误
+                await fs.rm(dir, { recursive: true, force: true });
+                return true;
+            } catch (err: any) {
+                if (err.code === 'EBUSY' && i < retries - 1) {
+                    await new Promise(r => setTimeout(r, 1000));
+                } else {
+                    throw err;
+                }
             }
         }
+        return false;
     };
-
-    // 先清理旧的 index.lock 和残留的 git 进程
-    try {
-        execSync(`taskkill /f /im git.exe 2>nul`, { stdio: 'pipe' });
-    } catch {
-        // 忽略清理失败
-    }
 
     await safeRmdir(targetDir);
     await fs.mkdir(path.dirname(targetDir), { recursive: true });
 
-    // 使用 partial clone + sparse checkout 只拉取需要的数据文件
-    // --filter=blob:none 只下载元数据（树对象），不下载文件内容（blob）
-    // --no-checkout 先不检出文件，等 sparse-checkout 配置完成后再检出
-    // 注意：不使用 cwd 参数，直接使用相对路径（相对于项目根目录），避免路径嵌套
-    const cloneArgs = ['clone', '--depth', '1', '--filter=blob:none', '--no-checkout', repoUrl, targetDir];
+    // 使用 --filter=blob:none (blobless clone) + --no-checkout，
+    // 仅下载 tree 对象，checkout 时按稀疏签出模式按需拉取 JSON 文件
+    const cloneArgs = ['clone', '--depth', '2', '--filter=blob:none', '--no-checkout', repoUrl, targetDir];
     console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
-    execSync(`git ${cloneArgs.join(' ')}`, {
-        stdio: 'inherit',
-        env: execOptions.env,
-        timeout: 300000, // 5 分钟超时
-    });
+    execSync(`git ${cloneArgs.join(' ')}`, execOptions);
 
-    console.log(`[${getTimestamp()}] 元数据下载完成，配置 sparse-checkout 排除不需要的文件...`);
+    // 初始化稀疏签出（no-cone 模式支持排除模式）
+    execSync(`git -C ${targetDir} sparse-checkout init --no-cone`, execOptions);
 
-    // 配置 sparse checkout 排除不需要的文件和目录
-    // 使用 --no-cone 模式支持排除模式（! 前缀）
-    // 只拉取 .json 文件，排除 _img、_doc、_font、_node、_test 等非数据目录和文件
-    const sparseCheckoutPatterns = [
-        '/*',                    // 包含根目录下所有内容
-        '!/_img/**',             // 排除 _img 目录
-        '!/_doc/**',             // 排除 _doc 目录
-        '!/_font/**',            // 排除 _font 目录
-        '!/_node/**',            // 排除 _node 目录
-        '!/_test/**',            // 排除 _test 目录
-        '!.editorconfig',        // 排除配置文件
-        '!.gitattributes',
-        '!.gitignore',
-        '!README.md',
-        '!package.json',
-        '!package-lock.json',
-        '!*.md',                 // 排除所有 markdown 文件
-        '!*.png',                // 排除所有图片文件
-        '!*.jpg',
-        '!*.jpeg',
-        '!*.gif',
-        '!*.svg',
-        '!*.ico',
-        '!*.woff',               // 排除字体文件
-        '!*.woff2',
-        '!*.ttf',
-        '!*.eot',
-        '!*.zip',                // 排除压缩包
-        '!*.tar.gz',
-    ];
-
-    // 直接写入 sparse-checkout 配置文件（兼容所有 Git 版本）
-    const gitInfoDir = path.join(targetDir, '.git', 'info');
-    fsSync.mkdirSync(gitInfoDir, { recursive: true });
-    fsSync.writeFileSync(
-        path.join(gitInfoDir, 'sparse-checkout'),
-        sparseCheckoutPatterns.join('\n') + '\n',
+    // 写入稀疏签出模式
+    await fs.writeFile(
+        path.join(targetDir, '.git', 'info', 'sparse-checkout'),
+        HOMEBREW_SPARSE_PATTERNS.join('\n') + '\n',
         'utf-8'
     );
 
-    // 启用 sparse checkout
-    execSync(`git -C "${targetDir}" config core.sparseCheckout true`, {
-        stdio: 'pipe',
-        env: execOptions.env,
-    });
-
-    // 检出文件（仅下载被 sparse-checkout 允许的文件的 blob，大幅减少下载量）
-    console.log(`[${getTimestamp()}] 检出文件（仅下载需要的数据，跳过 _img/_doc/_font 等非数据文件）...`);
-    execSync(`git -C "${targetDir}" checkout HEAD`, {
-        stdio: 'inherit',
-        env: execOptions.env,
-        timeout: 300000, // 5 分钟超时
-    });
-
+    // 执行签出
+    execSync(`git -C ${targetDir} checkout`, execOptions);
     console.log(`[${getTimestamp()}] homebrew 仓库克隆完成: ${targetDir}`);
-};
-
-/**
- * 需要保留不合并的目录列表。
- * _generated 目录只有 5 个文件，且是系统自动生成的，无需合并。
- * 其他所有类别目录（adventure, book, class, creature, spell, subclass 等）
- * 均可安全合并为 _all.json，因为 loadHomebrewByKeys 和 loadAllHomebrewFiles
- * 都已支持优先读取 _all.json。
- */
-const PER_PUBLICATION_CATEGORIES = new Set([
-    '_generated',
-]);
-
-/**
- * 合并 homebrew 所有分类目录下的 JSON 文件为单个 _all.json 文件。
- * 将所有小文件合并为一个 _all.json，将数千个小文件读取减少到几十个，
- * 大幅加快后续 start:homebrew 的加载速度。
- */
-const consolidateHomebrewData = async (homebrewDir: string): Promise<void> => {
-    let dirNames: string[];
-    try {
-        const entries = await fs.readdir(homebrewDir, { withFileTypes: true });
-        dirNames = entries.filter(e => e.isDirectory()).map(e => e.name);
-    } catch {
-        return;
-    }
-
-    let totalConsolidated = 0;
-    let totalFiles = 0;
-
-    for (const dir of dirNames) {
-        if (PER_PUBLICATION_CATEGORIES.has(dir)) continue;
-
-        const dirPath = path.join(homebrewDir, dir);
-        let files: string[];
-        try {
-            files = await fs.readdir(dirPath);
-        } catch {
-            continue;
-        }
-
-        const jsonFiles = files.filter(f => f.endsWith('.json') && f !== '_all.json');
-        if (jsonFiles.length <= 1) continue; // 只有一个文件，没必要合并
-
-        // 读取所有文件，合并数组数据
-        const merged: Record<string, any[]> = {};
-        for (const file of jsonFiles) {
-            try {
-                const content = await fs.readFile(path.join(dirPath, file), 'utf-8');
-                const data = JSON.parse(content);
-                for (const key of Object.keys(data)) {
-                    if (key.startsWith('_') || key.startsWith('$') || key.startsWith('foundry')) continue;
-                    if (!Array.isArray(data[key])) continue;
-                    if (!merged[key]) merged[key] = [];
-                    for (const item of data[key]) {
-                        merged[key].push(item);
-                    }
-                }
-            } catch {
-                // 跳过不可读的文件
-            }
-        }
-
-        // 写入 _all.json
-        await fs.writeFile(
-            path.join(dirPath, '_all.json'),
-            JSON.stringify(merged, null, 2),
-            'utf-8'
-        );
-
-        totalConsolidated++;
-        totalFiles += jsonFiles.length;
-    }
-
-    if (totalConsolidated > 0) {
-        console.log(`[${getTimestamp()}] homebrew 数据合并完成: ${totalConsolidated} 个目录，${totalFiles} 个文件 → ${totalConsolidated} 个 _all.json`);
-    } else {
-        console.log(`[${getTimestamp()}] 无需合并，所有目录已是出版物格式`);
-    }
 };
 
 /**
@@ -1226,15 +835,6 @@ const getHomebrewRepoData = async (
         return;
     }
 
-    // 第1步：全类别数据重组（先整理数据，确保 _copy 引用在干净的数据上解析）
-    console.log(`[${getTimestamp()}] 开始重组 homebrew 全类别数据...`);
-    await Promise.all([
-        reorganizeAllHomebrewData(enHomebrewDataPath),
-        reorganizeAllHomebrewData(zhHomebrewDataPath),
-    ]);
-    console.log(`[${getTimestamp()}] homebrew 全类别数据重组完成`);
-
-    // 第2步：处理 _copy 引用（在重组后的数据上解析，确保引用指向正确目录）
     console.log(`[${getTimestamp()}] 开始处理 homebrew _copy 引用...`);
 
     await resolveCopiesInHomebrewDirectories(
@@ -1245,104 +845,46 @@ const getHomebrewRepoData = async (
     );
 
     console.log(`[${getTimestamp()}] homebrew _copy 引用处理完成`);
-
-    // 第3步：合并非出版物类别的数据为 _all.json（减少文件数，加速 start:homebrew 加载）
-    console.log(`[${getTimestamp()}] 开始合并 homebrew 非出版物类别数据...`);
-    await Promise.all([
-        consolidateHomebrewData(enHomebrewDataPath),
-        consolidateHomebrewData(zhHomebrewDataPath),
-    ]);
-    console.log(`[${getTimestamp()}] homebrew 数据合并完成`);
 };
 
 (async () => {
-    try {
-        const zhRoot = path.dirname(config.DATA_ZH_DIR);
-        const enRoot = path.dirname(config.DATA_EN_DIR);
+    const zhRoot = path.dirname(config.DATA_ZH_DIR);
+    const enRoot = path.dirname(config.DATA_EN_DIR);
 
-        const isHomebrew = process.argv.includes('--homebrew');
+    const isHomebrew = process.argv.includes('--homebrew');
 
-        if (isHomebrew) {
-            const enHomebrewDir = config.HOMEBREW_EN_DIR;
-            const zhHomebrewDir = config.HOMEBREW_ZH_DIR;
+    if (isHomebrew) {
+        const enHomebrewDir = path.join(enRoot, 'homebrew');
+        const zhHomebrewDir = path.join(zhRoot, 'homebrew');
 
-            console.log(`[${getTimestamp()}] === Homebrew 模式 ===`);
-            await getHomebrewRepoData(
-                'https://github.com/TheGiddyLimit/homebrew.git',
-                'https://github.com/tjliqy/homebrew.git',
-                enHomebrewDir,
-                zhHomebrewDir
-            );
-            return;
-        }
+        console.log(`[${getTimestamp()}] === Homebrew 模式 ===`);
+        await getHomebrewRepoData(
+            'https://github.com/TheGiddyLimit/homebrew.git',
+            'https://github.com/tjliqy/homebrew.git',
+            enHomebrewDir,
+            zhHomebrewDir
+        );
+        return;
+    }
 
     const patchedRoot = './input/patched/';
 
-    // 始终重新拉取最新数据（删除旧数据目录，重新克隆）
-    const safeRemoveDir = async (dir: string) => {
-        // 如果目录包含 homebrew 子目录，先删除除 homebrew 外的其他子目录
-        const homebrewDir = path.join(dir, 'homebrew');
-        const homebrewExists = await fs.access(homebrewDir).then(() => true).catch(() => false);
-        if (homebrewExists) {
-            // 只删除 data 和 js 子目录（保留 homebrew 目录）
-            const subDirs = ['data', 'js'];
-            for (const subDir of subDirs) {
-                const subPath = path.join(dir, subDir);
-                try {
-                    await fs.rm(subPath, { recursive: true, force: true });
-                } catch {
-                    // 忽略错误
-                }
-            }
-            return;
-        }
-        // 先清理残留的 git 进程
-        try {
-            execSync(`taskkill /f /im git.exe 2>nul`, { stdio: 'pipe' });
-        } catch {
-            // 忽略清理失败
-        }
-        // 重试删除，最多 3 次
-        for (let attempt = 1; attempt <= 3; attempt++) {
-            try {
-                await fs.rm(dir, { recursive: true, force: true });
-                return;
-            } catch (err) {
-                if (attempt < 3) {
-                    console.log(`[${getTimestamp()}] 删除目录失败 (尝试 ${attempt}/3): ${dir}，等待后重试...`);
-                    // 再次清理 git 进程
-                    try {
-                        execSync(`taskkill /f /im git.exe 2>nul`, { stdio: 'pipe' });
-                    } catch {}
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                } else {
-                    // 最后一次尝试：使用系统命令
-                    console.log(`[${getTimestamp()}] 使用系统命令强制删除: ${dir}`);
-                    try {
-                        execSync(`rmdir /s /q "${dir}" 2>nul`, { stdio: 'pipe' });
-                    } catch (e) {
-                        throw new Error(`无法删除目录 ${dir}: ${err}`);
-                    }
-                }
-            }
-        }
-    };
+    // 预创建目录
     const paths = [zhRoot, enRoot, patchedRoot];
     for (const dirPath of paths) {
-        await safeRemoveDir(dirPath);
+        await fs.rm(dirPath, { recursive: true, force: true });
         await fs.mkdir(dirPath, { recursive: true });
     }
 
     console.log(`[${getTimestamp()}] 开始克隆中英数据...`);
-    await getRepoData(
-        'https://github.com/tjliqy/5etools-mirror-2.github.io.git',   // 中文仓库
-        'https://github.com/5etools-mirror-3/5etools-src.git',          // 英文仓库（官方最新）
-        { zh: zhRoot, en: enRoot }
-    );
+    await getRepoData('https://github.com/tjliqy/5etools-mirror-2.github.io.git', {
+        zh: zhRoot,
+        en: enRoot,
+    });
     
-    // 检查数据目录是否存在
     const zhDataPath = path.join(zhRoot, 'data');
     const enDataPath = path.join(enRoot, 'data');
+    
     const zhDataExists = await fs.access(zhDataPath).then(() => true).catch(() => false);
     const enDataExists = await fs.access(enDataPath).then(() => true).catch(() => false);
     
@@ -1375,9 +917,4 @@ const getHomebrewRepoData = async (
     }
     
     // console.log(`[${getTimestamp()}] success`);
-    } catch (error: any) {
-        console.error(`[${getTimestamp()}] 错误: ${error?.message || error}`);
-        console.error(error?.stack || '');
-        process.exit(1);
-    }
 })();
