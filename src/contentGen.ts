@@ -114,6 +114,62 @@ const findTitleInEntry = (entry: any, targetTitle: string): boolean => {
 };
 
 class TagParser {
+    /**
+     * 所有 {@tag} 标签的默认来源映射。
+     * 当标签的 param 中没有指定来源（即 parts[1] 为空）时，使用此默认值。
+     */
+    private static readonly TAG_DEFAULT_SOURCES: Record<string, string> = {
+        // 核心规则书类
+        '@spell': 'PHB',
+        '@item': 'DMG',
+        '@creature': 'MM',
+        '@class': 'PHB',
+        '@race': 'PHB',
+        '@background': 'PHB',
+        '@feat': 'PHB',
+        '@condition': 'PHB',
+        '@status': 'PHB',
+        '@disease': 'DMG',
+        '@action': 'PHB',
+        '@skill': 'PHB',
+        '@sense': 'PHB',
+        '@language': 'PHB',
+        '@table': 'DMG',
+        '@variantrule': 'DMG',
+        '@object': 'DMG',
+        '@trap': 'DMG',
+        '@hazard': 'DMG',
+        '@deck': 'DMG',
+        '@reward': 'DMG',
+        '@deity': 'PHB',
+        '@optfeature': 'PHB',
+        '@quickref': 'PHB',
+        '@cite': 'PHB',
+        '@card': 'DMG',
+        // 职业/子职/特性类
+        '@subclass': 'PHB',
+        '@classFeature': 'PHB',
+        '@subclassFeature': 'PHB',
+        // 补充书籍类
+        '@boon': 'MTF',
+        '@cult': 'MTF',
+        '@vehicle': 'GoS',
+        '@vehupgrade': 'GoS',
+        '@legroup': 'MM',
+        '@charoption': 'MOT',
+        '@psionic': 'UATMC',
+        '@creatureFluff': 'MM',
+        // 2024 规则类
+        '@facility': 'XDMG',
+        '@itemMastery': 'XPHB',
+        // 特殊/扩展类
+        '@recipe': 'HF',
+        '@crochet': 'CaBoMP',
+        '@crochetFluff': 'CaBoMP',
+        '@itemProperty': 'PHB',
+        '@itemEntry': 'DMG',
+    };
+
     allTags: Map<string, Set<string>> = new Map();
     constructor() {}
     /**
@@ -271,29 +327,34 @@ class TagParser {
         }
 
         // 处理{@class}标签，将特性位置（等级-索引）转换为特性名称
+        // 同时为没有来源后缀的添加|PHB后缀
         if (tag.tagName === '@class' && tag.param) {
             const parts = tag.param.split('|');
             const className = parts[0]?.trim();
-            const source = parts[1]; // 保留原始值（可能为空）
-            const subclass = parts[2]; // 保留原始值（可能为空）
+            const source = parts[1]?.trim() || 'PHB'; // 默认为 PHB
+            const subclass = parts[2]?.trim() || ''; // 保留原始值（可能为空）
             const featurePosition = parts[3]?.trim();
 
             // 如果第四个参数是特性位置格式（等级-索引），尝试转换为特性名称
             let newParam = tag.param;
+            // 先确保来源已填充
+            if (!parts[1]?.trim()) {
+                newParam = `${className}|${source}${subclass ? `|${subclass}` : ''}${featurePosition ? `|${featurePosition}` : ''}`;
+            }
             if (featurePosition && featurePosition.includes('-')) {
                 const [levelStr, indexStr] = featurePosition.split('-');
                 const level = parseInt(levelStr, 10);
                 const index = parseInt(indexStr, 10);
                 
                 if (!isNaN(level) && !isNaN(index)) {
-                    // 传递子类职业的实际值（可能为空字符串）
-                    const subclassValue = subclass?.trim() || '';
-                    const featureName = this.findClassNameByPosition(className, source?.trim() || '', subclassValue, level, index, isZh);
+                    // 传递子类职业的实际值
+                    const subclassValue = subclass || '';
+                    const featureName = this.findClassNameByPosition(className, source, subclassValue, level, index, isZh);
                     if (featureName) {
-                        // 构建新的标签参数，用特性名称替换位置，保留空值
+                        // 构建新的标签参数，用特性名称替换位置，使用默认来源
                         newParam = className;
-                        newParam += `|${source || ''}`;  // 保留第二个参数（可能为空）
-                        newParam += `|${subclass || ''}`; // 保留第三个参数（可能为空）
+                        newParam += `|${source}`;
+                        newParam += `|${subclass || ''}`;
                         newParam += `|${featureName}`;
                     }
                 }
@@ -409,7 +470,30 @@ class TagParser {
             return `{${tag.tagName} ${newParam}}`;
         }
 
-        // 保存原始参数
+        // 通用默认来源处理：检查是否有默认来源配置且用户未指定来源
+        if (tag.param) {
+            const defaultSource = TagParser.TAG_DEFAULT_SOURCES[tag.tagName];
+            if (defaultSource) {
+                const parts = tag.param.split('|');
+                const name = parts[0].trim();
+                const source = parts[1]?.trim() || '';
+                const restParams = parts.slice(2);
+
+                if (!source) {
+                    const restStr = restParams.length > 0 ? '|' + restParams.join('|') : '';
+                    const result = `{${tag.tagName} ${name}|${defaultSource}${restStr}}`;
+                    const newParam = `${name}|${defaultSource}${restStr}`;
+                    if (this.allTags.has(tag.tagName)) {
+                        this.allTags.get(tag.tagName)!.add(newParam);
+                    } else {
+                        this.allTags.set(tag.tagName, new Set([newParam]));
+                    }
+                    return result;
+                }
+            }
+        }
+
+        // 保存原始参数（未匹配任何处理逻辑的标签）
         if (this.allTags.has(tag.tagName)) {
             this.allTags.get(tag.tagName)!.add(tag.param || '');
         } else {

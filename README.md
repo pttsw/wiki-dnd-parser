@@ -155,8 +155,11 @@ npm run racetable
 # JSON 输出（./output）
 npm run start
 
-# JSON 输出（./output，包括homebrew）
+# JSON 输出（./output，包括合作方内容）
 npm run start:homebrew
+
+# 处理官方 + 所有自制数据（含非合作方）
+npm run start:homebrew:all
 ```
 5. 查看 `output/logs.json` 与 `output/idMgr.xlsx` 定位缺失翻译或 ID 不匹配。
 6. 确认没有错误后，运行 `npm run page` 生成 `./output_page`（homebrew 模式：`npm run page:homebrew`）。
@@ -164,8 +167,11 @@ npm run start:homebrew
 # Wiki 页面输出（./output_page）
 npm run page
 
-# homebrew Wiki 页面输出（./output_page，包括homebrew）
+# homebrew Wiki 页面输出（./output_page，包括合作方内容）
 npm run page:homebrew
+
+# 处理官方 + 所有自制数据（含非合作方）
+npm run page:homebrew:all
 ```
 7. 运行 `npm run listFiles` 可查看`./output`与`./output_page`输出文件列表。
 ```bash
