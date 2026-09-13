@@ -15,7 +15,7 @@ import {
     resolveCaseInsensitiveOutputFileName,
     splitStructuredRecordByDiff,
 } from './shared.js';
-import { isHomebrewMode, HOMEBREW_FILE_MAP, mergeHomebrewBilingual, isHomebrewSource } from '../homebrewLoader.js';
+import { isHomebrewMode, HOMEBREW_FILE_MAP, mergeHomebrewBilingual, isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
 
 export interface ExportItem {
     dataType: string;
@@ -151,7 +151,8 @@ const defaultBuildEntity = (
         dataType,
         uid: `${dataType}_${id}`,
         id,
-        ishomebrew: isHomebrewSource(enItem.source),
+        ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+        ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
         basicRules2024: !!(enItem.basicRules2024 || enItem.edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
         ...common,
         source: enItem.source,
@@ -276,7 +277,8 @@ export class BaseExporter {
             src: item.mainSource?.source || '',
             name_en: item.displayName?.en || '',
             name_zh: item.displayName?.zh || item.displayName?.en || '',
-            ishomebrew: !!item.ishomebrew
+            ...(item.ishomebrew ? { ishomebrew: true } : {}),
+            ...(item.ispartnered ? { ispartnered: true } : {})
         }));
 
         const output = {

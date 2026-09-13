@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -88,7 +88,7 @@ import { runFeatExporter } from './exporters/featExporter.js';
 import { escapeFileName, loadSubraceReplacementByNameMap, sectionTextIdMap, SubraceReplacement } from './exporters/shared.js';
 import { generateContents } from './generate-contents.js';
 import { splitBooks } from './split-books.js';
-import { isHomebrewMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource } from './homebrewLoader.js';
+import { isHomebrewMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource, isPartneredSource } from './homebrewLoader.js';
 
 interface InputChangedArray {
     name: string;
@@ -270,7 +270,8 @@ async function generateCollectionNameList(type: string, items: any[], outputDir:
             src: item.mainSource?.source || '',
             name_en: item.displayName?.en || '',
             name_zh: item.displayName?.zh || item.displayName?.en || '',
-            ishomebrew: !!item.ishomebrew
+            ...(item.ishomebrew ? { ishomebrew: true } : {}),
+            ...(item.ispartnered ? { ispartnered: true } : {})
         }));
         
         const output = {
@@ -1489,7 +1490,8 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
                 dataType: 'feat',
                 uid: `feat_${id}`,
                 id: id,
-                ishomebrew: isHomebrewSource(enFeat.source),
+                ...(isHomebrewSource(enFeat.source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(enFeat.source) ? { ispartnered: true } : {}),
                 ...common,
                 translator,
                 displayName: {
@@ -2339,7 +2341,8 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
                 dataType: 'item',
                 uid: `item_${id}`,
                 id: id,
-                ishomebrew: isHomebrewSource(enItem.source),
+                ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
                 basicRules2024: !!((enItem as any).basicRules2024 || (enItem as any).edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -2908,7 +2911,8 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
                 dataType: 'item',
                 uid: `item_${id} `,
                 id: id,
-                ishomebrew: isHomebrewSource(enItem.source),
+                ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
                 basicRules2024: !!((enItem as any).basicRules2024 || (enItem as any).edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -3536,7 +3540,8 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
             dataType: 'item',
             uid: `item_${opts.id}`,
             id: opts.id,
-            ishomebrew: isHomebrewSource(opts.source),
+            ...(isHomebrewSource(opts.source) ? { ishomebrew: true } : {}),
+            ...(isPartneredSource(opts.source) ? { ispartnered: true } : {}),
             basicRules2024: !!(enItem.basicRules2024 || enItem.edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
             ...common,
             translator,
@@ -4319,7 +4324,8 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 dataType: 'spell',
                 uid: `spell_${id}`,
                 id: id,
-                ishomebrew: isHomebrewSource(enSpell.source),
+                ...(isHomebrewSource(enSpell.source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(enSpell.source) ? { ispartnered: true } : {}),
                 basicRules2024: !!((enSpell as any).basicRules2024 || (enSpell as any).edition === 'one' || (typeof enSpell.source === 'string' && enSpell.source.startsWith('X'))),
                 ...common,
                 translator,
@@ -4628,7 +4634,8 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 dataType: 'bestiary',
                 uid: `bestiary_${id}`,
                 id,
-                ishomebrew: isHomebrewSource(enMonster.source),
+                ...(isHomebrewSource(enMonster.source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(enMonster.source) ? { ispartnered: true } : {}),
                 basicRules2024: !!(enMonster.basicRules2024 || enMonster.edition === 'one' || (typeof enMonster.source === 'string' && enMonster.source.startsWith('X'))),
                 ...common,
                 referenceSources,
@@ -4696,7 +4703,8 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 dataType: 'bestiary',
                 uid: `bestiary_${id}`,
                 id,
-                ishomebrew: isHomebrewSource(source),
+                ...(isHomebrewSource(source) ? { ishomebrew: true } : {}),
+                ...(isPartneredSource(source) ? { ispartnered: true } : {}),
                 basicRules2024: !!(typeof source === 'string' && source.startsWith('X')),
                 ...common,
                 referenceSources: [],
@@ -4832,98 +4840,6 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
         return data;
     }
 
-    // 处理 alignment 文本生成（参考Lua函数）
-    private processAlignmentText(alignmentData: any, language: string = 'zh'): string {
-        const alignment_Type: Record<string, string> = {
-            'L': '守序',
-            'C': '混乱',
-            'G': '善良',
-            'N': '中立',
-            'E': '邪恶',
-            'U': '无阵营',
-            'A': '任意阵营'
-        };
-
-        const alignment_Type_en: Record<string, string> = {
-            'L': 'lawful',
-            'C': 'chaotic',
-            'G': 'good',
-            'N': 'neutral',
-            'E': 'evil',
-            'U': 'Unaligned',
-            'A': 'Any Alignment'
-        };
-
-        const OrTitle: Record<string, string> = {
-            'zh': '或',
-            'en': ' or '
-        };
-
-        if (!alignmentData) {
-            return '';
-        }
-
-        // 提取alignment数组和prefix
-        const alignmenttags = Array.isArray(alignmentData) 
-            ? alignmentData 
-            : (alignmentData?.alignment || []);
-        const alignmentPrefix = alignmentData?.alignmentPrefix || '';
-
-        let result = '';
-        const ataglist: string[] = [];
-
-        for (const atag of alignmenttags) {
-            if (typeof atag === 'string') {
-                // 直接映射单个字符（alignment已经是数组，每个元素是单个字符如"N"或"G"）
-                if (language === 'zh') {
-                    result += alignment_Type[atag] || atag;
-                } else {
-                    result += alignment_Type_en[atag] || atag;
-                }
-            } else if (typeof atag === 'object' && atag !== null) {
-                const atagalignment = atag.alignment || '';
-                const chance = atag.chance || 0;
-                const atagalignmentPrefix = atag.alignmentPrefix || alignmentPrefix || '';
-
-                // 处理子alignment（可能是字符串或数组）
-                let subAlignmentText = '';
-                if (typeof atagalignment === 'string') {
-                    const tags = atagalignment.split(',');
-                    for (const tag of tags) {
-                        if (language === 'zh') {
-                            subAlignmentText += alignment_Type[tag] || tag;
-                        } else {
-                            subAlignmentText += alignment_Type_en[tag] || tag;
-                        }
-                    }
-                } else if (Array.isArray(atagalignment)) {
-                    for (const tag of atagalignment) {
-                        if (typeof tag === 'string') {
-                            if (language === 'zh') {
-                                subAlignmentText += alignment_Type[tag] || tag;
-                            } else {
-                                subAlignmentText += alignment_Type_en[tag] || tag;
-                            }
-                        }
-                    }
-                }
-
-                let atagalignment_text = atagalignmentPrefix + subAlignmentText;
-
-                if (chance > 0) {
-                    atagalignment_text += '（' + chance + '%）';
-                }
-                ataglist.push(atagalignment_text);
-            }
-        }
-
-        if (ataglist.length > 0) {
-            result = ataglist.join(OrTitle[language]);
-        }
-
-        return result;
-    }
-
     private transformSpellcastingSpells(data: Record<string, any>) {
         try {
             if (data.zh && data.zh.spellcasting && Array.isArray(data.zh.spellcasting)) {
@@ -4998,29 +4914,6 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
 
             // 处理 spellcasting 字段中的 spells 和 daily
             // this.transformSpellcastingViaStringify(processedData);
-
-            // 处理 alignment 字段
-            if (processedData.alignment) {
-                // 构建 alignment 块
-                const alignmentBlock: any = {
-                    alignment: processedData.alignment
-                };
-
-                // 生成 alignmenttext
-                alignmentBlock.alignmenttext = this.processAlignmentText(processedData.alignment);
-
-                // 处理 alignmentPrefix
-                if (processedData.en?.alignmentPrefix) {
-                    alignmentBlock.alignmentPrefix = processedData.en.alignmentPrefix;
-                    delete processedData.en.alignmentPrefix;
-                }
-                if (processedData.zh?.alignmentPrefix) {
-                    delete processedData.zh.alignmentPrefix;
-                }
-
-                // 替换原有的 alignment 字段
-                processedData.alignment = alignmentBlock;
-            }
 
             // 处理 initiative 字段（参考render.js的getInitiativeBonusNumber和_getInitiativePassive逻辑）
             if (processedData.initiative !== undefined) {
@@ -5258,7 +5151,7 @@ const loadIndexedSpellData = async (): Promise<{ en: SpellFile; zh: SpellFile }>
             loadHomebrewByKeys('zh', ['spell']),
         ]);
         // 收集 homebrew 来源标识符
-        if (enHb.spell) collectHomebrewItemSources(enHb);
+        if (enHb.spell) await collectHomebrewItemSources(enHb);
         if (enHb.spell) en.spell.push(...enHb.spell);
         if (zhHb.spell) zh.spell.push(...zhHb.spell);
     }
@@ -5322,7 +5215,7 @@ const loadIndexedBestiaryData = async (): Promise<{ en: MonsterFile; zh: Monster
             loadHomebrewByKeys('zh', ['monster']),
         ]);
         // 收集 homebrew 来源标识符
-        if (enHb.monster) collectHomebrewItemSources(enHb);
+        if (enHb.monster) await collectHomebrewItemSources(enHb);
         if (enHb.monster) en.monster.push(...enHb.monster);
         if (zhHb.monster) zh.monster.push(...zhHb.monster);
     }

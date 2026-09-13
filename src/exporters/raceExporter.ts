@@ -755,7 +755,8 @@ export const runRaceExporter = async (): Promise<RaceExporterResult> => {
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || '',
-        ishomebrew: !!item.ishomebrew,
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {}),
         superior: item.superiorfork?.superior || '',
         races: item.races || [],
     }));
@@ -765,7 +766,8 @@ export const runRaceExporter = async (): Promise<RaceExporterResult> => {
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || '',
-        ishomebrew: !!item.ishomebrew,
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {}),
         superior: item.superiorfork?.superior || '',
         races: [],
     }));
@@ -775,7 +777,8 @@ export const runRaceExporter = async (): Promise<RaceExporterResult> => {
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || '',
-        ishomebrew: !!item.ishomebrew,
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {}),
         superior: item.superiorfork?.superior || '',
         races: [],
     }));

@@ -868,16 +868,15 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 src: item.mainSource?.source || '',
                 name_en: item.displayName?.en || '',
                 name_zh: item.displayName?.zh || item.displayName?.en || '',
-                ishomebrew: !!item.ishomebrew,
+                ...(item.ishomebrew ? { ishomebrew: true } : {}),
+                ...(item.ispartnered ? { ispartnered: true } : {}),
                 basicRules2024,
                 superior: item.superiorfork?.superior || ''
             };
         }),
         ...subclassOutput.map(item => {
             const superiorId = item.superiorfork?.superior || '';
-            // 使用完整的上级职业 ID（如 "Wizard|PHB"）来查找 basicRules2024
             const parentBasicRules2024 = classBasicRulesMap.get(superiorId) || false;
-            // 如果子职业自身的 basicRules2024 为 true，或者上级职业的 basicRules2024 为 true，则为 true
             const basicRules2024 = (item.basicRules2024 || false) || parentBasicRules2024;
             
             return {
@@ -885,7 +884,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
                 src: item.mainSource?.source || '',
                 name_en: item.displayName?.en || '',
                 name_zh: item.displayName?.zh || item.displayName?.en || '',
-                ishomebrew: !!item.ishomebrew,
+                ...(item.ishomebrew ? { ishomebrew: true } : {}),
+                ...(item.ispartnered ? { ispartnered: true } : {}),
                 basicRules2024,
                 superior: superiorId
             };
@@ -906,7 +906,8 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || item.displayName?.en || '',
-        ishomebrew: !!item.ishomebrew,
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {}),
         basicRules2024: item.basicRules2024 || false,
         superior: item.superiorfork?.superior || ''    }));
     

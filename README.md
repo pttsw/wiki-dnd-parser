@@ -8,7 +8,7 @@
   `src/wikiPageGenerator.ts`（`npm run page`，根据 `./output` 目录下输出的 JSON 文件，生成对应的 wiki 内容页面）
   `src/list-files.ts`（`npm run listFiles`，输出output跟page文件对应页面名的收集表格）
   `src/generateRaceTable.ts`（`npm run racetable`，补全`子种族名字替换词典.xlsx`缺失数据）
-- 所有脚本均提供 `:homebrew` 后缀版本（如 `npm run start:homebrew`），用于处理第三方自制（homebrew）数据。
+- 提供 `:partnered` 和 `:homebrew` 两个版本（如 `npm run start:partnered` / `npm run start:homebrew`），分别用于处理合作方（partnered）和所有第三方自制（homebrew）数据。
 
 运行逻辑概览
 
@@ -150,16 +150,16 @@ npm run getCnRepo:homebrew
 npm run racetable
 ```
 3. 修改 `src/config.ts` 的 `DATA_EN_DIR` / `DATA_ZH_DIR`。
-4. 运行 `npm run start` 生成 `./output`（如需合并 homebrew 数据，使用 `npm run start:homebrew`）。
+4. 运行 `npm run start` 生成 `./output`（如需合并 homebrew 数据，使用 `npm run start:homebrew`；仅合作方使用 `npm run start:partnered`）。
 ```bash
 # JSON 输出（./output）
 npm run start
 
-# JSON 输出（./output，包括合作方内容）
-npm run start:homebrew
+# JSON 输出（./output，仅合作方内容）
+npm run start:partnered
 
-# 处理官方 + 所有自制数据（含非合作方）
-npm run start:homebrew:all
+# 处理官方 + 所有自制数据（含合作方和纯玩家自制）
+npm run start:homebrew
 ```
 5. 查看 `output/logs.json` 与 `output/idMgr.xlsx` 定位缺失翻译或 ID 不匹配。
 6. 确认没有错误后，运行 `npm run page` 生成 `./output_page`（homebrew 模式：`npm run page:homebrew`）。
@@ -167,11 +167,11 @@ npm run start:homebrew:all
 # Wiki 页面输出（./output_page）
 npm run page
 
-# homebrew Wiki 页面输出（./output_page，包括合作方内容）
-npm run page:homebrew
+# Wiki 页面输出（./output_page，仅合作方内容）
+npm run page:partnered
 
-# 处理官方 + 所有自制数据（含非合作方）
-npm run page:homebrew:all
+# 处理官方 + 所有自制数据（含合作方和纯玩家自制）
+npm run page:homebrew
 ```
 7. 运行 `npm run listFiles` 可查看`./output`与`./output_page`输出文件列表。
 ```bash
@@ -179,17 +179,24 @@ npm run page:homebrew:all
 npm run listFiles
 ```
 ---
-### Homebrew 模式（`*:homebrew` 指令）
+### Homebrew / Partnered 模式
 
-项目支持处理 5etools 生态的第三方自制（homebrew）数据，所有核心指令均提供 `:homebrew` 后缀版本。homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddyLimit/homebrew)（英文）和 [tjliqy/homebrew](https://github.com/tjliqy/homebrew)（中文翻译），数据存放于 `./input/5e-en/homebrew` 和 `./input/5e-cn/homebrew`。
+项目支持处理 5etools 生态的第三方自制（homebrew）数据，并在此基础上支持合作方（partnered）模式，区分商业合作方内容与纯玩家自制内容：
+
+- **Partnered 模式**（`start:partnered` / `page:partnered`）：仅加载标记为 `partnered: true` 的合作方内容，输出标记 `ispartnered: true`
+- **Homebrew 模式**（`start:homebrew` / `page:homebrew`）：加载所有第三方自制数据（含合作方和纯玩家自制），合作方标记 `ispartnered: true`，纯玩家自制标记 `ishomebrew: true`
+
+homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddyLimit/homebrew)（英文）和 [tjliqy/homebrew](https://github.com/tjliqy/homebrew)（中文翻译），数据存放于 `./input/5e-en/homebrew` 和 `./input/5e-cn/homebrew`。
 
 #### 指令对照表
 
 | 指令 | 对应脚本 | 作用（相对基础版本的差异） |
 | --- | ------- | ------------------------ |
 | `npm run getCnRepo:homebrew` | `getGitRepo.ts --homebrew` | 拉取包括 homebrew 仓库数据（blobless clone + sparse-checkout 仅下载 JSON）；生成 `replace-logs-homebrew.json` 跟踪变更；**全类别数据重组**（遍历所有类别目录的 JSON 文件，将参杂到错误目录的数据剪切到正确的类别目录，如 `spell/`、`item/`、`creature/`、`race/`、`class/`、`subrace/`、`table/`、`trap/`、`variantrule/`、`vehicle/`、`encounter/` 等 30+ 种类型）；**最后解析 `_copy` 引用**（在重组后的干净数据上解析 homebrew 引用的官方数据） |
-| `npm run start:homebrew` | `prepareData.ts --homebrew` | 在加载官方数据时，自动从 `HOMEBREW_EN_DIR`/`HOMEBREW_ZH_DIR` 加载对应的 homebrew 分类数据并合并到各导出器处理 |
-| `npm run page:homebrew` | `prepareData.ts --page --homebrew` + `generateBookPages.ts` | 先生成含 homebrew 数据的 JSON 输出，再生成对应的 Wiki 页面（包含 homebrew 内容） |
+| `npm run start:partnered` | `prepareData.ts --homebrew --partnered` | 在加载官方数据时，自动加载对应的 homebrew 分类数据（**仅限合作方内容**），输出标记 `ispartnered: true` |
+| `npm run start:homebrew` | `prepareData.ts --homebrew` | 在加载官方数据时，自动加载**所有** homebrew 分类数据（合作方 + 纯玩家自制），合作方输出标记 `ispartnered: true`，纯玩家自制标记 `ishomebrew: true` |
+| `npm run page:partnered` | `prepareData.ts --page --homebrew --partnered` + `generateBookPages.ts` | 先生成含合作方数据的 JSON 输出，再生成对应的 Wiki 页面 |
+| `npm run page:homebrew` | `prepareData.ts --page --homebrew` + `generateBookPages.ts` | 先生成含所有 homebrew 数据的 JSON 输出，再生成对应的 Wiki 页面 |
 | `npm run generateContents:homebrew` | `generate-contents.ts --homebrew` | 合并 homebrew 的 book/adventure 元数据到出版物目录 `output/contents/` |
 | `npm run splitBooks:homebrew` | `split-books.ts --homebrew` | 加载 homebrew 的 book/adventure 数据（含 book data 内容）到分割处理中 |
 | `npm run racetable:homebrew` | `generateRaceTable.ts --homebrew` | 合并 homebrew 的 subrace/race 数据到`子种族名字替换词典.xlsx` |

@@ -28,7 +28,8 @@ const generateSpellNameList = async (
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || item.displayName?.en || '',
-        ishomebrew: !!item.ishomebrew
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {})
     }));
 
     const output = {

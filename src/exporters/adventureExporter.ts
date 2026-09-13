@@ -77,7 +77,8 @@ export const runAdventureExporter = async (): Promise<AdventureExporterResult> =
                         src: data.source,
                         name_en: data.displayName?.en || '',
                         name_zh: data.displayName?.zh || data.displayName?.en || '',
-                        ishomebrew: !!data.ishomebrew
+                        ...(data.ishomebrew ? { ishomebrew: true } : {}),
+                        ...(data.ispartnered ? { ispartnered: true } : {})
                     });
                 }
             } catch {

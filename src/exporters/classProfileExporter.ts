@@ -16,7 +16,7 @@ import {
     resolveCaseInsensitiveOutputFileName,
     splitStructuredRecordByDiff,
 } from './shared.js';
-import { isHomebrewSource } from '../homebrewLoader.js';
+import { isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
 
 type LoggerLike = {
     log: (source: string, message: string) => void;
@@ -167,7 +167,8 @@ const buildEntityBase = (
         dataType,
         uid: `${dataType}_${id}`,
         id,
-        ishomebrew: isHomebrewSource(enItem.source),
+        ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+        ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
         ...common,
         source: enItem.source,
         page: enItem.page || 0,
@@ -291,7 +292,8 @@ const writeNameListOutput = async (
         src: item.mainSource?.source || '',
         name_en: item.displayName?.en || '',
         name_zh: item.displayName?.zh || item.displayName?.en || '',
-        ishomebrew: !!item.ishomebrew
+        ...(item.ishomebrew ? { ishomebrew: true } : {}),
+        ...(item.ispartnered ? { ispartnered: true } : {})
     }));
     
     const output = {
