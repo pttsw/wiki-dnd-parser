@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -387,6 +387,50 @@ async function loadConfigContentsNames(): Promise<Record<string, { zh: string; e
     return names;
 }
 
+async function loadCollectionSources(
+    homebrewDir: string,
+    result: Record<string, { name_en: string; name_zh: string; published: string; partnered: boolean }>,
+    locale: 'en' | 'zh'
+): Promise<void> {
+    const collectionDir = path.join(homebrewDir, 'collection');
+    try {
+        const files = await fs.readdir(collectionDir);
+        for (const file of files) {
+            if (!file.endsWith('.json')) continue;
+            try {
+                const content = await fs.readFile(path.join(collectionDir, file), 'utf-8');
+                const data = JSON.parse(content);
+                const sources = data._meta?.sources;
+                if (!Array.isArray(sources)) continue;
+                for (const source of sources) {
+                    if (!source.json) continue;
+                    const existing = result[source.json];
+                    const isPartnered = source.partnered === true;
+                    if (locale === 'en') {
+                        result[source.json] = {
+                            name_en: source.full || source.json,
+                            name_zh: existing?.name_zh || source.full || source.json,
+                            published: source.published || '',
+                            partnered: existing ? (existing.partnered || isPartnered) : isPartnered,
+                        };
+                    } else {
+                        result[source.json] = {
+                            name_en: existing?.name_en || source.full || source.json,
+                            name_zh: source.full || source.json,
+                            published: source.published || '',
+                            partnered: existing ? (existing.partnered || isPartnered) : isPartnered,
+                        };
+                    }
+                }
+            } catch {
+                // 忽略单个文件错误
+            }
+        }
+    } catch {
+        // collection 目录可能不存在，忽略
+    }
+}
+
 async function generateSourcesJson(
     bookMgr: BookMgr,
     featMgr: FeatMgr,
@@ -427,6 +471,11 @@ async function generateSourcesJson(
         const parserJsPath = path.join(dataEnDir, 'js/parser.js');
         const legacySources = await getLegacySources(parserJsPath);
 
+        // 扫描 homebrew collection 目录，收集合集来源信息
+        const collectionSources: Record<string, { name_en: string; name_zh: string; published: string; partnered: boolean }> = {};
+        await loadCollectionSources(config.HOMEBREW_EN_DIR, collectionSources, 'en');
+        await loadCollectionSources(config.HOMEBREW_ZH_DIR, collectionSources, 'zh');
+
         // 收集每个来源包含的类别
         const sourceTypes: Record<string, Set<string>> = {};
 
@@ -438,6 +487,11 @@ async function generateSourcesJson(
         // 初始化每个模组来源
         for (const adv of enAdventures) {
             sourceTypes[adv.id] = new Set();
+        }
+
+        // 初始化每个合集来源
+        for (const sourceId of Object.keys(collectionSources)) {
+            sourceTypes[sourceId] = new Set();
         }
 
         // 收集专长来源
@@ -569,6 +623,19 @@ async function generateSourcesJson(
                 name_en: configName?.en || adv.name,
                 source_published: adv.published || '',
                 name_zh: configName?.zh || adv.name,
+                newest: !legacySources.has(id),
+                have: Array.from(sourceTypes[id] || [])
+            };
+        }
+
+        // 生成 collection 来源数据（来自 homebrew collection 目录）
+        for (const [id, sourceInfo] of Object.entries(collectionSources)) {
+            data[id] = {
+                id: id,
+                type: sourceInfo.partnered ? 'partnered' : 'homebrew',
+                name_en: sourceInfo.name_en,
+                source_published: sourceInfo.published,
+                name_zh: sourceInfo.name_zh,
                 newest: !legacySources.has(id),
                 have: Array.from(sourceTypes[id] || [])
             };
