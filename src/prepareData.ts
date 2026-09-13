@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -433,19 +433,7 @@ async function loadCollectionSources(
 
 async function generateSourcesJson(
     bookMgr: BookMgr,
-    featMgr: FeatMgr,
-    spellMgr: SpellMgr,
-    baseItemMgr: BaseItemMgr,
-    itemMgr: ItemMgr,
-    magicVariantMgr: MagicVariantMgr,
-    bestiaryMgr: BestiaryMgr,
-    raceData: Record<string, any>[],
-    classData: Record<string, any>[],
-    backgroundData: Record<string, any>[],
-    hazardData: Record<string, any>[],
-    trapData: Record<string, any>[],
-    genericProfileData: Record<string, Record<string, any>[]>,
-    outputDir: string
+    namelistDir: string
 ) {
     try {
         const enBooks = bookMgr.raw.en?.book || [];
@@ -476,7 +464,7 @@ async function generateSourcesJson(
         await loadCollectionSources(config.HOMEBREW_EN_DIR, collectionSources, 'en');
         await loadCollectionSources(config.HOMEBREW_ZH_DIR, collectionSources, 'zh');
 
-        // 收集每个来源包含的类别
+        // 初始化来源类型
         const sourceTypes: Record<string, Set<string>> = {};
 
         // 初始化每个扩展来源
@@ -494,107 +482,39 @@ async function generateSourcesJson(
             sourceTypes[sourceId] = new Set();
         }
 
-        // 收集专长来源
-        for (const item of featMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('feat');
-            }
+        // ★ 从 namelist 文件读取数据，聚合每个来源包含的类别
+        let namelistFiles: string[];
+        try {
+            namelistFiles = await fs.readdir(namelistDir);
+        } catch {
+            namelistFiles = [];
         }
 
-        // 收集法术来源
-        for (const item of spellMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('spell');
-            }
-        }
+        for (const file of namelistFiles) {
+            if (!file.endsWith('namelist.json')) continue;
+            try {
+                const content = await fs.readFile(path.join(namelistDir, file), 'utf-8');
+                const parsed = JSON.parse(content);
+                const typeName: string = parsed.type;
+                const items: Array<{ src: string }> = parsed.data || [];
 
-        // 收集基础物品来源
-        for (const item of baseItemMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('item');
-            }
-        }
-
-        // 收集物品来源
-        for (const item of itemMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('item');
-            }
-        }
-
-        // 收集魔法变体来源
-        for (const item of magicVariantMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('item');
-            }
-        }
-
-        // 收集怪物来源
-        for (const item of bestiaryMgr.db.values()) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('bestiary');
-            }
-        }
-
-        // 收集种族来源
-        for (const item of raceData) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('race');
-            }
-        }
-
-        // 收集职业来源
-        for (const item of classData) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('class');
-            }
-        }
-
-        // 收集背景来源
-        for (const item of backgroundData) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('background');
-            }
-        }
-
-        // 收集危险来源
-        for (const item of hazardData) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('hazard');
-            }
-        }
-
-        // 收集陷阱来源
-        for (const item of trapData) {
-            const sourceId = item.mainSource?.source;
-            if (sourceId && sourceTypes[sourceId]) {
-                sourceTypes[sourceId].add('trap');
-            }
-        }
-
-        // 收集其他通用数据类型来源
-        for (const [dataType, items] of Object.entries(genericProfileData)) {
-            for (const item of items) {
-                const sourceId = item.mainSource?.source;
-                if (sourceId && sourceTypes[sourceId]) {
-                    sourceTypes[sourceId].add(dataType);
+                for (const item of items) {
+                    const src = item.src;
+                    if (src) {
+                        if (!sourceTypes[src]) {
+                            sourceTypes[src] = new Set();
+                        }
+                        sourceTypes[src].add(typeName.toLowerCase());
+                    }
                 }
+            } catch {
+                // 忽略单个 namelist 文件错误
             }
         }
 
         const data: Record<string, any> = {};
 
-        // 生成扩展来源数据
+        // 生成扩展来源数据 (book)
         for (const enBook of enBooks) {
             const id = enBook.id;
             const zhBook = zhBooks.find(b => b.id === id);
@@ -612,7 +532,7 @@ async function generateSourcesJson(
             };
         }
 
-        // 生成模组来源数据
+        // 生成模组来源数据 (adventure)
         for (const adv of enAdventures) {
             const id = adv.id;
             const configName = configContentsNames[id];
@@ -646,7 +566,7 @@ async function generateSourcesJson(
             data: data
         };
 
-        const outputPath = path.join(outputDir, 'Sources.json');
+        const outputPath = path.join(namelistDir, 'Sources.json');
         await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
         console.log(`已生成 Sources.json 文件：${outputPath}`);
     } catch (error) {
@@ -5600,21 +5520,8 @@ let isnavpillIds = new Set<string>();
             // 生成 Sources.json
             const namelistDir = path.join('./output', 'namelist');
             await fs.mkdir(namelistDir, { recursive: true });
-            const classData = [...classResult.classes, ...classResult.subclasses];
             await generateSourcesJson(
                 bookMgr,
-                featMgr,
-                spellMgr,
-                baseItemMgr,
-                itemMgr,
-                magicVariantMgr,
-                bestiaryMgr,
-                raceResult.data,
-                classData,
-                backgroundResult.data,
-                hazardResult.data,
-                trapResult.data,
-                genericProfileData,
                 namelistDir
             );
 
