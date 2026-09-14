@@ -16,6 +16,7 @@ import {
     splitStructuredRecordByDiff,
 } from './shared.js';
 import { isHomebrewMode, HOMEBREW_FILE_MAP, mergeHomebrewBilingual, isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
+import { namelistRegistry } from '../namelistRegistry.js';
 
 export interface ExportItem {
     dataType: string;
@@ -265,30 +266,10 @@ export class BaseExporter {
             const fileName = resolveCaseInsensitiveOutputFileName(usedNames, preferredFileName, item.id);
             const filePath = path.join(sourceDir, fileName);
             await fs.writeFile(filePath, JSON.stringify(item, null, 2), 'utf-8');
+
+            // 写入时同步注册到 namelist
+            namelistRegistry.register(this.config.dataType, item);
         }
-    }
-
-    async generateNameList(outputData: Record<string, any>[], typeName: string): Promise<void> {
-        const namelistDir = path.join('./output', 'namelist');
-        await fs.mkdir(namelistDir, { recursive: true });
-
-        const namelistData = outputData.map(item => ({
-            id: item.id || '',
-            src: item.mainSource?.source || '',
-            name_en: item.displayName?.en || '',
-            name_zh: item.displayName?.zh || item.displayName?.en || '',
-            ...(item.ishomebrew ? { ishomebrew: true } : {}),
-            ...(item.ispartnered ? { ispartnered: true } : {})
-        }));
-
-        const output = {
-            type: typeName,
-            data: namelistData
-        };
-
-        const outputPath = path.join(namelistDir, `${typeName}namelist.json`);
-        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-        console.log(`已生成 ${typeName}namelist.json 文件：${outputPath}`);
     }
 
     async run(): Promise<{ count: number; data: Record<string, any>[] }> {
@@ -299,7 +280,6 @@ export class BaseExporter {
         const outputData = this.buildOutputData(enEntries, zhEntries, fluffStore);
         
         await this.writeOutputFiles(outputData, outputDir);
-        await this.generateNameList(outputData, dataType);
 
         return { count: outputData.length, data: outputData };
     }

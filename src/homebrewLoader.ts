@@ -240,6 +240,27 @@ export const loadHomebrewByKeys = async (
                     }
                 }
             }));
+
+            // 额外扫描 collection/ 目录，确保合作方合集数据被加载
+            // （reorganizeAllHomebrewData 尚未运行时，collection 数据还在 collection/ 目录下）
+            const collectionDirPath = path.join(baseDir, 'collection');
+            try {
+                const collectionFiles = await fs.readdir(collectionDirPath);
+                await Promise.all(collectionFiles.map(async (file) => {
+                    if (!file.endsWith('.json')) return;
+                    const data = await readJsonCached(locale, path.join(collectionDirPath, file));
+                    if (!data || !hasPartneredMeta(data, partneredSources)) return;
+                    for (const key of keysInDir) {
+                        if (Array.isArray(data[key])) {
+                            for (const item of data[key]) {
+                                keyToData[key].push(item);
+                            }
+                        }
+                    }
+                }));
+            } catch {
+                // collection 目录可能不存在，忽略
+            }
             return;
         }
 
@@ -337,6 +358,21 @@ export const loadAllHomebrewFiles = async (
                 if (data && hasPartneredMeta(data, partneredSources) && keys.some(k => Array.isArray(data[k]) && data[k].length > 0)) {
                     result.push(data);
                 }
+            }
+
+            // 额外扫描 collection/ 目录，确保合作方合集数据被加载
+            const collectionDirPath = path.join(baseDir, 'collection');
+            try {
+                const collectionFiles = await fs.readdir(collectionDirPath);
+                for (const file of collectionFiles) {
+                    if (!file.endsWith('.json')) continue;
+                    const data = await readJsonCached(locale, path.join(collectionDirPath, file));
+                    if (data && hasPartneredMeta(data, partneredSources) && keys.some(k => Array.isArray(data[k]) && data[k].length > 0)) {
+                        result.push(data);
+                    }
+                }
+            } catch {
+                // collection 目录可能不存在，忽略
             }
             continue;
         }

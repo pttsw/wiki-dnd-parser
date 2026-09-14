@@ -719,6 +719,298 @@ const HOMEBREW_SPARSE_PATTERNS = [
 ];
 
 /**
+ * 数据键名 → 类别目录名的映射。
+ * 未列出的键（如 card, citation, sense 等）无对应目录，保留在原文件中。
+ * 
+ * 重组逻辑：遍历所有目录下的 JSON 文件，检查每个键是否映射到其他目录。
+ * 若键的目标目录与当前文件所在目录不同，则将数据移动到目标目录的对应文件中。
+ * 解决 homebrew 数据中各类别目录下参杂其他类别数据的问题。
+ */
+const KEY_TO_DIR: Record<string, string> = {
+    // 直接对应
+    'action': 'action',
+    'adventure': 'adventure',
+    'adventureData': 'adventure',
+    'background': 'background',
+    'backgroundFluff': 'background',
+    'baseitem': 'baseitem',
+    'book': 'book',
+    'bookData': 'book',
+    'boon': 'boon',
+    'charoption': 'charoption',
+    'class': 'class',
+    'classFeature': 'class',
+    'classFluff': 'class',
+    'condition': 'condition',
+    'conditionFluff': 'condition',
+    'cult': 'cult',
+    'deck': 'deck',
+    'deity': 'deity',
+    'disease': 'disease',
+    'diseaseFluff': 'disease',
+    'encounter': 'encounter',
+    'encounterData': 'encounter',
+    'feat': 'feat',
+    'featFluff': 'feat',
+    'hazard': 'hazard',
+    'item': 'item',
+    'itemEntry': 'item',
+    'itemFluff': 'item',
+    'itemGroup': 'item',
+    'itemMastery': 'item',
+    'itemProperty': 'item',
+    'itemType': 'item',
+    'itemTypeAdditionalEntries': 'item',
+    'language': 'language',
+    'languageFluff': 'language',
+    'legendaryGroup': 'creature',
+    'magicvariant': 'magicvariant',
+    'makebrewCreatureTrait': 'makebrew',
+    'monster': 'creature',
+    'monsterFluff': 'creature',
+    'object': 'object',
+    'objectFluff': 'object',
+    'optionalfeature': 'optionalfeature',
+    'optionalfeatureFluff': 'optionalfeature',
+    'race': 'race',
+    'raceFluff': 'race',
+    'recipe': 'recipe',
+    'recipeFluff': 'recipe',
+    'reward': 'reward',
+    'rewardFluff': 'reward',
+    'spell': 'spell',
+    'spellFluff': 'spell',
+    'subclass': 'subclass',
+    'subclassFeature': 'subclass',
+    'subclassFluff': 'subclass',
+    'subrace': 'subrace',
+    'table': 'table',
+    'trap': 'trap',
+    'variantrule': 'variantrule',
+    'vehicle': 'vehicle',
+    'vehicleFluff': 'vehicle',
+    'vehicleUpgrade': 'vehicle',
+};
+
+/**
+ * 全类别数据重组：遍历 homebrew 所有类别目录下的 JSON 文件，
+ * 将其中不属于当前目录的数组数据剪切到正确的类别目录。
+ * 
+ * 覆盖所有类别目录（action, background, class, creature, spell, item, race,
+ * subrace, table, trap, variantrule, vehicle, encounter, feat, language,
+ * optionalfeature, subclass 等），不仅限于 collection 目录。
+ * 
+ * 解决 homebrew 数据中各类别目录下参杂其他类别数据的问题，
+ * 确保每个类别目录下只包含该类型的数据。
+ * 
+ * @param homebrewDir homebrew 根目录（en 或 zh）
+ */
+const reorganizeAllHomebrewData = async (homebrewDir: string): Promise<void> => {
+    // 扫描所有子目录
+    let dirNames: string[];
+    try {
+        const entries = await fs.readdir(homebrewDir, { withFileTypes: true });
+        dirNames = entries.filter((e: any) => e.isDirectory()).map((e: any) => e.name);
+    } catch {
+        console.log(`[${getTimestamp()}] homebrew 目录不存在，跳过重组: ${homebrewDir}`);
+        return;
+    }
+
+    if (dirNames.length === 0) {
+        console.log(`[${getTimestamp()}] 无子目录，跳过重组: ${homebrewDir}`);
+        return;
+    }
+
+    // 收集所有目录下的 JSON 文件: { filePath, dirName, fileName, data }
+    const allFiles: any[] = [];
+
+    for (const dir of dirNames) {
+        const dirPath = path.join(homebrewDir, dir);
+        let files: string[];
+        try {
+            files = await fs.readdir(dirPath);
+        } catch {
+            continue;
+        }
+
+        const jsonFiles = files.filter((f: string) => f.endsWith('.json'));
+        for (const file of jsonFiles) {
+            const filePath = path.join(dirPath, file);
+            try {
+                const content = await fs.readFile(filePath, 'utf-8');
+                const data = JSON.parse(content);
+                allFiles.push({ filePath, dirName: dir, fileName: file, data });
+            } catch {
+                // 跳过不可读的文件
+            }
+        }
+    }
+
+    // 第一遍扫描：收集需要移动的键
+    const moves: Array<{ source: any; targetDir: string; key: string; array: any[] }> = [];
+    const keysToRemove = new Map<any, string[]>();
+
+    for (const fileData of allFiles) {
+        const { data, dirName } = fileData;
+        const keys = Object.keys(data);
+
+        for (const key of keys) {
+            // 跳过元数据、特殊键名和非数组
+            if (key.startsWith('_') || key.startsWith('$') || key.startsWith('foundry')) continue;
+            if (!Array.isArray(data[key])) continue;
+            if (data[key].length === 0) continue;
+
+            const targetDir = KEY_TO_DIR[key];
+            if (!targetDir) continue;           // 无对应目录，保留在原位
+            if (targetDir === dirName) continue; // 已在正确目录，跳过
+
+            // 需要移动此键的数据到目标目录
+            moves.push({ source: fileData, targetDir, key, array: data[key] });
+            if (!keysToRemove.has(fileData)) keysToRemove.set(fileData, []);
+            keysToRemove.get(fileData)!.push(key);
+        }
+    }
+
+    if (moves.length === 0) {
+        console.log(`[${getTimestamp()}] 所有数据已在正确目录，无需重组 (${homebrewDir})`);
+        return;
+    }
+
+    // 按目标 (targetDir, fileName) 分组，以便合并到同一文件
+    const movesByTarget = new Map<string, Array<{ key: string; array: any[] }>>();
+
+    for (const move of moves) {
+        const targetKey = `${move.targetDir}/${move.source.fileName}`;
+        if (!movesByTarget.has(targetKey)) {
+            movesByTarget.set(targetKey, []);
+        }
+        movesByTarget.get(targetKey)!.push({ key: move.key, array: move.array });
+    }
+
+    // 写入目标文件（合并已有数据）
+    for (const [targetKey, keyArrays] of movesByTarget) {
+        const [targetDir, ...fileNameParts] = targetKey.split('/');
+        const fileName = fileNameParts.join('/');
+        const targetDirPath = path.join(homebrewDir, targetDir);
+        const targetFilePath = path.join(targetDirPath, fileName);
+
+        await fs.mkdir(targetDirPath, { recursive: true });
+
+        let targetData: any = {};
+        try {
+            const existingContent = await fs.readFile(targetFilePath, 'utf-8');
+            targetData = JSON.parse(existingContent);
+        } catch {
+            // 目标文件不存在，使用空对象
+        }
+
+        for (const { key, array } of keyArrays) {
+            if (Array.isArray(targetData[key])) {
+                targetData[key].push(...array);
+            } else {
+                targetData[key] = array;
+            }
+        }
+
+        await fs.writeFile(targetFilePath, JSON.stringify(targetData, null, 2), 'utf-8');
+    }
+
+    // 从源文件中删除已移动的键
+    for (const [fileData, keys] of keysToRemove) {
+        for (const key of keys) {
+            delete fileData.data[key];
+        }
+        await fs.writeFile(fileData.filePath, JSON.stringify(fileData.data, null, 2), 'utf-8');
+    }
+
+    const totalMoved = moves.reduce((sum, m) => sum + m.array.length, 0);
+    const sourceDirs = [...new Set(moves.map(m => m.source.dirName))];
+    const targetDirs = [...new Set(moves.map(m => m.targetDir))];
+    console.log(`[${getTimestamp()}] 全类别数据重组完成: 扫描 ${dirNames.length} 个目录，` +
+        `从 ${sourceDirs.join(', ')} 移动 ${moves.length} 个键 ` +
+        `到 ${targetDirs.join(', ')}，共 ${totalMoved} 条数据`);
+};
+
+/**
+ * 需要保留不合并的目录列表。
+ * _generated 目录只有 5 个文件，且是系统自动生成的，无需合并。
+ * 其他所有类别目录（adventure, book, class, creature, spell, subclass 等）
+ * 均可安全合并为 _all.json，因为 loadHomebrewByKeys 和 loadAllHomebrewFiles
+ * 都已支持优先读取 _all.json。
+ */
+const PER_PUBLICATION_CATEGORIES = new Set([
+    '_generated',
+]);
+
+/**
+ * 合并 homebrew 所有分类目录下的 JSON 文件为单个 _all.json 文件。
+ * 将所有小文件合并为一个 _all.json，将数千个小文件读取减少到几十个，
+ * 大幅加快后续 start:homebrew 的加载速度。
+ */
+const consolidateHomebrewData = async (homebrewDir: string): Promise<void> => {
+    let dirNames: string[];
+    try {
+        const entries = await fs.readdir(homebrewDir, { withFileTypes: true });
+        dirNames = entries.filter(e => e.isDirectory()).map(e => e.name);
+    } catch {
+        return;
+    }
+
+    let totalConsolidated = 0;
+    let totalFiles = 0;
+
+    for (const dir of dirNames) {
+        if (PER_PUBLICATION_CATEGORIES.has(dir)) continue;
+
+        const dirPath = path.join(homebrewDir, dir);
+        let files: string[];
+        try {
+            files = await fs.readdir(dirPath);
+        } catch {
+            continue;
+        }
+
+        const jsonFiles = files.filter(f => f.endsWith('.json') && f !== '_all.json');
+        if (jsonFiles.length <= 1) continue; // 只有一个文件，没必要合并
+
+        // 读取所有文件，合并数组数据
+        const merged: Record<string, any[]> = {};
+        for (const file of jsonFiles) {
+            try {
+                const content = await fs.readFile(path.join(dirPath, file), 'utf-8');
+                const data = JSON.parse(content);
+                for (const key of Object.keys(data)) {
+                    if (key.startsWith('_') || key.startsWith('$') || key.startsWith('foundry')) continue;
+                    if (!Array.isArray(data[key])) continue;
+                    if (!merged[key]) merged[key] = [];
+                    for (const item of data[key]) {
+                        merged[key].push(item);
+                    }
+                }
+            } catch {
+                // 跳过不可读的文件
+            }
+        }
+
+        // 写入 _all.json
+        await fs.writeFile(
+            path.join(dirPath, '_all.json'),
+            JSON.stringify(merged, null, 2),
+            'utf-8'
+        );
+
+        totalConsolidated++;
+        totalFiles += jsonFiles.length;
+    }
+
+    if (totalConsolidated > 0) {
+        console.log(`[${getTimestamp()}] homebrew 数据合并完成: ${totalConsolidated} 个目录，${totalFiles} 个文件 → ${totalConsolidated} 个 _all.json`);
+    } else {
+        console.log(`[${getTimestamp()}] 无需合并，所有目录已是出版物格式`);
+    }
+};
+
+/**
  * 克隆单个 homebrew 仓库到目标目录，使用稀疏签出跳过不需要的目录和文件。
  */
 const cloneHomebrewRepo = async (
@@ -845,6 +1137,32 @@ const getHomebrewRepoData = async (
     );
 
     console.log(`[${getTimestamp()}] homebrew _copy 引用处理完成`);
+
+    // 第1步：全类别数据重组（先整理数据，确保 _copy 引用在干净的数据上解析）
+    console.log(`[${getTimestamp()}] 开始重组 homebrew 全类别数据...`);
+    await Promise.all([
+        reorganizeAllHomebrewData(enHomebrewDataPath),
+        reorganizeAllHomebrewData(zhHomebrewDataPath),
+    ]);
+    console.log(`[${getTimestamp()}] homebrew 全类别数据重组完成`);
+
+    // 第2步：重新处理 _copy 引用（因为重组后可能改变了文件位置）
+    console.log(`[${getTimestamp()}] 重新处理 homebrew _copy 引用...`);
+    await resolveCopiesInHomebrewDirectories(
+        enMainDataPath,
+        zhMainDataPath,
+        enHomebrewDataPath,
+        zhHomebrewDataPath
+    );
+    console.log(`[${getTimestamp()}] homebrew _copy 引用二次处理完成`);
+
+    // 第3步：合并非出版物类别的数据为 _all.json（减少文件数，加速 start:homebrew 加载）
+    console.log(`[${getTimestamp()}] 开始合并 homebrew 非出版物类别数据...`);
+    await Promise.all([
+        consolidateHomebrewData(enHomebrewDataPath),
+        consolidateHomebrewData(zhHomebrewDataPath),
+    ]);
+    console.log(`[${getTimestamp()}] homebrew 数据合并完成`);
 };
 
 (async () => {

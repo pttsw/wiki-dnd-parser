@@ -17,6 +17,7 @@ import {
     splitStructuredRecordByDiff,
 } from './shared.js';
 import { isHomebrewMode, HOMEBREW_FILE_MAP, mergeHomebrewBilingual, isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
+import { namelistRegistry } from '../namelistRegistry.js';
 
 type LoggerLike = {
     log: (source: string, message: string) => void;
@@ -170,27 +171,10 @@ const writeFileOutput = async (
     }
 };
 
-const writeNameListOutput = async (profile: ExportProfile, data: Record<string, any>[]) => {
-    const namelistDir = path.join('./output', 'namelist');
-    await fs.mkdir(namelistDir, { recursive: true });
-    
-    const namelistData = data.map(item => ({
-        id: item.id || '',
-        src: item.mainSource?.source || '',
-        name_en: item.displayName?.en || '',
-        name_zh: item.displayName?.zh || item.displayName?.en || '',
-        ...(item.ishomebrew ? { ishomebrew: true } : {}),
-        ...(item.ispartnered ? { ispartnered: true } : {})
-    }));
-    
-    const output = {
-        type: profile.dataType,
-        data: namelistData
-    };
-    
-    const outputPath = path.join(namelistDir, `${profile.dataType}namelist.json`);
-    await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-    console.log(`已生成 ${profile.dataType}namelist.json 文件：${outputPath}`);
+const registerNameListEntries = (profile: ExportProfile, data: Record<string, any>[]) => {
+    for (const item of data) {
+        namelistRegistry.register(profile.dataType, item);
+    }
 };
 
 const buildEntity = (
@@ -325,7 +309,7 @@ const runSingleProfile = async (
     }
 
     await writeFileOutput(profile, outputData, deps.logger);
-    await writeNameListOutput(profile, outputData);
+    registerNameListEntries(profile, outputData);
 
     return outputData;
 };

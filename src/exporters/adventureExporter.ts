@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { namelistRegistry } from '../namelistRegistry.js';
 
 const removeBOM = (content: string): string => {
     if (content.startsWith('\uFEFF')) {
@@ -13,21 +14,18 @@ export interface AdventureExporterResult {
 }
 
 export const runAdventureExporter = async (): Promise<AdventureExporterResult> => {
-    const outputDir = './output';
-    const namelistDir = path.join(outputDir, 'namelist');
-    await fs.mkdir(namelistDir, { recursive: true });
-
     const adventureDataList: Array<{
         id: string;
         src: string;
         name_en: string;
         name_zh: string;
         ishomebrew: boolean;
+        ispartnered?: boolean;
     }> = [];
 
     let adventureDir: string;
     try {
-        adventureDir = path.join(outputDir, 'adventure');
+        adventureDir = path.join('./output', 'adventure');
         await fs.access(adventureDir);
     } catch {
         console.log('[AdventureExporter] 未找到 adventure 目录，跳过生成 namelist');
@@ -88,14 +86,11 @@ export const runAdventureExporter = async (): Promise<AdventureExporterResult> =
     }
 
     if (adventureDataList.length > 0) {
-        const output = {
-            type: 'adventure',
-            data: adventureDataList
-        };
-        
-        const outputPath = path.join(namelistDir, 'adventurelist.json');
-        await fs.writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-        console.log(`已生成 adventurelist.json 文件：${outputPath}`);
+        // 注册到统一 namelist 注册表
+        for (const entry of adventureDataList) {
+            namelistRegistry.register('adventure', entry);
+        }
+        console.log(`已注册 ${adventureDataList.length} 条冒险数据到 namelist`);
     }
 
     return { count: adventureDataList.length };
