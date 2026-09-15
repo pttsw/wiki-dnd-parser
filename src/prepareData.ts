@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -88,7 +88,7 @@ import { runFeatExporter } from './exporters/featExporter.js';
 import { escapeFileName, loadSubraceReplacementByNameMap, sectionTextIdMap, SubraceReplacement } from './exporters/shared.js';
 import { generateContents } from './generate-contents.js';
 import { splitBooks } from './split-books.js';
-import { isHomebrewMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource, isPartneredSource } from './homebrewLoader.js';
+import { isHomebrewMode, isPartneredMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource, isPartneredSource } from './homebrewLoader.js';
 import { namelistRegistry } from './namelistRegistry.js';
 
 interface InputChangedArray {
@@ -645,7 +645,13 @@ async function generateSourcesJson(
         }
 
         // 生成 collection 来源数据（来自 homebrew collection 目录）
+        // 根据运行模式过滤：
+        //   npm run start（非 homebrew）：不输出任何 collection 来源
+        //   npm run start:partnered：只输出合作方（partnered）collection 来源
+        //   npm run start:homebrew：输出所有 collection 来源
         for (const [id, sourceInfo] of Object.entries(collectionSources)) {
+            if (!isHomebrewMode) continue; // 非 homebrew 模式跳过所有 collection
+            if (isPartneredMode && !sourceInfo.partnered) continue; // partnered 模式跳过纯 homebrew
             data[id] = {
                 id: id,
                 type: sourceInfo.partnered ? 'partnered' : 'homebrew',

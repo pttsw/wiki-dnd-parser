@@ -16,7 +16,7 @@ import {
     resolveCaseInsensitiveOutputFileName,
     splitStructuredRecordByDiff,
 } from './shared.js';
-import { isHomebrewMode, loadHomebrewByKeys } from '../homebrewLoader.js';
+import { isHomebrewMode, loadHomebrewByKeys, isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
 
 const readJson = async <T>(filePath: string): Promise<T> => {
     const content = await fs.readFile(filePath, 'utf-8');
@@ -212,6 +212,8 @@ const buildEntityBase = (
         dataType: 'class',
         uid: `class_${id}`,
         id,
+        ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+        ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
         basicRules2024: !!(enItem.basicRules2024 || enItem.edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
         ...common,
         translator,

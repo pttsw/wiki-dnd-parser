@@ -19,7 +19,7 @@ import {
     splitStructuredRecordByDiff,
     SubraceReplacement,
 } from './shared.js';
-import { isHomebrewMode, loadHomebrewByKeys, mergeHomebrewData } from '../homebrewLoader.js';
+import { isHomebrewMode, loadHomebrewByKeys, mergeHomebrewData, isHomebrewSource, isPartneredSource } from '../homebrewLoader.js';
 
 const replaceRaceLinks = (text: string, replacementMap: Map<string, SubraceReplacement>): string => {
     return text.replace(/\{@race\s+([^}\s]+)/g, (match, raceName) => {
@@ -285,6 +285,8 @@ const buildEntityBase = (
         dataType,
         uid: `${dataType}_${id}`,
         id,
+        ...(isHomebrewSource(enItem.source) ? { ishomebrew: true } : {}),
+        ...(isPartneredSource(enItem.source) ? { ispartnered: true } : {}),
         basicRules2024: !!(enItem.basicRules2024 || enItem.edition === 'one' || (typeof enItem.source === 'string' && enItem.source.startsWith('X'))),
         ...common,
         ...topLevelExtracted,
