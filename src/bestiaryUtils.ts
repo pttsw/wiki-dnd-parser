@@ -153,6 +153,14 @@ export const splitBestiaryRecord = (
             continue;
         }
         
+        // alignment 和 passive 字段固定输出到 en 和 zh 各一个
+        if (key === 'alignment' || key === 'passive') {
+            if (enValue !== undefined) enOut[key] = enValue;
+            if (zhValue !== undefined) zhOut[key] = zhValue;
+            else if (enValue !== undefined) zhOut[key] = key === 'alignment' ? [] : 0;
+            continue;
+        }
+        
         if (hasLocalizedDifference(enValue, zhValue)) {
             if (enValue !== undefined) enOut[key] = enValue;
             if (zhValue !== undefined) zhOut[key] = zhValue;
