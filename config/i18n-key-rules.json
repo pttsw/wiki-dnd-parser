@@ -24,7 +24,27 @@
   ],
   "forceCommonKeys": [
     "type",
-    "items"
+    "items",
+    "weight",
+    "value",
+    "rarity",
+    "sentient",
+    "level",
+    "school",
+    "ritual",
+    "size",
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha",
+    "alignmentPrefix",
+    "initiative",
+    "save",
+    "cr",
+    "environment",
+    "bestiarytype"
   ],
   "weaponKeys": [
     "weaponCategory",

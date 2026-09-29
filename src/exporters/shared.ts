@@ -228,7 +228,8 @@ export const extractTranslator = (
 };
 
 export const hasLocalizedDifference = (enValue: unknown, zhValue: unknown): boolean => {
-    if (zhValue === undefined || zhValue === null) return false;
+    if (enValue !== undefined && (zhValue === undefined || zhValue === null)) return true;
+    if (zhValue !== undefined && (enValue === undefined || enValue === null)) return true;
     if (typeof enValue === 'string' || typeof zhValue === 'string') {
         return enValue !== zhValue;
     }
