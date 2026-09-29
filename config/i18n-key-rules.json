@@ -24,7 +24,8 @@
   ],
   "forceCommonKeys": [
     "type",
-    "items"
+    "items",
+    "weight"
   ],
   "weaponKeys": [
     "weaponCategory",
