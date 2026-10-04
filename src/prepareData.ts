@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -46,6 +46,7 @@ import config, { mwUtil } from './config.js';
 import {
     buildGroupedBlock,
     classifyI18nKeys,
+    getEnglishOnlyKeys,
     i18nKeyRules,
     splitRecordByI18n,
 } from './i18n.js';
@@ -997,9 +998,13 @@ const applyWeaponDerived = (
     if (dmgs.length > 0 && block.dmgs === undefined) {
         block.dmgs = dmgs;
     }
+    // 处理range字段，将"20/60"格式转换为{normal: number, long: number}
     if (item.range && block.range === undefined) {
         const [min, max] = item.range.split('/');
-        block.range = { min: Number(min), max: Number(max) };
+        block.range = { normal: Number(min), long: Number(max) };
+    } else if (typeof block.range === 'string' && block.range.includes('/')) {
+        const [min, max] = block.range.split('/');
+        block.range = { normal: Number(min), long: Number(max) };
     }
     // 添加bonusWeapon到weapon块
     if (item.bonusWeapon !== undefined) {
@@ -1516,6 +1521,7 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
 
             const split = splitRecordByI18n(enFeat, zhFeat, keySets, {
                 emptyZhValue: '',
+                englishOnlyKeys: getEnglishOnlyKeys('feat'),
             });
             const common = { ...split.common };
             const enOut: WikiFeatEntry = {
@@ -2344,7 +2350,14 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
 
             const split = splitRecordByI18n(enItem, zhItem, keySets, {
                 emptyZhValue: '',
-                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+                skipKeys: [
+                    ...i18nKeyRules.weaponKeys,
+                    ...i18nKeyRules.armorKeys,
+                    'recharge',
+                    'rechargeAmount',
+                    'charges',
+                ],
+                englishOnlyKeys: getEnglishOnlyKeys('item'),
             });
             const weaponGroup = buildGroupedBlock(
                 enItem,
@@ -2913,7 +2926,14 @@ class ItemMgr implements DataMgr<ItemFileEntry> {
 
             const split = splitRecordByI18n(enItem, zhItem, keySets, {
                 emptyZhValue: '',
-                skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+                skipKeys: [
+                    ...i18nKeyRules.weaponKeys,
+                    ...i18nKeyRules.armorKeys,
+                    'recharge',
+                    'rechargeAmount',
+                    'charges',
+                ],
+                englishOnlyKeys: getEnglishOnlyKeys('item'),
             });
             const weaponGroup = buildGroupedBlock(
                 enItem,
@@ -3532,7 +3552,14 @@ class MagicVariantMgr implements DataMgr<MagicVariantEntry> {
         const localKeySets = classifyI18nKeys([{ en: enItem, zh: zhItem || null }], i18nKeyRules);
         const split = splitRecordByI18n(enItem, zhItem, localKeySets, {
             emptyZhValue: '',
-            skipKeys: [...i18nKeyRules.weaponKeys, ...i18nKeyRules.armorKeys],
+            skipKeys: [
+                ...i18nKeyRules.weaponKeys,
+                ...i18nKeyRules.armorKeys,
+                'recharge',
+                'rechargeAmount',
+                'charges',
+            ],
+            englishOnlyKeys: getEnglishOnlyKeys('magicvariant'),
         });
         const weaponGroup = buildGroupedBlock(
             enItem,
@@ -4400,6 +4427,7 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
             const relatedIds = collectRelatedIds(id);
             const split = splitRecordByI18n(enSpell, zhSpell, keySets, {
                 emptyZhValue: '',
+                englishOnlyKeys: getEnglishOnlyKeys('spell'),
             });
             const common = { ...split.common };
             const enOut = { ...split.en };

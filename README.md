@@ -64,9 +64,9 @@
   - `DATA_EN_DIR` 英文数据根目录（应包含 `books.json`、`items.json`、`spells/` 等）。
   - `DATA_ZH_DIR` 中文数据根目录。
   - 默认值为 `./input/5e-en/data` 与 `./input/5e-cn/data`。
-- `npm run getCnRepo` 使用 HTTPS 从 `https://github.com/tjliqy/5etools-mirror-2.github.io.git` 拉取数据：
-  - `data` -> `./input/5e-cn/data`（中文）
-  - `data-bak` -> `./input/5e-en/data`（英文）
+- `npm run getCnRepo` 使用 HTTPS 从 `https://github.com/5etools-mirror-3/5etools-src.git` 与 `https://github.com/tjliqy/5etools-cn.git` 拉取数据：
+  - `https://github.com/5etools-mirror-3/5etools-src.git` -> `./input/5e-cn/data`（中文）
+  - `https://github.com/5etools-mirror-3/5etools-src.git` -> `./input/5e-en/data`（英文）
   - 如果数据不在 `./input/.../data`，请手动调整 `src/config.ts`。
 - 目录清单会被 `createOutputFolders` 重置，请避免把其他文件放在 `./output` 下。
 

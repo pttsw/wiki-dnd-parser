@@ -1,7 +1,10 @@
 import { createHash } from 'crypto';
 import path from 'path';
 import XLSX from 'xlsx';
-import { i18nKeyRules } from '../i18n.js';
+import { i18nKeyRules, getEnglishOnlyKeys } from '../i18n.js';
+
+// 重新导出，供各导出器统一从 shared.js 引用
+export { getEnglishOnlyKeys };
 
 export interface SubraceReplacement {
     subraceName: string;
@@ -267,10 +270,12 @@ export const splitStructuredRecordByDiff = (
         forceLocalizedKeys?: string[];
         forceCommonKeys?: string[];
         skipKeys?: string[];
+        englishOnlyKeys?: Set<string>;
     }
 ) => {
     const emptyZhValue = options?.emptyZhValue ?? '';
     const skipKeys = new Set(options?.skipKeys || []);
+    const englishOnlyKeys = new Set(options?.englishOnlyKeys || []);
     const forceLocalizedKeys = new Set(
         options?.forceLocalizedKeys || i18nKeyRules.forceLocalizedKeys || []
     );
@@ -286,6 +291,13 @@ export const splitStructuredRecordByDiff = (
 
         const enValue = en?.[key];
         const zhValue = zh?.[key];
+
+        // 特殊字段：优先英文，无英文回退中文，始终作为顶层键
+        if (englishOnlyKeys.has(key)) {
+            if (enValue !== undefined) common[key] = enValue;
+            else if (zhValue !== undefined) common[key] = zhValue;
+            continue;
+        }
 
         if (forceCommonKeys.has(key)) {
             if (enValue !== undefined) common[key] = enValue;

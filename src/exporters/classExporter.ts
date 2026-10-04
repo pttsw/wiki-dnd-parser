@@ -12,6 +12,7 @@ import {
     escapeFileName,
     extractTranslator,
     getDefaultId,
+    getEnglishOnlyKeys,
     normalizeReprintedAs,
     resolveCaseInsensitiveOutputFileName,
     splitStructuredRecordByDiff,
@@ -109,6 +110,53 @@ const loadIndexedClassFluffData = async () => {
     return { en, zh };
 };
 
+// 递归解析结构中的所有字符串：为其中任意层级的 {@tag}（含嵌套 entries 内的表格单元格）补全来源后缀
+const parseTagsRecursively = (value: any, isZh: boolean): any => {
+    if (typeof value === 'string') {
+        return tagParser.parse(value, isZh);
+    }
+    if (Array.isArray(value)) {
+        return value.map((item: any) => parseTagsRecursively(item, isZh));
+    }
+    if (value && typeof value === 'object') {
+        const result: Record<string, any> = {};
+        for (const key of Object.keys(value)) {
+            result[key] = parseTagsRecursively(value[key], isZh);
+        }
+        return result;
+    }
+    return value;
+};
+
+// 为 additionalSpells 中缺少来源后缀的纯法术名补上默认来源（prepared/known/expanded/innate），如 英雄气概 -> 英雄气概|PHB
+const enrichAdditionalSpells = (additionalSpells: any): any => {
+    if (!Array.isArray(additionalSpells)) return additionalSpells;
+    return additionalSpells.map((entry: any) => {
+        if (!entry || typeof entry !== 'object') return entry;
+        const out: Record<string, any> = { ...entry };
+        for (const key of ['prepared', 'known', 'expanded', 'innate']) {
+            const spells = out[key];
+            if (!spells || typeof spells !== 'object') continue;
+            const newSpells: Record<string, any> = {};
+            for (const level of Object.keys(spells)) {
+                const value = spells[level];
+                // 仅处理纯法术名数组；choose/选择对象等保持原样
+                if (Array.isArray(value)) {
+                    newSpells[level] = value.map((name: any) => {
+                        if (typeof name !== 'string') return name;
+                        // 已带来源后缀(|x)则保留，否则补上默认来源 PHB
+                        return name.includes('|') ? name : `${name}|PHB`;
+                    });
+                } else {
+                    newSpells[level] = value;
+                }
+            }
+            out[key] = newSpells;
+        }
+        return out;
+    });
+};
+
 const applyEntriesHtml = (
     block: Record<string, any>,
     id: string,
@@ -117,37 +165,7 @@ const applyEntriesHtml = (
     if (!block || block.entries === undefined) return;
     try {
         if (Array.isArray(block.entries)) {
-            block.entries = block.entries.map((entry: any) => {
-                if (typeof entry === 'string') {
-                    return tagParser.parse(entry, locale === 'zh');
-                } else if (entry && typeof entry === 'object') {
-                    if (entry.type === 'table' && Array.isArray(entry.rows)) {
-                        entry.rows = entry.rows.map((row: any[]) => {
-                            return row.map((cell: any) => {
-                                if (typeof cell === 'string') {
-                                    return tagParser.parse(cell, locale === 'zh');
-                                }
-                                return cell;
-                            });
-                        });
-                    }
-                    if (entry.entries && Array.isArray(entry.entries)) {
-                        entry.entries = entry.entries.map((subEntry: any) => {
-                            if (typeof subEntry === 'string') {
-                                return tagParser.parse(subEntry, locale === 'zh');
-                            }
-                            return subEntry;
-                        });
-                    }
-                    if (typeof entry.entry === 'string') {
-                        entry.entry = tagParser.parse(entry.entry, locale === 'zh');
-                    }
-                    if (typeof entry.name === 'string') {
-                        entry.name = tagParser.parse(entry.name, locale === 'zh');
-                    }
-                }
-                return entry;
-            });
+            block.entries = block.entries.map((entry: any) => parseTagsRecursively(entry, locale === 'zh'));
             block.html = parseContent(block.entries);
         } else if (block.entries === '') {
             block.html = '';
@@ -174,11 +192,14 @@ const buildEntityBase = (
     entryMap: Map<string, Record<string, any>>,
     reprintMap: Map<string, string[]>,
     full: { en?: any; zh?: any } | undefined,
+    dataType: string = 'class',
 ) => {
     const id = getDefaultId(enItem);
+    const englishOnlyKeys = getEnglishOnlyKeys(dataType);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
         emptyZhValue: '',
         forceLocalizedKeys: ['multiclassing'],
+        englishOnlyKeys,
     });
     const common = { ...split.common };
     const enOut = { ...split.en };
@@ -511,37 +532,7 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         if (!feature || typeof feature !== 'object') return;
         
         if (Array.isArray(feature.entries)) {
-            feature.entries = feature.entries.map((entry: any) => {
-                if (typeof entry === 'string') {
-                    return tagParser.parse(entry, isZh);
-                } else if (entry && typeof entry === 'object') {
-                    if (entry.type === 'table' && Array.isArray(entry.rows)) {
-                        entry.rows = entry.rows.map((row: any[]) => {
-                            return row.map((cell: any) => {
-                                if (typeof cell === 'string') {
-                                    return tagParser.parse(cell, isZh);
-                                }
-                                return cell;
-                            });
-                        });
-                    }
-                    if (entry.entries && Array.isArray(entry.entries)) {
-                        entry.entries = entry.entries.map((subEntry: any) => {
-                            if (typeof subEntry === 'string') {
-                                return tagParser.parse(subEntry, isZh);
-                            }
-                            return subEntry;
-                        });
-                    }
-                    if (typeof entry.entry === 'string') {
-                        entry.entry = tagParser.parse(entry.entry, isZh);
-                    }
-                    if (typeof entry.name === 'string') {
-                        entry.name = tagParser.parse(entry.name, isZh);
-                    }
-                }
-                return entry;
-            });
+            feature.entries = feature.entries.map((entry: any) => parseTagsRecursively(entry, isZh));
         }
         
         if (feature.subclassFeatures && Array.isArray(feature.subclassFeatures)) {
@@ -705,6 +696,14 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         if (classEntityBase.en && classEntityBase.en.classFeatures) {
             classEntityBase.en.classFeatures = expandClassFeatures(classEntityBase.en.classFeatures);
         }
+
+        // 为 additionalSpells 中缺少来源的法术名补上默认来源
+        if (classEntityBase.zh && classEntityBase.zh.additionalSpells) {
+            classEntityBase.zh.additionalSpells = enrichAdditionalSpells(classEntityBase.zh.additionalSpells);
+        }
+        if (classEntityBase.en && classEntityBase.en.additionalSpells) {
+            classEntityBase.en.additionalSpells = enrichAdditionalSpells(classEntityBase.en.additionalSpells);
+        }
         
         if (enClass.isSidekick !== true) {
             classOutput.push({
@@ -739,6 +738,14 @@ export const runClassExporter = async (): Promise<ClassExporterResult> => {
         }
         if (entityBase.en && entityBase.en.subclassFeatures) {
             entityBase.en.subclassFeatures = expandRefSubclassFeatures(entityBase.en.subclassFeatures, false);
+        }
+
+        // 为 additionalSpells 中缺少来源的法术名补上默认来源
+        if (entityBase.zh && entityBase.zh.additionalSpells) {
+            entityBase.zh.additionalSpells = enrichAdditionalSpells(entityBase.zh.additionalSpells);
+        }
+        if (entityBase.en && entityBase.en.additionalSpells) {
+            entityBase.en.additionalSpells = enrichAdditionalSpells(entityBase.en.additionalSpells);
         }
 
         subclassOutput.push({

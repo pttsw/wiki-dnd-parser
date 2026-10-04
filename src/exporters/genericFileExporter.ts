@@ -11,6 +11,7 @@ import {
     escapeFileName,
     extractTranslator,
     getDefaultId,
+    getEnglishOnlyKeys,
     hasLocalizedDifference,
     normalizeReprintedAs,
     resolveCaseInsensitiveOutputFileName,
@@ -187,11 +188,13 @@ const buildEntity = (
     logger: LoggerLike
 ) => {
     const id = getDefaultId(enItem);
+    const englishOnlyKeys = getEnglishOnlyKeys(profile.dataType);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
         emptyZhValue: '',
         forceCommonKeys: profile.forceCommonKeys,
         forceLocalizedKeys: profile.forceLocalizedKeys,
         skipKeys: profile.skipKeys,
+        englishOnlyKeys,
     });
     const common = { ...split.common };
     const enOut = { ...split.en };

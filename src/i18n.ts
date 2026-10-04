@@ -29,6 +29,24 @@ const loadKeyRules = (): I18nKeyRules => {
 
 export const i18nKeyRules = loadKeyRules();
 
+type EnglishOnlyKeysConfig = Record<string, string[] | undefined>;
+
+const loadEnglishOnlyConfig = (): EnglishOnlyKeysConfig => {
+    const configPath = path.resolve('./config/english-only-keys.json');
+    try {
+        const content = fs.readFileSync(configPath, 'utf-8');
+        return JSON.parse(content) as EnglishOnlyKeysConfig;
+    } catch {
+        return {};
+    }
+};
+
+const englishOnlyConfig = loadEnglishOnlyConfig();
+
+// 获取指定类别“优先英文、无英文回退中文、作为顶层键”的键集合
+export const getEnglishOnlyKeys = (category: string): Set<string> =>
+    new Set(englishOnlyConfig[category] || []);
+
 type RecordPair = {
     en: Record<string, any> | null | undefined;
     zh: Record<string, any> | null | undefined;
@@ -87,10 +105,12 @@ export const splitRecordByI18n = (
     options?: {
         emptyZhValue?: string;
         skipKeys?: string[];
+        englishOnlyKeys?: Set<string>;
     }
 ) => {
     const emptyZhValue = options?.emptyZhValue ?? '';
     const skipKeys = new Set(options?.skipKeys || []);
+    const englishOnlyKeys = new Set(options?.englishOnlyKeys || []);
     const common: Record<string, any> = {};
     const enOut: Record<string, any> = {};
     const zhOut: Record<string, any> = {};
@@ -100,6 +120,12 @@ export const splitRecordByI18n = (
         if (skipKeys.has(key)) continue;
         const enValue = en ? en[key] : undefined;
         const zhValue = zh ? zh[key] : undefined;
+        // 特殊字段：优先英文，无英文回退中文，始终作为顶层键
+        if (englishOnlyKeys.has(key)) {
+            if (enValue !== undefined) common[key] = enValue;
+            else if (zhValue !== undefined) common[key] = zhValue;
+            continue;
+        }
         if (keySets.localizedKeys.has(key)) {
             if (enValue !== undefined) enOut[key] = enValue;
             if (zhValue !== undefined) {

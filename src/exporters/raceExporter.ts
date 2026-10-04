@@ -13,6 +13,7 @@ import {
     escapeFileName,
     extractTranslator,
     getDefaultId,
+    getEnglishOnlyKeys,
     loadSubraceReplacementDictionary,
     normalizeReprintedAs,
     resolveCaseInsensitiveOutputFileName,
@@ -241,8 +242,10 @@ const buildEntityBase = (
     originalId?: string
 ) => {
     const id = originalId || getDefaultId(enItem);
+    const englishOnlyKeys = getEnglishOnlyKeys(dataType);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
         emptyZhValue: '',
+        englishOnlyKeys,
     });
     const common = { ...split.common };
     const enOut = { ...split.en };

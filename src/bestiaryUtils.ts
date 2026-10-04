@@ -3,6 +3,9 @@ import type {
     MonsterFluffContent,
     MonsterFluffEntry,
 } from './types/bestiary.js';
+import { getEnglishOnlyKeys } from './i18n.js';
+
+const bestiaryEnglishOnlyKeys = getEnglishOnlyKeys('bestiary');
 
 export const getBestiaryId = (monster: Pick<MonsterFileEntry, 'name' | 'ENG_name' | 'source'>) => {
     const name = monster.ENG_name ? monster.ENG_name.trim() : (monster.name || '').trim();
@@ -132,24 +135,13 @@ export const splitBestiaryRecord = (
         const enValue = en?.[key];
         const zhValue = zh?.[key];
         
-        // 特殊处理某些字段，总是使用英文数据
-        const englishOnlyKeys = new Set([
-            'type',
-            'environment',
-            'treasure',
-            'dragonAge',
-            'traitTags',
-            'actionTags',
-            'conditionInflictSpell',
-            'savingThrowForced',
-            'savingThrowForcedLegendary',
-            'savingThrowForcedSpell',
-			'group',
-			'initiative'
-        ]);
-        
-        if (englishOnlyKeys.has(key) && enValue !== undefined) {
-            common[key] = enValue;
+        // 特殊处理某些字段：优先英文，没有英文时回退中文，始终作为顶层键
+        if (bestiaryEnglishOnlyKeys.has(key)) {
+            if (enValue !== undefined) {
+                common[key] = enValue;
+            } else if (zhValue !== undefined) {
+                common[key] = zhValue;
+            }
             continue;
         }
         

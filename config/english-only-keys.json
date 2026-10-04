@@ -1,0 +1,19 @@
+{
+  "bestiary": [
+    "type",
+    "environment",
+    "treasure",
+    "dragonAge",
+    "traitTags",
+    "actionTags",
+    "conditionInflictSpell",
+    "savingThrowForced",
+    "savingThrowForcedLegendary",
+    "savingThrowForcedSpell",
+    "group",
+    "initiative"
+  ],
+  "item": [
+    "poisonTypes"
+  ]
+}

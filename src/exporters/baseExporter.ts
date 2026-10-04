@@ -11,6 +11,7 @@ import {
     escapeFileName,
     extractTranslator,
     getDefaultId,
+    getEnglishOnlyKeys,
     normalizeReprintedAs,
     resolveCaseInsensitiveOutputFileName,
     splitStructuredRecordByDiff,
@@ -127,9 +128,11 @@ const defaultBuildEntity = (
     const id = getDefaultId(enItem);
     // 只有当存在中文翻译时，才强制本地化指定字段（如 duration）
     const effectiveForceLocalized = zhItem ? forceLocalizedKeys : undefined;
+    const englishOnlyKeys = getEnglishOnlyKeys(dataType);
     const split = splitStructuredRecordByDiff(enItem, zhItem, {
         emptyZhValue: '',
         forceLocalizedKeys: effectiveForceLocalized,
+        englishOnlyKeys,
     });
     const common = { ...split.common };
     const enOut = { ...split.en };
