@@ -44,7 +44,8 @@
     "save",
     "cr",
     "environment",
-    "bestiarytype"
+    "bestiarytype",
+	"scfType"
   ],
   "weaponKeys": [
     "weaponCategory",

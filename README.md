@@ -120,14 +120,31 @@ json 输出产物（`npm run start`）：
 
 Wiki 页面输出产物（`npm run page`）：
 
-- `output_page/法术/{来源}/*.wiki`
-- `output_page/物品/{来源}/*.wiki`
-- `output_page/怪物/{来源}/*.wiki`
-- `output_page/扩展/{来源}/*.wiki`
-- `output_page/模组/{来源}/*.wiki`
+- `output_page/法术/{来源}/*.wiki`（spell）
+- `output_page/物品/{来源}/*.wiki`（item）
+- `output_page/怪物/{来源}/*.wiki`（bestiary）
+- `output_page/种族/{来源}/*.wiki`（race）
+- `output_page/专长/{来源}/*.wiki`（feat）
 - `output_page/职业/`
-  - `output_page/职业/{来源}/*.wiki`
-  - `output_page/职业/2014（或2024）/*.wiki`
+  - `output_page/职业/{来源}/*.wiki`（subclass）
+  - `output_page/职业/2014（或2024）/*.wiki`（class）
+- `output_page/背景/{来源}/*.wiki`（background）
+- `output_page/扩展/{来源}/*.wiki`（book）
+- `output_page/模组/{来源}/*.wiki`（adventure）
+- `output_page/据点/{来源}/*.wiki`（bastion）
+- `output_page/恩赐/{来源}/*.wiki`（boon）
+- `output_page/角色创建选项/{来源}/*.wiki`（charoption）
+- `output_page/状态/{来源}/*.wiki`（condition）
+- `output_page/牌组/{来源}/*.wiki`（deck）
+- `output_page/神祇/{来源}/*.wiki`（deity）
+- `output_page/危害/{来源}/*.wiki`（hazard）
+- `output_page/物件/{来源}/*.wiki`（object）
+- `output_page/可选特性/{来源}/*.wiki`（optionalfeature）
+- `output_page/奖励/{来源}/*.wiki`（reward）
+- `output_page/陷阱/{来源}/*.wiki`（trap）
+- `output_page/变体规则/{来源}/*.wiki`（variantrule）
+- `output_page/载具/{来源}/*.wiki`（vehicle）
+- `output_page/出版物首页/*.wiki`（出版物首页）
 
 Wiki 文件名格式：**中文名.wiki**（按来源分文件夹存放）
 

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -1418,7 +1418,12 @@ class BookMgr implements DataMgr<BookFileEntry> {
                 },
                 allSources: [],
                 displayName: {
-                    zh: zhBook ? zhBook.name : null,
+                    zh: (() => {
+                        if (!zhBook) return null;
+                        const zhName = zhBook.name || '';
+                        if (zhName.trim() === enBook.name.trim()) return null;
+                        return zhBook.name;
+                    })(),
                     en: enBook.name,
                 },
                 group: enBook.group,
@@ -1584,7 +1589,12 @@ class FeatMgr implements DataMgr<FeatFileEntry> {
                 ...common,
                 translator,
                 displayName: {
-                    zh: zhFeat ? zhFeat.name : null,
+                    zh: (() => {
+                        if (!zhFeat) return null;
+                        const zhName = zhFeat.name || '';
+                        if (zhName.trim() === enFeat.name.trim()) return null;
+                        return zhFeat.name;
+                    })(),
                     en: enFeat.name,
                 },
                 mainSource: {
@@ -1740,7 +1750,13 @@ class ItemPropertyMgr implements DataMgr<ItemProperty> {
                 },
                 allSources: [],
                 displayName: {
-                    zh: zhProperty ? getPropertyName(zhProperty) : null,
+                    zh: (() => {
+                        if (!zhProperty) return null;
+                        const zhName = getPropertyName(zhProperty) || '';
+                        const enName = getPropertyName(enProperty) || '';
+                        if (zhName.trim() === enName.trim()) return null;
+                        return getPropertyName(zhProperty);
+                    })(),
                     en: getPropertyName(enProperty),
                 },
                 zh: zhProperty
@@ -1818,7 +1834,12 @@ class ItemTypeMgr implements DataMgr<ItemType> {
                 },
                 allSources: [],
                 displayName: {
-                    zh: zhType ? zhType.name : null,
+                    zh: (() => {
+                        if (!zhType) return null;
+                        const zhName = zhType.name || '';
+                        if (zhName.trim() === enType.name.trim()) return null;
+                        return zhType.name;
+                    })(),
                     en: enType.name,
                 },
                 zh: zhType
@@ -4419,7 +4440,12 @@ class SpellMgr implements DataMgr<SpellFileEntry> {
                 ...common,
                 translator,
                 displayName: {
-                    zh: zhSpell ? zhSpell.name : null,
+                    zh: (() => {
+                        if (!zhSpell) return null;
+                        const zhName = zhSpell.name || '';
+                        if (zhName.trim() === enSpell.name.trim()) return null;
+                        return zhSpell.name;
+                    })(),
                     en: enSpell.name,
                 },
                 mainSource: {
@@ -4730,7 +4756,12 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 referenceSources,
                 translator,
                 displayName: {
-                    zh: zhMonster ? zhMonster.name : null,
+                    zh: (() => {
+                        if (!zhMonster) return null;
+                        const zhName = zhMonster.name || '';
+                        if (zhName.trim() === enMonster.name.trim()) return null;
+                        return zhMonster.name;
+                    })(),
                     en: enMonster.name,
                 },
                 mainSource: {
@@ -4799,7 +4830,13 @@ class BestiaryMgr implements DataMgr<MonsterFileEntry> {
                 referenceSources: [],
                 translator,
                 displayName: {
-                    zh: fluffZh ? fluffZh.name : null,
+                    zh: (() => {
+                        if (!fluffZh) return null;
+                        const enName = fluffEn?.name || fluffZh?.ENG_name || fluffZh?.name || id.split('|')[0];
+                        const zhName = fluffZh.name || '';
+                        if (zhName.trim() === enName.trim()) return null;
+                        return fluffZh.name;
+                    })(),
                     en: fluffEn?.name || fluffZh?.ENG_name || fluffZh?.name || id.split('|')[0],
                 },
                 mainSource: {
@@ -5652,50 +5689,59 @@ let isnavpillIds = new Set<string>();
             await generateOutputReplaceLogs();
         } else {
             // npm run page: 只生成 wiki 页面到 output_page 目录
-            // 先加载 class 数据
-            const classResult = await runClassExporter();
-            
-            // 合并主职业和子职业数据
-            const classMap = new Map<string, any>();
-            for (const cls of classResult.classes) {
-                classMap.set(cls.id, cls);
-            }
-            for (const sub of classResult.subclasses) {
-                classMap.set(sub.id, sub);
-            }
+            // 从 output 目录读取已有的 JSON 数据
 
-            // 加载种族数据
-            await runRaceExporter();
-            
-            const raceMap = new Map<string, any>();
-            const raceDir = path.join('./output', 'race');
-            if (await fs.access(raceDir).then(() => true).catch(() => false)) {
-                const races = await fs.readdir(raceDir);
-                for (const raceName of races) {
-                    const racePath = path.join(raceDir, raceName);
-                    if ((await fs.stat(racePath)).isDirectory()) {
-                        const sources = await fs.readdir(racePath);
-                        for (const source of sources) {
-                            const sourcePath = path.join(racePath, source);
-                            if ((await fs.stat(sourcePath)).isDirectory()) {
-                                const files = await fs.readdir(sourcePath);
-                                for (const file of files) {
-                                    if (file.endsWith('.json')) {
-                                        const filePath = path.join(sourcePath, file);
-                                        const content = await fs.readFile(filePath, 'utf-8');
-                                        try {
-                                            const raceData = JSON.parse(content);
-                                            raceMap.set(raceData.id, raceData);
-                                        } catch (err) {
-                                            console.warn(`[prepareData] 读取种族文件失败: ${filePath}`, err);
-                                        }
+            const loadOutputDataMap = async (dataType: string): Promise<Map<string, any>> => {
+                const dataMap = new Map<string, any>();
+                const dataDir = path.join('./output', dataType);
+                if (await fs.access(dataDir).then(() => true).catch(() => false)) {
+                    const sources = await fs.readdir(dataDir);
+                    for (const source of sources) {
+                        const sourcePath = path.join(dataDir, source);
+                        if ((await fs.stat(sourcePath)).isDirectory()) {
+                            const files = await fs.readdir(sourcePath);
+                            for (const file of files) {
+                                if (file.endsWith('.json')) {
+                                    const filePath = path.join(sourcePath, file);
+                                    const content = await fs.readFile(filePath, 'utf-8');
+                                    try {
+                                        const data = JSON.parse(content);
+                                        dataMap.set(data.id, data);
+                                    } catch (err) {
+                                        console.warn(`[prepareData] 读取 ${dataType} 文件失败: ${filePath}`, err);
                                     }
                                 }
                             }
                         }
                     }
                 }
+                return dataMap;
+            };
+
+            // 加载职业数据
+            const classMap = await loadOutputDataMap('class');
+            const subclassMap = await loadOutputDataMap('subclass');
+            for (const [id, data] of subclassMap) {
+                classMap.set(id, data);
             }
+
+            // 加载所有其他类型数据（从 output 目录读取已有的 JSON）
+            const raceMap = await loadOutputDataMap('race');
+            const featMap = await loadOutputDataMap('feat');
+            const backgroundMap = await loadOutputDataMap('background');
+            const hazardMap = await loadOutputDataMap('hazard');
+            const trapMap = await loadOutputDataMap('trap');
+            const bastionMap = await loadOutputDataMap('bastion');
+            const boonMap = await loadOutputDataMap('boon');
+            const charoptionMap = await loadOutputDataMap('charoption');
+            const conditionMap = await loadOutputDataMap('condition');
+            const deckMap = await loadOutputDataMap('deck');
+            const deityMap = await loadOutputDataMap('deity');
+            const objectMap = await loadOutputDataMap('object');
+            const optionalfeatureMap = await loadOutputDataMap('optionalfeature');
+            const rewardMap = await loadOutputDataMap('reward');
+            const variantruleMap = await loadOutputDataMap('variantrule');
+            const vehicleMap = await loadOutputDataMap('vehicle');
             
             const wikiPageGenerator = new WikiPageGenerator({
                 books: bookFiles,
@@ -5706,11 +5752,26 @@ let isnavpillIds = new Set<string>();
                 bestiary: bestiaryMgr.db,
                 classes: classMap,
                 races: raceMap,
+                feats: featMap,
+                backgrounds: backgroundMap,
+                hazards: hazardMap,
+                traps: trapMap,
+                bastions: bastionMap,
+                boons: boonMap,
+                charoptions: charoptionMap,
+                conditions: conditionMap,
+                decks: deckMap,
+                deities: deityMap,
+                objects: objectMap,
+                optionalfeatures: optionalfeatureMap,
+                rewards: rewardMap,
+                variantrules: variantruleMap,
+                vehicles: vehicleMap,
                 logger: message => printProgress(`wikiPage: ${message}`),
             });
             const wikiPageResult = await wikiPageGenerator.generateAll();
             printProgress(
-                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, classFiles=${wikiPageResult.classFiles}, raceFiles=${wikiPageResult.raceFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
+                `wikiPage 完成 (spellFiles=${wikiPageResult.spellFiles}, itemFiles=${wikiPageResult.itemFiles}, bestiaryFiles=${wikiPageResult.bestiaryFiles}, classFiles=${wikiPageResult.classFiles}, raceFiles=${wikiPageResult.raceFiles}, featFiles=${wikiPageResult.featFiles}, backgroundFiles=${wikiPageResult.backgroundFiles}, hazardFiles=${wikiPageResult.hazardFiles}, trapFiles=${wikiPageResult.trapFiles}, bastionFiles=${wikiPageResult.bastionFiles}, boonFiles=${wikiPageResult.boonFiles}, charoptionFiles=${wikiPageResult.charoptionFiles}, conditionFiles=${wikiPageResult.conditionFiles}, deckFiles=${wikiPageResult.deckFiles}, deityFiles=${wikiPageResult.deityFiles}, objectFiles=${wikiPageResult.objectFiles}, optionalfeatureFiles=${wikiPageResult.optionalfeatureFiles}, rewardFiles=${wikiPageResult.rewardFiles}, variantruleFiles=${wikiPageResult.variantruleFiles}, vehicleFiles=${wikiPageResult.vehicleFiles}, failed=${wikiPageResult.failed}, skippedSelfRedirects=${wikiPageResult.skippedSelfRedirects}, pageConflicts=${wikiPageResult.pageConflicts})`
             );
 
             const wikiPageMapPath = './output/_json-page-wiki.json';

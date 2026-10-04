@@ -97,6 +97,21 @@ type WikiPageGeneratorOptions = {
     bestiary: Map<string, WikiBestiaryData>;
     classes: Map<string, WikiClassData>;
     races: Map<string, WikiRaceData>;
+    feats: Map<string, any>;
+    backgrounds: Map<string, any>;
+    hazards: Map<string, any>;
+    traps: Map<string, any>;
+    bastions: Map<string, any>;
+    boons: Map<string, any>;
+    charoptions: Map<string, any>;
+    conditions: Map<string, any>;
+    decks: Map<string, any>;
+    deities: Map<string, any>;
+    objects: Map<string, any>;
+    optionalfeatures: Map<string, any>;
+    rewards: Map<string, any>;
+    variantrules: Map<string, any>;
+    vehicles: Map<string, any>;
     outputRoot?: string;
     logger?: (message: string) => void;
 };
@@ -107,6 +122,21 @@ type WikiPageGenerationResult = {
     bestiaryFiles: number;
     classFiles: number;
     raceFiles: number;
+    featFiles: number;
+    backgroundFiles: number;
+    hazardFiles: number;
+    trapFiles: number;
+    bastionFiles: number;
+    boonFiles: number;
+    charoptionFiles: number;
+    conditionFiles: number;
+    deckFiles: number;
+    deityFiles: number;
+    objectFiles: number;
+    optionalfeatureFiles: number;
+    rewardFiles: number;
+    variantruleFiles: number;
+    vehicleFiles: number;
     failed: number;
     skippedSelfRedirects: number;
     pageConflicts: number;
@@ -119,11 +149,41 @@ export class WikiPageGenerator {
     private readonly bestiaryDir: string;
     private readonly classesDir: string;
     private readonly racesDir: string;
+    private readonly featsDir: string;
+    private readonly backgroundsDir: string;
+    private readonly hazardsDir: string;
+    private readonly trapsDir: string;
+    private readonly bastionsDir: string;
+    private readonly boonsDir: string;
+    private readonly charoptionsDir: string;
+    private readonly conditionsDir: string;
+    private readonly decksDir: string;
+    private readonly deitiesDir: string;
+    private readonly objectsDir: string;
+    private readonly optionalfeaturesDir: string;
+    private readonly rewardsDir: string;
+    private readonly variantrulesDir: string;
+    private readonly vehiclesDir: string;
     private readonly spells: Map<string, WikiSpellData>;
     private readonly itemIndex: Map<string, WikiItemData> = new Map();
     private readonly bestiaryIndex: Map<string, WikiBestiaryData> = new Map();
     private readonly classIndex: Map<string, WikiClassData> = new Map();
     private readonly raceIndex: Map<string, WikiRaceData> = new Map();
+    private readonly featIndex: Map<string, any> = new Map();
+    private readonly backgroundIndex: Map<string, any> = new Map();
+    private readonly hazardIndex: Map<string, any> = new Map();
+    private readonly trapIndex: Map<string, any> = new Map();
+    private readonly bastionIndex: Map<string, any> = new Map();
+    private readonly boonIndex: Map<string, any> = new Map();
+    private readonly charoptionIndex: Map<string, any> = new Map();
+    private readonly conditionIndex: Map<string, any> = new Map();
+    private readonly deckIndex: Map<string, any> = new Map();
+    private readonly deityIndex: Map<string, any> = new Map();
+    private readonly objectIndex: Map<string, any> = new Map();
+    private readonly optionalfeatureIndex: Map<string, any> = new Map();
+    private readonly rewardIndex: Map<string, any> = new Map();
+    private readonly variantruleIndex: Map<string, any> = new Map();
+    private readonly vehicleIndex: Map<string, any> = new Map();
     private readonly sourceNames: Map<string, SourceNameEntry> = new Map();
     private readonly writtenFiles: Map<string, string> = new Map();
     private readonly logger: (message: string) => void;
@@ -140,6 +200,21 @@ export class WikiPageGenerator {
         this.bestiaryDir = path.join(this.outputRoot, '怪物');
         this.classesDir = path.join(this.outputRoot, '职业');
         this.racesDir = path.join(this.outputRoot, '种族');
+        this.featsDir = path.join(this.outputRoot, '专长');
+        this.backgroundsDir = path.join(this.outputRoot, '背景');
+        this.hazardsDir = path.join(this.outputRoot, '危害');
+        this.trapsDir = path.join(this.outputRoot, '陷阱');
+        this.bastionsDir = path.join(this.outputRoot, '据点');
+        this.boonsDir = path.join(this.outputRoot, '恩赐');
+        this.charoptionsDir = path.join(this.outputRoot, '角色创建选项');
+        this.conditionsDir = path.join(this.outputRoot, '状态');
+        this.decksDir = path.join(this.outputRoot, '牌组');
+        this.deitiesDir = path.join(this.outputRoot, '神祇');
+        this.objectsDir = path.join(this.outputRoot, '物件');
+        this.optionalfeaturesDir = path.join(this.outputRoot, '可选特性');
+        this.rewardsDir = path.join(this.outputRoot, '奖励');
+        this.variantrulesDir = path.join(this.outputRoot, '变体规则');
+        this.vehiclesDir = path.join(this.outputRoot, '载具');
         this.spells = options.spells;
         this.logger = options.logger || (() => {});
         this.options = options;
@@ -148,6 +223,21 @@ export class WikiPageGenerator {
         this.buildBestiaryIndex(options.bestiary);
         this.buildClassIndex(options.classes);
         this.buildRaceIndex(options.races);
+        this.buildFeatIndex(options.feats);
+        this.buildBackgroundIndex(options.backgrounds);
+        this.buildHazardIndex(options.hazards);
+        this.buildTrapIndex(options.traps);
+        this.buildBastionIndex(options.bastions);
+        this.buildBoonIndex(options.boons);
+        this.buildCharoptionIndex(options.charoptions);
+        this.buildConditionIndex(options.conditions);
+        this.buildDeckIndex(options.decks);
+        this.buildDeityIndex(options.deities);
+        this.buildObjectIndex(options.objects);
+        this.buildOptionalfeatureIndex(options.optionalfeatures);
+        this.buildRewardIndex(options.rewards);
+        this.buildVariantruleIndex(options.variantrules);
+        this.buildVehicleIndex(options.vehicles);
     }
 
     private buildClassIndex(classes: Map<string, WikiClassData>) {
@@ -162,12 +252,117 @@ export class WikiPageGenerator {
         }
     }
 
+    private buildFeatIndex(feats: Map<string, any>) {
+        for (const [id, featData] of feats) {
+            this.featIndex.set(id, featData);
+        }
+    }
+
+    private buildBackgroundIndex(backgrounds: Map<string, any>) {
+        for (const [id, data] of backgrounds) {
+            this.backgroundIndex.set(id, data);
+        }
+    }
+
+    private buildHazardIndex(hazards: Map<string, any>) {
+        for (const [id, data] of hazards) {
+            this.hazardIndex.set(id, data);
+        }
+    }
+
+    private buildTrapIndex(traps: Map<string, any>) {
+        for (const [id, data] of traps) {
+            this.trapIndex.set(id, data);
+        }
+    }
+
+    private buildBastionIndex(bastions: Map<string, any>) {
+        for (const [id, data] of bastions) {
+            this.bastionIndex.set(id, data);
+        }
+    }
+
+    private buildBoonIndex(boons: Map<string, any>) {
+        for (const [id, data] of boons) {
+            this.boonIndex.set(id, data);
+        }
+    }
+
+    private buildCharoptionIndex(charoptions: Map<string, any>) {
+        for (const [id, data] of charoptions) {
+            this.charoptionIndex.set(id, data);
+        }
+    }
+
+    private buildConditionIndex(conditions: Map<string, any>) {
+        for (const [id, data] of conditions) {
+            this.conditionIndex.set(id, data);
+        }
+    }
+
+    private buildDeckIndex(decks: Map<string, any>) {
+        for (const [id, data] of decks) {
+            this.deckIndex.set(id, data);
+        }
+    }
+
+    private buildDeityIndex(deities: Map<string, any>) {
+        for (const [id, data] of deities) {
+            this.deityIndex.set(id, data);
+        }
+    }
+
+    private buildObjectIndex(objects: Map<string, any>) {
+        for (const [id, data] of objects) {
+            this.objectIndex.set(id, data);
+        }
+    }
+
+    private buildOptionalfeatureIndex(optionalfeatures: Map<string, any>) {
+        for (const [id, data] of optionalfeatures) {
+            this.optionalfeatureIndex.set(id, data);
+        }
+    }
+
+    private buildRewardIndex(rewards: Map<string, any>) {
+        for (const [id, data] of rewards) {
+            this.rewardIndex.set(id, data);
+        }
+    }
+
+    private buildVariantruleIndex(variantrules: Map<string, any>) {
+        for (const [id, data] of variantrules) {
+            this.variantruleIndex.set(id, data);
+        }
+    }
+
+    private buildVehicleIndex(vehicles: Map<string, any>) {
+        for (const [id, data] of vehicles) {
+            this.vehicleIndex.set(id, data);
+        }
+    }
+
     async generateAll(): Promise<WikiPageGenerationResult> {
         await fs.mkdir(this.spellsDir, { recursive: true });
         await fs.mkdir(this.itemsDir, { recursive: true });
         await fs.mkdir(this.bestiaryDir, { recursive: true });
         await fs.mkdir(this.classesDir, { recursive: true });
         await fs.mkdir(this.racesDir, { recursive: true });
+        await fs.mkdir(this.featsDir, { recursive: true });
+        await fs.mkdir(this.backgroundsDir, { recursive: true });
+        await fs.mkdir(this.hazardsDir, { recursive: true });
+        await fs.mkdir(this.trapsDir, { recursive: true });
+        await fs.mkdir(this.bastionsDir, { recursive: true });
+        await fs.mkdir(this.boonsDir, { recursive: true });
+        await fs.mkdir(this.charoptionsDir, { recursive: true });
+        await fs.mkdir(this.conditionsDir, { recursive: true });
+        await fs.mkdir(this.decksDir, { recursive: true });
+        await fs.mkdir(this.deitiesDir, { recursive: true });
+        await fs.mkdir(this.objectsDir, { recursive: true });
+        await fs.mkdir(this.optionalfeaturesDir, { recursive: true });
+        await fs.mkdir(this.rewardsDir, { recursive: true });
+        await fs.mkdir(this.variantrulesDir, { recursive: true });
+        await fs.mkdir(this.vehiclesDir, { recursive: true });
 
         await this.buildSourceNameIndex(this.options.books);
 
@@ -176,6 +371,21 @@ export class WikiPageGenerator {
         const bestiaryFiles = await this.generateBestiaryPages();
         const classFiles = await this.generateClassPages();
         const raceFiles = await this.generateRacePages();
+        const featFiles = await this.generateFeatPages();
+        const backgroundFiles = await this.generateBackgroundPages();
+        const hazardFiles = await this.generateHazardPages();
+        const trapFiles = await this.generateTrapPages();
+        const bastionFiles = await this.generateBastionPages();
+        const boonFiles = await this.generateBoonPages();
+        const charoptionFiles = await this.generateCharoptionPages();
+        const conditionFiles = await this.generateConditionPages();
+        const deckFiles = await this.generateDeckPages();
+        const deityFiles = await this.generateDeityPages();
+        const objectFiles = await this.generateObjectPages();
+        const optionalfeatureFiles = await this.generateOptionalfeaturePages();
+        const rewardFiles = await this.generateRewardPages();
+        const variantruleFiles = await this.generateVariantrulePages();
+        const vehicleFiles = await this.generateVehiclePages();
 
         return {
             spellFiles,
@@ -183,6 +393,21 @@ export class WikiPageGenerator {
             bestiaryFiles,
             classFiles,
             raceFiles,
+            featFiles,
+            backgroundFiles,
+            hazardFiles,
+            trapFiles,
+            bastionFiles,
+            boonFiles,
+            charoptionFiles,
+            conditionFiles,
+            deckFiles,
+            deityFiles,
+            objectFiles,
+            optionalfeatureFiles,
+            rewardFiles,
+            variantruleFiles,
+            vehicleFiles,
             failed: 0,
             skippedSelfRedirects: this.skippedSelfRedirects,
             pageConflicts: this.pageConflicts,
@@ -1170,6 +1395,120 @@ export class WikiPageGenerator {
             this.recordPageMap(filePath, mapInfo.jsonPath, mapInfo.sourceId, mapInfo.pageId, mapInfo.locale);
         }
         return true;
+    }
+
+    private async generateFeatPages(): Promise<number> {
+        return this.generateGenericPages(
+            this.featIndex,
+            this.featsDir,
+            'feat',
+            '{{专长卡|{name}|{source}}}',
+            '专长'
+        );
+    }
+
+    private async generateGenericPages(
+        index: Map<string, any>,
+        dir: string,
+        dataType: string,
+        cardTemplate: string,
+        chineseDirName: string
+    ): Promise<number> {
+        let written = 0;
+
+        for (const [id, data] of index) {
+            const sourceId = data.mainSource?.source;
+            if (!sourceId) continue;
+
+            const sourceTranslated = this.resolveSourceName(sourceId);
+            const nameZh = this.getRawNameZh(data);
+            const nameEn = this.getRawNameEn(data);
+            const jsonPath = this.computeJsonPath(dataType, sourceId, data.displayName?.en, data.displayName?.zh, id);
+
+            if (nameZh) {
+                const mainTitle = this.sanitizeFileSegment(nameZh);
+                const mainContent = cardTemplate.replace(/\{name\}/g, nameZh).replace(/\{source\}/g, sourceId);
+
+                if (await this.writePage(dir, mainTitle, mainContent, sourceTranslated, { jsonPath, sourceId, pageId: id, locale: 'zh' })) {
+                    written += 1;
+                }
+
+                const zhRedirectTitle = this.sanitizeFileSegment(nameZh);
+                const targetWikiTitle = `${chineseDirName}/${sourceTranslated}/${mainTitle}`;
+
+                if (await this.writeRedirectPage(dir, zhRedirectTitle, targetWikiTitle, sourceId, { jsonPath, sourceId, pageId: id, locale: 'zh' })) {
+                    written += 1;
+                }
+            }
+
+            if (nameEn && nameEn !== nameZh) {
+                const enRedirectTitle = this.sanitizeFileSegment(nameEn);
+                const mainTitle = nameZh ? this.sanitizeFileSegment(nameZh) : this.sanitizeFileSegment(nameEn);
+                const targetWikiTitle = `${chineseDirName}/${sourceTranslated}/${mainTitle}`;
+
+                if (await this.writeRedirectPage(dir, enRedirectTitle, targetWikiTitle, sourceId, { jsonPath, sourceId, pageId: id, locale: 'en' })) {
+                    written += 1;
+                }
+            }
+        }
+
+        return written;
+    }
+
+    private async generateBackgroundPages(): Promise<number> {
+        return this.generateGenericPages(this.backgroundIndex, this.backgroundsDir, 'background', '{{背景卡|{name}|{source}}}', '背景');
+    }
+
+    private async generateHazardPages(): Promise<number> {
+        return this.generateGenericPages(this.hazardIndex, this.hazardsDir, 'hazard', '{{危害卡|{name}|{source}}}', '危害');
+    }
+
+    private async generateTrapPages(): Promise<number> {
+        return this.generateGenericPages(this.trapIndex, this.trapsDir, 'trap', '{{陷阱卡|{name}|{source}}}', '陷阱');
+    }
+
+    private async generateBastionPages(): Promise<number> {
+        return this.generateGenericPages(this.bastionIndex, this.bastionsDir, 'bastion', '{{据点卡|{name}|{source}}}', '据点');
+    }
+
+    private async generateBoonPages(): Promise<number> {
+        return this.generateGenericPages(this.boonIndex, this.boonsDir, 'boon', '{{恩赐卡|{name}|{source}}}', '恩赐');
+    }
+
+    private async generateCharoptionPages(): Promise<number> {
+        return this.generateGenericPages(this.charoptionIndex, this.charoptionsDir, 'charoption', '{{角色创建选项卡|{name}|{source}}}', '角色创建选项');
+    }
+
+    private async generateConditionPages(): Promise<number> {
+        return this.generateGenericPages(this.conditionIndex, this.conditionsDir, 'condition', '{{状态卡|{name}|{source}}}', '状态');
+    }
+
+    private async generateDeckPages(): Promise<number> {
+        return this.generateGenericPages(this.deckIndex, this.decksDir, 'deck', '{{牌组卡|{name}|{source}}}', '牌组');
+    }
+
+    private async generateDeityPages(): Promise<number> {
+        return this.generateGenericPages(this.deityIndex, this.deitiesDir, 'deity', '{{神祇卡|{name}|{source}}}', '神祇');
+    }
+
+    private async generateObjectPages(): Promise<number> {
+        return this.generateGenericPages(this.objectIndex, this.objectsDir, 'object', '{{物件卡|{name}|{source}}}', '物件');
+    }
+
+    private async generateOptionalfeaturePages(): Promise<number> {
+        return this.generateGenericPages(this.optionalfeatureIndex, this.optionalfeaturesDir, 'optionalfeature', '{{可选特性卡|{name}|{source}}}', '可选特性');
+    }
+
+    private async generateRewardPages(): Promise<number> {
+        return this.generateGenericPages(this.rewardIndex, this.rewardsDir, 'reward', '{{奖励卡|{name}|{source}}}', '奖励');
+    }
+
+    private async generateVariantrulePages(): Promise<number> {
+        return this.generateGenericPages(this.variantruleIndex, this.variantrulesDir, 'variantrule', '{{变体规则卡|{name}|{source}}}', '变体规则');
+    }
+
+    private async generateVehiclePages(): Promise<number> {
+        return this.generateGenericPages(this.vehicleIndex, this.vehiclesDir, 'vehicle', '{{载具卡|{name}|{source}}}', '载具');
     }
 }
 
