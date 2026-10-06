@@ -29,7 +29,9 @@ const loadKeyRules = (): I18nKeyRules => {
 
 export const i18nKeyRules = loadKeyRules();
 
-type EnglishOnlyKeysConfig = Record<string, string[] | undefined>;
+type EnglishOnlyKeysConfig = Record<string, string[] | undefined> & {
+    aliases?: Record<string, string>;
+};
 
 const loadEnglishOnlyConfig = (): EnglishOnlyKeysConfig => {
     const configPath = path.resolve('./config/english-only-keys.json');
@@ -44,8 +46,15 @@ const loadEnglishOnlyConfig = (): EnglishOnlyKeysConfig => {
 const englishOnlyConfig = loadEnglishOnlyConfig();
 
 // 获取指定类别“优先英文、无英文回退中文、作为顶层键”的键集合
-export const getEnglishOnlyKeys = (category: string): Set<string> =>
-    new Set(englishOnlyConfig[category] || []);
+export const getEnglishOnlyKeys = (category: string): Set<string> => {
+    const direct = englishOnlyConfig[category];
+    if (Array.isArray(direct)) return new Set(direct);
+    const aliasTarget = englishOnlyConfig.aliases?.[category];
+    if (aliasTarget) {
+        return new Set(englishOnlyConfig[aliasTarget] || []);
+    }
+    return new Set();
+};
 
 type RecordPair = {
     en: Record<string, any> | null | undefined;
@@ -139,8 +148,69 @@ export const splitRecordByI18n = (
         }
     }
 
+    stripNestedEnglishOnly(enOut, zhOut, common, englishOnlyKeys);
+
     return { common, en: enOut, zh: zhOut };
 };
+
+// 递归清理嵌套在局部化对象内部的 englishOnly 键：
+// 找到 englishOnly 键后，将“英文优先、无英文则中文”的值提升到 topLevel（顶层 common），
+// 并从英文、中文两侧的嵌套对象中同时删除该键，避免 zh/en 里各保留一份。
+const stripNestedEnglishOnly = (
+    enObj: unknown,
+    zhObj: unknown,
+    topLevel: Record<string, any>,
+    englishOnlyKeys: Set<string>
+): void => {
+    if (!zhObj || typeof zhObj !== 'object') {
+        if (!enObj || typeof enObj !== 'object') return;
+        // 中文侧缺失，但英文对象仍可能存在 englishOnly 键
+        if (Array.isArray(enObj)) return;
+        const enRecord = enObj as Record<string, any>;
+        for (const key of Object.keys(enRecord)) {
+            if (englishOnlyKeys.has(key) && enRecord[key] !== undefined) {
+                if (topLevel[key] === undefined) topLevel[key] = enRecord[key];
+                delete enRecord[key];
+            }
+        }
+        return;
+    }
+
+    if (Array.isArray(zhObj)) {
+        if (!Array.isArray(enObj)) return;
+        for (let i = 0; i < zhObj.length; i++) {
+            const enItem = enObj[i];
+            const zhItem = zhObj[i];
+            if (zhItem && typeof zhItem === 'object') {
+                stripNestedEnglishOnly(enItem, zhItem, topLevel, englishOnlyKeys);
+            }
+        }
+        return;
+    }
+
+    const zhRecord = zhObj as Record<string, any>;
+    const enRecord = enObj && typeof enObj === 'object' ? (enObj as Record<string, any>) : undefined;
+
+    for (const key of Object.keys(zhRecord)) {
+        if (englishOnlyKeys.has(key)) {
+            // 英文优先，无英文则用中文兜底
+            const value = enRecord && enRecord[key] !== undefined ? enRecord[key] : zhRecord[key];
+            if (value !== undefined && topLevel[key] === undefined) {
+                topLevel[key] = value;
+            }
+            if (enRecord) delete enRecord[key];
+            delete zhRecord[key];
+            continue;
+        }
+        const enChild = enRecord ? enRecord[key] : undefined;
+        const zhChild = zhRecord[key];
+        if (zhChild && typeof zhChild === 'object') {
+            stripNestedEnglishOnly(enChild, zhChild, topLevel, englishOnlyKeys);
+        }
+    }
+};
+
+export { stripNestedEnglishOnly };
 
 export const buildGroupedBlock = (
     en: Record<string, any> | null | undefined,

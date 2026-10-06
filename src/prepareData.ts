@@ -1,4 +1,4 @@
-import {
+﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -2628,7 +2628,7 @@ class BaseItemMgr implements DataMgr<ItemFileEntry> {
         }
         // 冒险装备
         if (typeAbbr === 'G') {
-            return '冒险用品';
+            return '冒险装备';
         }
         // 坐骑与载具
         if (typeAbbr === 'VEH' || typeAbbr === 'MNT' || typeAbbr === 'AIR' || typeAbbr === 'SHP' || typeAbbr === 'SPC' || typeAbbr === 'TAH') {

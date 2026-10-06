@@ -1,10 +1,10 @@
 import { createHash } from 'crypto';
 import path from 'path';
 import XLSX from 'xlsx';
-import { i18nKeyRules, getEnglishOnlyKeys } from '../i18n.js';
+import { i18nKeyRules, getEnglishOnlyKeys, stripNestedEnglishOnly } from '../i18n.js';
 
 // 重新导出，供各导出器统一从 shared.js 引用
-export { getEnglishOnlyKeys };
+export { getEnglishOnlyKeys, stripNestedEnglishOnly };
 
 export interface SubraceReplacement {
     subraceName: string;
@@ -324,6 +324,8 @@ export const splitStructuredRecordByDiff = (
             common[key] = zhValue;
         }
     }
+
+    stripNestedEnglishOnly(enOut, zhOut, common, englishOnlyKeys);
 
     return { common, en: enOut, zh: zhOut };
 };
