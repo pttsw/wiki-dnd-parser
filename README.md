@@ -203,7 +203,7 @@ npm run listFiles
 - **Partnered 模式**（`start:partnered` / `page:partnered`）：仅加载标记为 `partnered: true` 的合作方内容，输出标记 `ispartnered: true`
 - **Homebrew 模式**（`start:homebrew` / `page:homebrew`）：加载所有第三方自制数据（含合作方和纯玩家自制），合作方标记 `ispartnered: true`，纯玩家自制标记 `ishomebrew: true`
 
-homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddyLimit/homebrew)（英文）和 [tjliqy/homebrew](https://github.com/tjliqy/homebrew)（中文翻译），数据存放于 `./input/5e-en/homebrew` 和 `./input/5e-cn/homebrew`。
+homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddyLimit/homebrew)（英文）和 [tjliqy/homebrew-deploy](https://github.com/tjliqy/homebrew-deploy)（中文翻译），数据存放于 `./input/5e-en/homebrew` 和 `./input/5e-cn/homebrew`。
 
 #### 指令对照表
 

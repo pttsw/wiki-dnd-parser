@@ -1178,7 +1178,7 @@ const getHomebrewRepoData = async (
         console.log(`[${getTimestamp()}] === Homebrew 模式 ===`);
         await getHomebrewRepoData(
             'https://github.com/TheGiddyLimit/homebrew.git',
-            'https://github.com/tjliqy/homebrew.git',
+            'https://github.com/tjliqy/homebrew-deploy.git',
             enHomebrewDir,
             zhHomebrewDir
         );

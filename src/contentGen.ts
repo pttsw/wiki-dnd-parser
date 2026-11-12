@@ -251,17 +251,17 @@ class TagParser {
                 source = 'PHB';
             }
             
-            // 检查法术名是否为中文，如果是，查找英文名
-            let englishName = '';
-            if (containsChinese(spellName)) {
-                englishName = spellNameMap.get(spellName) || '';
-            }
-            
-            // 检查是否已经有en=参数
-            const hasEnParam = restParams.some(p => p.startsWith('en='));
-            if (englishName && !hasEnParam) {
-                restParams.push(`en=${englishName}`);
-            }
+            // // 检查法术名是否为中文，如果是，查找英文名
+            // let englishName = '';
+            // if (containsChinese(spellName)) {
+            //     englishName = spellNameMap.get(spellName) || '';
+            // }
+            // 
+            // // 检查是否已经有en=参数
+            // const hasEnParam = restParams.some(p => p.startsWith('en='));
+            // if (englishName && !hasEnParam) {
+            //     restParams.push(`en=${englishName}`);
+            // }
             
             // 构建结果
             const restStr = restParams.length > 0 ? '|' + restParams.join('|') : '';

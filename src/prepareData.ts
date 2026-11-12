@@ -1,4 +1,4 @@
-﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -125,6 +125,22 @@ interface InputReplaceLogs {
     generatedAt: string;
 }
 
+interface InputHomebrewReplaceLogs {
+    en?: {
+        commit?: { hash: string; message: string; author: string; date: string };
+        previousCommit?: { hash: string; message: string; author: string; date: string };
+        changedFiles?: InputChangedFile[];
+        generatedAt?: string;
+    };
+    zh?: {
+        commit?: { hash: string; message: string; author: string; date: string };
+        previousCommit?: { hash: string; message: string; author: string; date: string };
+        changedFiles?: InputChangedFile[];
+        generatedAt?: string;
+    };
+    generatedAt?: string;
+}
+
 interface OutputChangedFile {
     filePath: string;
     dataType: string;
@@ -140,6 +156,7 @@ interface OutputReplaceLogs {
 
 let inputReplaceLogs: InputReplaceLogs | null = null;
 let changedUidsSet: Set<string> | null = null;
+let changedHomebrewSources: Set<string> | null = null;
 const changedOutputFiles: OutputChangedFile[] = [];
 
 const getCommonParentDir = (path1: string, path2: string): string => {
@@ -218,14 +235,111 @@ const loadInputReplaceLogs = async (): Promise<void> => {
     }
 };
 
+const readHomebrewChangedFile = async (baseDir: string, relativePath: string): Promise<Record<string, any> | null> => {
+    const normalized = relativePath.replace(/\\/g, '/');
+    const filePath = path.join(baseDir, ...normalized.split('/'));
+    try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(content) as Record<string, any>;
+    } catch {
+        return null;
+    }
+};
+
+const extractSourceIdsFromHomebrewFile = (data: Record<string, any>): string[] => {
+    const ids = new Set<string>();
+    const metaSources = data._meta?.sources;
+    if (Array.isArray(metaSources)) {
+        for (const s of metaSources) {
+            if (s?.json) ids.add(String(s.json));
+        }
+    }
+    for (const [key, value] of Object.entries(data)) {
+        if (key.startsWith('_') || key.startsWith('$')) continue;
+        if (!Array.isArray(value)) continue;
+        for (const item of value) {
+            if (!item || typeof item !== 'object') continue;
+            if (item.source) ids.add(String(item.source));
+            // adventure / book 的输出目录使用条目的 id 作为目录名
+            if ((key === 'adventure' || key === 'book') && item.id) ids.add(String(item.id));
+        }
+    }
+    return [...ids];
+};
+
+const buildChangedHomebrewSources = async (logs: InputHomebrewReplaceLogs): Promise<Set<string>> => {
+    const sources = new Set<string>();
+    const addSource = (id: string): void => {
+        if (!id) return;
+        sources.add(id);
+        sources.add(escapeFileName(id));
+    };
+
+    const files = new Set<string>();
+    for (const f of logs.en?.changedFiles ?? []) files.add(f.filePath);
+    for (const f of logs.zh?.changedFiles ?? []) files.add(f.filePath);
+
+    for (const filePath of files) {
+        const normalized = filePath.replace(/\\/g, '/');
+        // 跳过自动生成的索引与元数据文件，它们不对应任何数据来源
+        if (normalized.startsWith('_generated/') || normalized.startsWith('_meta/')) continue;
+        if (normalized.endsWith('_all.json')) continue;
+        if (!normalized.endsWith('.json')) continue;
+
+        const [enData, zhData] = await Promise.all([
+            readHomebrewChangedFile(config.HOMEBREW_EN_DIR, normalized),
+            readHomebrewChangedFile(config.HOMEBREW_ZH_DIR, normalized),
+        ]);
+
+        let extracted = 0;
+        for (const data of [enData, zhData]) {
+            if (!data) continue;
+            for (const id of extractSourceIdsFromHomebrewFile(data)) {
+                addSource(id);
+                extracted++;
+            }
+        }
+
+        if (extracted === 0) {
+            // 文件不存在（可能已被删除），退化为用文件名近似匹配
+            const base = normalized.split('/').pop();
+            if (base) addSource(base.slice(0, -'.json'.length));
+        }
+    }
+
+    return sources;
+};
+
+const loadInputHomebrewReplaceLogs = async (): Promise<void> => {
+    const commonParentDir = getCommonParentDir(config.DATA_ZH_DIR, config.DATA_EN_DIR);
+    const inputPath = path.join(commonParentDir, 'replace-logs-homebrew.json');
+    try {
+        const content = await fs.readFile(inputPath, 'utf-8');
+        const parsed = JSON.parse(content) as InputHomebrewReplaceLogs;
+        changedHomebrewSources = await buildChangedHomebrewSources(parsed);
+        const changedFileCount = (parsed.en?.changedFiles?.length ?? 0) + (parsed.zh?.changedFiles?.length ?? 0);
+        console.log(chalk.cyan(`[prepareData] 已加载 ${inputPath}，检测到 ${changedFileCount} 个变更文件，${changedHomebrewSources.size} 个变更来源`));
+    } catch {
+        changedHomebrewSources = null;
+        console.log(chalk.cyan(`[prepareData] 未找到 ${inputPath}，跳过 homebrew 变更跟踪`));
+    }
+};
+
 const isUidChanged = (uid: string): boolean => {
     if (!inputReplaceLogs || !changedUidsSet) return false;
     return changedUidsSet.has(uid);
 };
 
+const registerChangedOutputFile = (filePath: string, dataType: string, source: string): void => {
+    const existingIndex = changedOutputFiles.findIndex(f => f.filePath === filePath);
+    if (existingIndex === -1) {
+        changedOutputFiles.push({ filePath, dataType, source });
+    }
+};
+
 const trackOutputFile = (filePath: string, dataType: string, source: string, uid?: string): void => {
     if (!inputReplaceLogs) return;
-    
+
     if (uid !== undefined && uid !== '__collection__') {
         if (!isUidChanged(uid)) {
             return;
@@ -235,23 +349,87 @@ const trackOutputFile = (filePath: string, dataType: string, source: string, uid
             return;
         }
     }
-    
-    const existingIndex = changedOutputFiles.findIndex(f => f.filePath === filePath);
-    if (existingIndex === -1) {
-        changedOutputFiles.push({ filePath, dataType, source });
+
+    registerChangedOutputFile(filePath, dataType, source);
+};
+
+const collectChangedHomebrewOutputFiles = async (): Promise<void> => {
+    if (!changedHomebrewSources || changedHomebrewSources.size === 0) return;
+
+    const outputRoot = './output';
+    let topDirs: string[] = [];
+    try {
+        topDirs = (await fs.readdir(outputRoot)).filter(name => !name.startsWith('.'));
+    } catch {
+        return;
+    }
+
+    for (const top of topDirs) {
+        const topPath = path.join(outputRoot, top);
+        try {
+            if (!(await fs.stat(topPath)).isDirectory()) continue;
+        } catch {
+            continue;
+        }
+
+        let entries: string[] = [];
+        try {
+            entries = await fs.readdir(topPath);
+        } catch {
+            continue;
+        }
+
+        // 一层：output/<type>/<sourceId>/... （管理器、通用导出器、adventure/book 页面输出）
+        for (const entry of entries) {
+            if (!changedHomebrewSources.has(entry)) continue;
+            const sourcePath = path.join(topPath, entry);
+            try {
+                if (!(await fs.stat(sourcePath)).isDirectory()) continue;
+                const files = await fs.readdir(sourcePath);
+                for (const file of files) {
+                    if (!file.endsWith('.json')) continue;
+                    registerChangedOutputFile(`${top}/${entry}/${file}`, top, entry);
+                }
+            } catch {
+                continue;
+            }
+        }
+
+        // 二层：output/contents/<book|adventure>/<id>.json
+        for (const entry of entries) {
+            const subPath = path.join(topPath, entry);
+            try {
+                if (!(await fs.stat(subPath)).isDirectory()) continue;
+                const subFiles = await fs.readdir(subPath);
+                for (const file of subFiles) {
+                    if (!file.endsWith('.json')) continue;
+                    const id = file.slice(0, -'.json'.length);
+                    if (changedHomebrewSources.has(id)) {
+                        registerChangedOutputFile(`${top}/${entry}/${file}`, top, id);
+                    }
+                }
+            } catch {
+                continue;
+            }
+        }
     }
 };
 
 const generateOutputReplaceLogs = async (): Promise<void> => {
-    if (!inputReplaceLogs) return;
-    
+    if (!inputReplaceLogs && !changedHomebrewSources) return;
+
+    // homebrew 变更通过输出目录扫描补齐（adventure 等由 split-books 生成的输出不会调用 trackOutputFile）
+    if (changedHomebrewSources) {
+        await collectChangedHomebrewOutputFiles();
+    }
+
     const outputReplaceLogs: OutputReplaceLogs = {
-        inputCommit: inputReplaceLogs.commit.hash,
-        inputCommitMessage: inputReplaceLogs.commit.message,
+        inputCommit: inputReplaceLogs?.commit?.hash ?? '',
+        inputCommitMessage: inputReplaceLogs?.commit?.message ?? '',
         changedOutputFiles: changedOutputFiles,
         generatedAt: new Date().toISOString()
     };
-    
+
     const outputPath = path.join('./output', 'replace-logs.json');
     await fs.writeFile(outputPath, JSON.stringify(outputReplaceLogs, null, 2), 'utf-8');
     console.log(chalk.cyan(`[prepareData] 已生成 output/replace-logs.json，记录了 ${changedOutputFiles.length} 个输出文件变更`));
@@ -5428,8 +5606,12 @@ let isnavpillIds = new Set<string>();
         await createOutputFolders(generatePages, cleanOutput);
         printProgress('输出目录已重建');
         
-        // 加载 input/replace-logs.json
+        // 加载 input/replace-logs.json（官方数据变更）
         await loadInputReplaceLogs();
+        // 加载 input/replace-logs-homebrew.json（homebrew 数据变更）
+        if (isHomebrewMode) {
+            await loadInputHomebrewReplaceLogs();
+        }
 
         // 生成出版物目录和分割出版物（仅在非page模式下）
         let contentsResult = { bookCount: 0, adventureCount: 0, copiedCount: 0 };
