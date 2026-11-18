@@ -64,9 +64,9 @@
   - `DATA_EN_DIR` 英文数据根目录（应包含 `books.json`、`items.json`、`spells/` 等）。
   - `DATA_ZH_DIR` 中文数据根目录。
   - 默认值为 `./input/5e-en/data` 与 `./input/5e-cn/data`。
-- `npm run getCnRepo` 使用 HTTPS 从 `https://github.com/5etools-mirror-3/5etools-src.git` 与 `https://github.com/tjliqy/5etools-cn.git` 拉取数据：
-  - `https://github.com/5etools-mirror-3/5etools-src.git` -> `./input/5e-cn/data`（中文）
-  - `https://github.com/5etools-mirror-3/5etools-src.git` -> `./input/5e-en/data`（英文）
+- `npm run getCnRepo` 使用 HTTPS 从 `https://github.com/tjliqy/5etools-mirror-2.github.io.git` 拉取数据：
+  - `data/` -> `./input/5e-cn/data`（中文）
+  - `data-bak/` -> `./input/5e-en/data`（英文）
   - 如果数据不在 `./input/.../data`，请手动调整 `src/config.ts`。
 - 目录清单会被 `createOutputFolders` 重置，请避免把其他文件放在 `./output` 下。
 
@@ -154,14 +154,21 @@ Wiki 文件名格式：**中文名.wiki**（按来源分文件夹存放）
 2. 获取数据（二选一，也可同时执行）：
    - **官方数据**：运行 `npm run getCnRepo` 拉取官方仓库数据（中英文）。
    - **第三方合作（homebrew）数据（可选）**：运行 `npm run getCnRepo:homebrew` 拉取 homebrew 仓库数据（见下方 Homebrew 模式说明）。
+   - 上述命令默认**增量拉取**（首次全量克隆，之后只拉后续变更）；如需「删除目录 + 全量克隆」的旧模式，使用对应的 `-lightweight` 命令或加 `--lightweight` 参数（见下方「数据拉取模式」）。
    - 如果不通过脚本拉取文件，而选择手动放数据，可在`src\config.ts`中修改文件路径。
    - 运行 `npm run racetable` 补全`子种族名字替换词典.xlsx`缺失数据，然后手动补充替换项。
 ```bash
-# 拉取官方数据
+# 拉取官方数据（增量）
 npm run getCnRepo
 
-# 拉取第三方合作数据
+# 拉取官方数据（全量克隆，旧模式）
+npm run getCnRepo-lightweight
+
+# 拉取第三方合作数据（增量）
 npm run getCnRepo:homebrew
+
+# 拉取第三方合作数据（全量克隆，旧模式）
+npm run getCnRepo:homebrew-lightweight
 
 # 补全子种族名字替换词典
 npm run racetable
@@ -196,6 +203,25 @@ npm run page:homebrew
 npm run listFiles
 ```
 ---
+
+### 数据拉取模式（getCnRepo）
+
+`npm run getCnRepo` 与 `npm run getCnRepo:homebrew` 默认采用**增量拉取**，`--lightweight` 是两者共享的开关，用于退回旧的全量克隆模式：
+
+| 命令 | 等价参数 | 行为 |
+| --- | --- | --- |
+| `npm run getCnRepo` | 无 | 增量拉取（git fetch + reset） |
+| `npm run getCnRepo:homebrew` | `--homebrew` | 增量拉取（复用 blobless + 稀疏签出） |
+| `npm run getCnRepo-lightweight` | `--lightweight` | 全量克隆（删除目录后重新克隆，旧模式） |
+| `npm run getCnRepo:homebrew-lightweight` | `--homebrew --lightweight` | 全量克隆（旧模式） |
+
+增量机制说明：
+
+- 首次运行仍会全量克隆一次（建立本地缓存）：官方数据缓存到 `./repo-cache`，homebrew 数据直接缓存在 `./input/5e-en/homebrew` / `./input/5e-cn/homebrew` 的 `.git` 中。
+- 之后每次运行执行 `git fetch --depth 2 --force` + `git reset --hard origin/<分支>`，只下载后续变更。
+- 若增量拉取失败（例如上游强推导致浅克隆历史错乱），会自动回退为全量克隆。
+- 也可以手动拼参数：`npm run getCnRepo -- --lightweight`（npm 传参需用 `--` 分隔）。
+
 ### Homebrew / Partnered 模式
 
 项目支持处理 5etools 生态的第三方自制（homebrew）数据，并在此基础上支持合作方（partnered）模式，区分商业合作方内容与纯玩家自制内容：
@@ -209,7 +235,8 @@ homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddy
 
 | 指令 | 对应脚本 | 作用（相对基础版本的差异） |
 | --- | ------- | ------------------------ |
-| `npm run getCnRepo:homebrew` | `getGitRepo.ts --homebrew` | 拉取包括 homebrew 仓库数据（blobless clone + sparse-checkout 仅下载 JSON）；生成 `replace-logs-homebrew.json` 跟踪变更；**全类别数据重组**（遍历所有类别目录的 JSON 文件，将参杂到错误目录的数据剪切到正确的类别目录，如 `spell/`、`item/`、`creature/`、`race/`、`class/`、`subrace/`、`table/`、`trap/`、`variantrule/`、`vehicle/`、`encounter/` 等 30+ 种类型）；**最后解析 `_copy` 引用**（在重组后的干净数据上解析 homebrew 引用的官方数据） |
+| `npm run getCnRepo:homebrew` | `getGitRepo.ts --homebrew` | **增量拉取** homebrew 仓库数据（首次 blobless clone + sparse-checkout 仅下载 JSON，之后 `git fetch` + `reset` 仅拉后续变更）；生成 `replace-logs-homebrew.json` 跟踪变更；**全类别数据重组**（遍历所有类别目录的 JSON 文件，将参杂到错误目录的数据剪切到正确的类别目录，如 `spell/`、`item/`、`creature/`、`race/`、`class/`、`subrace/`、`table/`、`trap/`、`variantrule/`、`vehicle/`、`encounter/` 等 30+ 种类型）；**最后解析 `_copy` 引用**（在重组后的干净数据上解析 homebrew 引用的官方数据） |
+| `npm run getCnRepo:homebrew-lightweight` | `getGitRepo.ts --homebrew --lightweight` | 与 `getCnRepo:homebrew` 相同，但采用旧模式：每次删除目录后全量克隆（`--lightweight` 开关） |
 | `npm run start:partnered` | `prepareData.ts --homebrew --partnered` | 在加载官方数据时，自动加载对应的 homebrew 分类数据（**仅限合作方内容**），输出标记 `ispartnered: true` |
 | `npm run start:homebrew` | `prepareData.ts --homebrew` | 在加载官方数据时，自动加载**所有** homebrew 分类数据（合作方 + 纯玩家自制），合作方输出标记 `ispartnered: true`，纯玩家自制标记 `ishomebrew: true` |
 | `npm run page:partnered` | `prepareData.ts --page --homebrew --partnered` + `generateBookPages.ts` | 先生成含合作方数据的 JSON 输出，再生成对应的 Wiki 页面 |
@@ -220,7 +247,7 @@ homebrew 数据仓库来自 [TheGiddyLimit/homebrew](https://github.com/TheGiddy
 
 #### `npm run getCnRepo:homebrew` 详细流程
 
-1. **克隆仓库**：使用 `git clone --depth 2 --filter=blob:none --no-checkout` 进行 blobless 克隆，仅下载 tree 元数据
+1. **克隆/增量拉取仓库**：首次使用 `git clone --depth 2 --filter=blob:none --no-checkout` 进行 blobless 克隆，仅下载 tree 元数据；之后若本地已有仓库，则改为 `git fetch --depth 2 --force` + `git reset --hard` 增量拉取（失败自动回退全量克隆）
 2. **稀疏签出**：通过 `sparse-checkout --no-cone` 仅签出 `*.json` 文件，跳过非 JSON 资源
 3. **生成变更日志**：对比最近两次 commit，生成 `replace-logs-homebrew.json`（记录增删改的文件与数组）
 4. **全类别数据重组**（第1步）：遍历所有类别目录下的 JSON 文件，检查每个键是否映射到 `KEY_TO_DIR` 中的其他目录。若发现数据参杂到错误目录（如 `spell/` 目录下出现 `monster` 数据、`item/` 目录下出现 `spell` 数据等），则将其剪切到正确的类别目录并合并到已有文件。覆盖所有 30+ 种类型目录，不仅限于 collection。**这是解决 homebrew 数据混乱的关键步骤。**
@@ -249,7 +276,7 @@ HOMEBREW_ZH_DIR: './input/5e-cn/homebrew'   // 中文 homebrew 数据目录
 
 备注
 
-- `src/getGitRepo.ts` 通过 `git clone` + `sparse-checkout` 仅下载 `data/` 与 `data-bak` 目录。
+- `src/getGitRepo.ts` 默认增量拉取：官方数据缓存到 `./repo-cache`，homebrew 数据缓存到 `./input/*/homebrew` 的 `.git`，之后 `git fetch` + `reset` 仅拉后续变更；`--lightweight` 参数退回「删除目录 + 全量克隆」旧模式（`git clone` + `sparse-checkout` 仅下载 `data/` 与 `data-bak` 目录）。
 - `src/contentGen.ts` 会把表格/列表等结构转为 HTML，并统一收集 `{@tag}` 参数。
 - `src/preprocess.ts` 未接入脚本流程，如需使用需自行调用。
 - 默认配置是相对路径，跨平台可用；如数据位置不同请改 `src/config.ts`。

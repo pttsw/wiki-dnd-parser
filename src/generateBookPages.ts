@@ -683,6 +683,42 @@ const main = async () => {
         const jsonPageOutputPath = './output/json-page.json';
         await fs.writeFile(jsonPageOutputPath, JSON.stringify(mergedMap, null, 2), 'utf-8');
         console.log(`已生成 ${jsonPageOutputPath}，记录了 ${mergedMap.length} 个页面映射`);
+
+        // 根据 replace-logs.json 记录本次有更新/新增的 json 文件，筛选出对应重新生成的 wiki 页面
+        const replaceLogsPath = './output/replace-logs.json';
+        let changedJsonPaths = new Set<string>();
+        try {
+            const logsContent = await fs.readFile(replaceLogsPath, 'utf-8');
+            const logs = JSON.parse(logsContent);
+            const changedFiles = logs.changedOutputFiles;
+            if (Array.isArray(changedFiles)) {
+                for (const item of changedFiles) {
+                    if (item && typeof item.filePath === 'string') {
+                        changedJsonPaths.add(item.filePath);
+                    }
+                }
+            }
+        } catch {
+            console.log(`未找到 ${replaceLogsPath}，跳过更新 wiki 文件清单生成`);
+        }
+
+        if (changedJsonPaths.size > 0) {
+            const updatedWikiFiles = mergedMap.filter((entry) => entry && changedJsonPaths.has(entry.jsonPath)).map((entry) => ({
+                wikiPath: entry.wikiPath,
+                jsonPath: entry.jsonPath,
+                pageId: entry.pageId,
+                bookId: entry.bookId,
+                locale: entry.locale,
+            })).sort((a, b) => a.wikiPath.localeCompare(b.wikiPath));
+
+            const updatedWikiOutputPath = './output_page/updated-wiki-files.json';
+            await fs.writeFile(updatedWikiOutputPath, JSON.stringify({
+                generatedAt: new Date().toISOString(),
+                count: updatedWikiFiles.length,
+                wikiFiles: updatedWikiFiles,
+            }, null, 2), 'utf-8');
+            console.log(`已生成 ${updatedWikiOutputPath}，记录了 ${updatedWikiFiles.length} 个更新或新增的 wiki 文件`);
+        }
     } catch (error) {
         console.error('生成页面失败:', error);
         process.exit(1);

@@ -1,6 +1,9 @@
 node_modules
 output/**/*
 input/**/*
+temp-git-clone/
+repo-cache/
+repo-cache.tmp/
 .env
 *.log
 temp-repo.zip

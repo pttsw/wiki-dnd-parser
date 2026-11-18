@@ -243,7 +243,22 @@ const getCommonParentDir = (path1: string, path2: string): string => {
     return commonParts.length > 0 ? commonParts.join('/') : dir1;
 };
 
+const isCommitAvailable = (repoDir: string, commitHash: string): boolean => {
+    try {
+        execSync(`git cat-file -e ${commitHash}^{commit}`, {
+            cwd: repoDir,
+            stdio: ['ignore', 'ignore', 'ignore']
+        });
+        return true;
+    } catch {
+        return false;
+    }
+};
+
 const generateReplaceLogs = async (repoDir: string, zhDir: string, enDir: string) => {
+    const commonParentDir = getCommonParentDir(zhDir, enDir);
+    const outputPath = path.join(commonParentDir, 'replace-logs.json');
+
     const replaceLogs: {
         commit: CommitInfo;
         previousCommit: CommitInfo;
@@ -255,81 +270,111 @@ const generateReplaceLogs = async (repoDir: string, zhDir: string, enDir: string
         changedFiles: [],
         generatedAt: new Date().toISOString()
     };
-    
+
+    // 读取上一次的 replace-logs，用于确定本次 diff 的基准提交（即上次已处理的提交）
+    let previousHash = '';
+    try {
+        const prevContent = await fs.readFile(outputPath, 'utf-8');
+        const prevParsed = JSON.parse(prevContent) as { commit?: { hash?: string } };
+        previousHash = prevParsed?.commit?.hash || '';
+    } catch {
+        previousHash = '';
+    }
+
     try {
         const latestCommit = execSync('git rev-parse HEAD', {
             cwd: repoDir,
             encoding: 'utf-8',
             stdio: ['ignore', 'pipe', 'ignore']
         }).trim();
-        
-        const previousCommit = execSync('git rev-parse HEAD~1', {
-            cwd: repoDir,
-            encoding: 'utf-8',
-            stdio: ['ignore', 'pipe', 'ignore']
-        }).trim();
-        
-        replaceLogs.commit = getCommitInfo(latestCommit, repoDir);
-        replaceLogs.previousCommit = getCommitInfo(previousCommit, repoDir);
-        
-        const diffOutput = execSync(`git diff ${previousCommit} ${latestCommit} --name-status`, {
-            cwd: repoDir,
-            encoding: 'utf-8',
-            stdio: ['ignore', 'pipe', 'ignore']
-        });
-        
-        const lines = diffOutput.trim().split('\n');
-        
-        for (const line of lines) {
-            const [status, filePath] = line.split('\t');
-            if (!filePath) continue;
-            
-            const jsonMatch = filePath.match(/(data|data-bak)\/(.+\.json)/);
-            if (!jsonMatch) continue;
-            
-            const locale = jsonMatch[1] === 'data' ? 'zh' : 'en';
-            
-            let changedArrays: ChangedArray[] = [];
-            
-            if (status !== 'D') {
-                try {
-                    const newContent = await fs.readFile(path.join(repoDir, filePath), 'utf-8');
-                    let oldContent = '';
-                    if (status !== 'A') {
-                        try {
-                            oldContent = execSync(`git show ${previousCommit}:${filePath}`, {
-                                cwd: repoDir,
-                                encoding: 'utf-8',
-                                stdio: ['ignore', 'pipe', 'ignore']
-                            }).trim();
-                        } catch {
-                            oldContent = '';
-                        }
-                    }
-                    const changedArraysResult = analyzeJsonDiff(oldContent, newContent);
-                    changedArrays = changedArraysResult;
-                } catch {
-                    changedArrays = [{ name: 'content', type: 'modified' }];
-                }
+
+        // 优先用上一次记录的 commit 作为基准，从而覆盖「上次拉取到本次之间的所有提交」；
+        // 若该 commit 不在本地（浅克隆历史被截断）或不再是祖先（上游强推），则退回 HEAD~1
+        let baseCommit = '';
+        if (previousHash && isCommitAvailable(repoDir, previousHash)) {
+            try {
+                execSync(`git merge-base --is-ancestor ${previousHash} ${latestCommit}`, {
+                    cwd: repoDir,
+                    stdio: ['ignore', 'ignore', 'ignore']
+                });
+                baseCommit = previousHash;
+            } catch {
+                baseCommit = '';
             }
-            
-            let fileStatus: 'added' | 'modified' | 'deleted' = 'modified';
-            if (status === 'A') fileStatus = 'added';
-            if (status === 'D') fileStatus = 'deleted';
-            
-            replaceLogs.changedFiles.push({
-                filePath: jsonMatch[2],
-                locale,
-                status: fileStatus,
-                changedArrays
+        }
+        if (!baseCommit) {
+            try {
+                baseCommit = execSync('git rev-parse HEAD~1', {
+                    cwd: repoDir,
+                    encoding: 'utf-8',
+                    stdio: ['ignore', 'pipe', 'ignore']
+                }).trim();
+            } catch {
+                baseCommit = '';
+            }
+        }
+
+        replaceLogs.commit = getCommitInfo(latestCommit, repoDir);
+        replaceLogs.previousCommit = getCommitInfo(baseCommit, repoDir);
+
+        if (baseCommit) {
+            const diffOutput = execSync(`git diff ${baseCommit} ${latestCommit} --name-status`, {
+                cwd: repoDir,
+                encoding: 'utf-8',
+                stdio: ['ignore', 'pipe', 'ignore']
             });
+
+            const lines = diffOutput.trim().split('\n');
+
+            for (const line of lines) {
+                const [status, filePath] = line.split('\t');
+                if (!filePath) continue;
+
+                const jsonMatch = filePath.match(/(data|data-bak)\/(.+\.json)/);
+                if (!jsonMatch) continue;
+
+                const locale = jsonMatch[1] === 'data' ? 'zh' : 'en';
+
+                let changedArrays: ChangedArray[] = [];
+
+                if (status !== 'D') {
+                    try {
+                        const newContent = await fs.readFile(path.join(repoDir, filePath), 'utf-8');
+                        let oldContent = '';
+                        if (status !== 'A') {
+                            try {
+                                oldContent = execSync(`git show ${baseCommit}:${filePath}`, {
+                                    cwd: repoDir,
+                                    encoding: 'utf-8',
+                                    stdio: ['ignore', 'pipe', 'ignore']
+                                }).trim();
+                            } catch {
+                                oldContent = '';
+                            }
+                        }
+                        const changedArraysResult = analyzeJsonDiff(oldContent, newContent);
+                        changedArrays = changedArraysResult;
+                    } catch {
+                        changedArrays = [{ name: 'content', type: 'modified' }];
+                    }
+                }
+
+                let fileStatus: 'added' | 'modified' | 'deleted' = 'modified';
+                if (status === 'A') fileStatus = 'added';
+                if (status === 'D') fileStatus = 'deleted';
+
+                replaceLogs.changedFiles.push({
+                    filePath: jsonMatch[2],
+                    locale,
+                    status: fileStatus,
+                    changedArrays
+                });
+            }
         }
     } catch (error) {
         console.warn(`[${getTimestamp()}] 生成 replace-logs.json 失败:`, error);
     }
-    
-    const commonParentDir = getCommonParentDir(zhDir, enDir);
-    const outputPath = path.join(commonParentDir, 'replace-logs.json');
+
     await fs.mkdir(commonParentDir, { recursive: true });
     await fs.writeFile(outputPath, JSON.stringify(replaceLogs, null, 2), 'utf-8');
     console.log(`[${getTimestamp()}] 已生成 replace-logs.json: ${outputPath}`);
@@ -470,8 +515,10 @@ const buildProxyEnv = () => {
 const getRepoData = async (
     repoUrl: string,
     targetPaths: { zh: string; en: string },
-    branch?: string
+    branch?: string,
+    mode: 'clone' | 'pull' = 'clone'
 ) => {
+    const isIncremental = mode === 'pull';
     const branchText = branch ? ` (分支: ${branch})` : '';
     const proxy = buildProxyEnv();
     if (proxy.sources.length > 0) {
@@ -482,8 +529,10 @@ const getRepoData = async (
         );
     }
     const execOptions = { stdio: 'inherit' as const, env: proxy.env };
-    console.log(`[${getTimestamp()}] 正在克隆仓库: ${repoUrl}${branchText}`);
-    const tempDir = './temp-git-clone';
+    console.log(
+        `[${getTimestamp()}] 正在${isIncremental ? '增量拉取' : '克隆'}仓库: ${repoUrl}${branchText}`
+    );
+    const tempDir = isIncremental ? './repo-cache' : './temp-git-clone';
 
     // 安全删除目录，带重试
     const safeRmdir = async (dir: string, retries = 3) => {
@@ -504,23 +553,98 @@ const getRepoData = async (
     };
 
     try {
-        console.log(`[${getTimestamp()}] 清理临时目录...`);
-        // 移除临时目录
-        await safeRmdir(tempDir);
+        if (isIncremental) {
+            const gitDir = path.join(tempDir, '.git');
+            const isRepo = await fs.access(gitDir).then(() => true).catch(() => false);
 
-        console.log(`[${getTimestamp()}] 开始克隆仓库...`);
-        // 使用 --depth 2 来获取最近两次提交，以便比较差异
-        const cloneArgs = [
-            'clone',
-            '--depth',
-            '2',
-            ...(branch ? ['--branch', branch] : []),
-            repoUrl,
-            tempDir,
-        ];
-        console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
-        execSync(`git ${cloneArgs.join(' ')}`, execOptions);
-        console.log(`[${getTimestamp()}] 克隆完成！`);
+            if (!isRepo) {
+                // 首次运行：克隆仓库到持久化缓存目录（depth 50 保留历史，便于后续增量 diff）
+                console.log(`[${getTimestamp()}] 首次运行，克隆仓库到缓存目录...`);
+                const cloneArgs = [
+                    'clone',
+                    '--depth',
+                    '50',
+                    ...(branch ? ['--branch', branch] : []),
+                    repoUrl,
+                    tempDir,
+                ];
+                console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
+                execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+            } else {
+                // 增量拉取：fetch + reset，仅下载后续变更
+                console.log(`[${getTimestamp()}] 缓存仓库已存在，增量拉取最新提交...`);
+                try {
+                    let remoteBranch = branch;
+                    if (!remoteBranch) {
+                        try {
+                            const originHead = execSync('git rev-parse --abbrev-ref origin/HEAD', {
+                                cwd: tempDir,
+                                encoding: 'utf-8',
+                                stdio: ['ignore', 'pipe', 'ignore']
+                            }).trim();
+                            if (originHead.startsWith('origin/')) {
+                                remoteBranch = originHead.slice('origin/'.length);
+                            }
+                        } catch {
+                            remoteBranch = '';
+                        }
+                    }
+                    if (!remoteBranch) remoteBranch = 'HEAD';
+                    // 不带 refspec 的 fetch 会更新 refs/remotes/origin/*，供后续 reset 使用；
+                    // 保留一段历史（depth 50）以便与上次记录的 commit 做 diff，而非只比对最近一次提交
+                    execSync(`git fetch --depth 50 --force origin`, {
+                        ...execOptions,
+                        cwd: tempDir
+                    });
+                    execSync(`git reset --hard origin/${remoteBranch}`, {
+                        ...execOptions,
+                        cwd: tempDir
+                    });
+                } catch (pullErr) {
+                    // 增量拉取失败（如上游强推导致浅克隆历史错乱）时，回退为全量克隆；
+                    // 先克隆到临时目录，成功后再替换缓存，避免克隆失败时丢失已有缓存
+                    console.warn(`[${getTimestamp()}] 增量拉取失败，回退为全量克隆:`, pullErr);
+                    const tmpCloneDir = `${tempDir}.tmp`;
+                    await safeRmdir(tmpCloneDir);
+                    const cloneArgs = [
+                        'clone',
+                        '--depth',
+                        '50',
+                        ...(branch ? ['--branch', branch] : []),
+                        repoUrl,
+                        tmpCloneDir,
+                    ];
+                    try {
+                        execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+                    } catch (cloneErr) {
+                        await safeRmdir(tmpCloneDir);
+                        throw cloneErr;
+                    }
+                    // 克隆成功，用新缓存替换旧缓存
+                    await safeRmdir(tempDir);
+                    await fs.rename(tmpCloneDir, tempDir);
+                }
+            }
+            console.log(`[${getTimestamp()}] 缓存仓库已更新`);
+        } else {
+            console.log(`[${getTimestamp()}] 清理临时目录...`);
+            // 移除临时目录
+            await safeRmdir(tempDir);
+
+            console.log(`[${getTimestamp()}] 开始克隆仓库...`);
+            // 使用 --depth 2 来获取最近两次提交，以便比较差异
+            const cloneArgs = [
+                'clone',
+                '--depth',
+                '2',
+                ...(branch ? ['--branch', branch] : []),
+                repoUrl,
+                tempDir,
+            ];
+            console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
+            execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+            console.log(`[${getTimestamp()}] 克隆完成！`);
+        }
         
         // 生成 replace-logs.json
         console.log(`[${getTimestamp()}] 生成 replace-logs.json...`);
@@ -605,12 +729,14 @@ const getRepoData = async (
         // console.log(`[${getTimestamp()}]   - zh/bestiary/index.json: ${zhBestiaryIndexExists}`);
         // console.log(`[${getTimestamp()}]   - en/bestiary/index.json: ${enBestiaryIndexExists}`);
         
-        // 尝试删除临时目录，但即使失败也继续执行
-        try {
-            await safeRmdir(tempDir);
-            console.log(`[${getTimestamp()}] 临时目录已清理`);
-        } catch (rmErr) {
-            console.warn(`[${getTimestamp()}] 警告: 无法清理临时目录 ${tempDir}，忽略错误继续执行...`);
+        // 全量克隆模式清理临时目录；增量模式保留缓存仓库以便下次继续增量拉取
+        if (!isIncremental) {
+            try {
+                await safeRmdir(tempDir);
+                console.log(`[${getTimestamp()}] 临时目录已清理`);
+            } catch (rmErr) {
+                console.warn(`[${getTimestamp()}] 警告: 无法清理临时目录 ${tempDir}，忽略错误继续执行...`);
+            }
         }
         
         console.log(
@@ -633,7 +759,23 @@ const generateHomebrewReplaceLogs = async (
     zhRepoDir: string,
     outputPath: string
 ) => {
-    const processRepo = async (repoDir: string, locale: 'en' | 'zh') => {
+    // 读取上一次的 replace-logs，确定本次 diff 的基准提交（上次已处理的提交，按语言分别记录）
+    let prevEnHash = '';
+    let prevZhHash = '';
+    try {
+        const prevContent = await fs.readFile(outputPath, 'utf-8');
+        const prevParsed = JSON.parse(prevContent) as {
+            en?: { commit?: { hash?: string } };
+            zh?: { commit?: { hash?: string } };
+        };
+        prevEnHash = prevParsed?.en?.commit?.hash || '';
+        prevZhHash = prevParsed?.zh?.commit?.hash || '';
+    } catch {
+        prevEnHash = '';
+        prevZhHash = '';
+    }
+
+    const processRepo = async (repoDir: string, locale: 'en' | 'zh', previousHash: string) => {
         const result = {
             commit: { hash: '', message: '', author: '', date: '' } as CommitInfo,
             previousCommit: { hash: '', message: '', author: '', date: '' } as CommitInfo,
@@ -649,25 +791,40 @@ const generateHomebrewReplaceLogs = async (
                 stdio: ['ignore', 'pipe', 'ignore']
             }).trim();
 
-            let previousCommit = '';
-            try {
-                previousCommit = execSync('git rev-parse HEAD~1', {
-                    cwd: repoDir,
-                    encoding: 'utf-8',
-                    stdio: ['ignore', 'pipe', 'ignore']
-                }).trim();
-            } catch {
-                console.log(`[${getTimestamp()}]   [${locale}] 仓库 depth=1，跳过 previous commit 对比`);
+            // 优先用上次记录的 commit 作为基准，从而覆盖「上次拉取到本次之间的所有提交」；
+            // 若该 commit 不在本地（浅克隆历史被截断）或不再是祖先（上游强推），则退回 HEAD~1
+            let baseCommit = '';
+            if (previousHash && isCommitAvailable(repoDir, previousHash)) {
+                try {
+                    execSync(`git merge-base --is-ancestor ${previousHash} ${latestCommit}`, {
+                        cwd: repoDir,
+                        stdio: ['ignore', 'ignore', 'ignore']
+                    });
+                    baseCommit = previousHash;
+                } catch {
+                    baseCommit = '';
+                }
+            }
+            if (!baseCommit) {
+                try {
+                    baseCommit = execSync('git rev-parse HEAD~1', {
+                        cwd: repoDir,
+                        encoding: 'utf-8',
+                        stdio: ['ignore', 'pipe', 'ignore']
+                    }).trim();
+                } catch {
+                    console.log(`[${getTimestamp()}]   [${locale}] 仓库 depth=1，跳过 previous commit 对比`);
+                }
             }
 
             result.commit = getCommitInfo(latestCommit, repoDir);
-            if (previousCommit) {
-                result.previousCommit = getCommitInfo(previousCommit, repoDir);
+            if (baseCommit) {
+                result.previousCommit = getCommitInfo(baseCommit, repoDir);
             }
 
-            if (previousCommit) {
+            if (baseCommit) {
                 console.log(`[${getTimestamp()}]   [${locale}] 计算 diff...`);
-                const diffOutput = execSync(`git diff ${previousCommit} ${latestCommit} --name-status`, {
+                const diffOutput = execSync(`git diff ${baseCommit} ${latestCommit} --name-status`, {
                     cwd: repoDir,
                     encoding: 'utf-8',
                     stdio: ['ignore', 'pipe', 'ignore']
@@ -703,8 +860,8 @@ const generateHomebrewReplaceLogs = async (
     };
 
     const [enResult, zhResult] = await Promise.all([
-        processRepo(enRepoDir, 'en'),
-        processRepo(zhRepoDir, 'zh')
+        processRepo(enRepoDir, 'en', prevEnHash),
+        processRepo(zhRepoDir, 'zh', prevZhHash)
     ]);
 
     const output = { en: enResult, zh: zhResult, generatedAt: new Date().toISOString() };
@@ -1016,10 +1173,9 @@ const consolidateHomebrewData = async (homebrewDir: string): Promise<void> => {
 const cloneHomebrewRepo = async (
     repoUrl: string,
     targetDir: string,
-    execOptions: { stdio: 'inherit'; env: NodeJS.ProcessEnv }
+    execOptions: { stdio: 'inherit'; env: NodeJS.ProcessEnv },
+    isIncremental = true
 ) => {
-    console.log(`[${getTimestamp()}] 正在克隆 homebrew 仓库: ${repoUrl}`);
-
     // 安全删除目标目录
     const safeRmdir = async (dir: string, retries = 3) => {
         for (let i = 0; i < retries; i++) {
@@ -1037,27 +1193,74 @@ const cloneHomebrewRepo = async (
         return false;
     };
 
-    await safeRmdir(targetDir);
+    // 增量模式：目标目录已存在完整 git 仓库时，仅 fetch + reset 后续变更
+    const gitDir = path.join(targetDir, '.git');
+    const isRepo = await fs.access(gitDir).then(() => true).catch(() => false);
+
+    if (isIncremental && isRepo) {
+        console.log(`[${getTimestamp()}] homebrew 仓库已存在，增量拉取: ${repoUrl}`);
+        try {
+            let remoteBranch = '';
+            try {
+                const originHead = execSync('git rev-parse --abbrev-ref origin/HEAD', {
+                    cwd: targetDir,
+                    encoding: 'utf-8',
+                    stdio: ['ignore', 'pipe', 'ignore']
+                }).trim();
+                if (originHead.startsWith('origin/')) {
+                    remoteBranch = originHead.slice('origin/'.length);
+                }
+            } catch {
+                remoteBranch = '';
+            }
+            if (!remoteBranch) remoteBranch = 'HEAD';
+
+            // 不带 refspec 的 fetch 会更新 refs/remotes/origin/*，供后续 reset 使用；
+            // 保留一段历史（depth 50）以便与上次记录的 commit 做 diff，而非只比对最近一次提交
+            execSync(`git -C ${targetDir} fetch --depth 50 --force origin`, execOptions);
+            execSync(`git -C ${targetDir} reset --hard origin/${remoteBranch}`, execOptions);
+            // 重新按稀疏签出模式物化工作区，避免残留已删除的文件
+            execSync(`git -C ${targetDir} checkout`, execOptions);
+            console.log(`[${getTimestamp()}] homebrew 仓库增量更新完成: ${targetDir}`);
+            return;
+        } catch (pullErr) {
+            console.warn(`[${getTimestamp()}] homebrew 增量拉取失败，回退为全量克隆:`, pullErr);
+        }
+    }
+
+    console.log(`[${getTimestamp()}] 正在克隆 homebrew 仓库: ${repoUrl}`);
+    const tmpTargetDir = `${targetDir}.tmp`;
+    await safeRmdir(tmpTargetDir);
     await fs.mkdir(path.dirname(targetDir), { recursive: true });
 
     // 使用 --filter=blob:none (blobless clone) + --no-checkout，
-    // 仅下载 tree 对象，checkout 时按稀疏签出模式按需拉取 JSON 文件
-    const cloneArgs = ['clone', '--depth', '2', '--filter=blob:none', '--no-checkout', repoUrl, targetDir];
+    // 仅下载 tree 对象，checkout 时按稀疏签出模式按需拉取 JSON 文件；
+    // depth 50 保留一段历史，便于后续与上次记录的 commit 做增量 diff
+    const cloneArgs = ['clone', '--depth', '50', '--filter=blob:none', '--no-checkout', repoUrl, tmpTargetDir];
     console.log(`[${getTimestamp()}] 执行: git ${cloneArgs.join(' ')}`);
-    execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+    try {
+        execSync(`git ${cloneArgs.join(' ')}`, execOptions);
+    } catch (cloneErr) {
+        await safeRmdir(tmpTargetDir);
+        throw cloneErr;
+    }
 
     // 初始化稀疏签出（no-cone 模式支持排除模式）
-    execSync(`git -C ${targetDir} sparse-checkout init --no-cone`, execOptions);
+    execSync(`git -C ${tmpTargetDir} sparse-checkout init --no-cone`, execOptions);
 
     // 写入稀疏签出模式
     await fs.writeFile(
-        path.join(targetDir, '.git', 'info', 'sparse-checkout'),
+        path.join(tmpTargetDir, '.git', 'info', 'sparse-checkout'),
         HOMEBREW_SPARSE_PATTERNS.join('\n') + '\n',
         'utf-8'
     );
 
     // 执行签出
-    execSync(`git -C ${targetDir} checkout`, execOptions);
+    execSync(`git -C ${tmpTargetDir} checkout`, execOptions);
+
+    // 克隆并签出成功，用新目录替换旧目录（避免失败时丢失旧数据）
+    await safeRmdir(targetDir);
+    await fs.rename(tmpTargetDir, targetDir);
     console.log(`[${getTimestamp()}] homebrew 仓库克隆完成: ${targetDir}`);
 };
 
@@ -1068,7 +1271,8 @@ const getHomebrewRepoData = async (
     enRepoUrl: string,
     zhRepoUrl: string,
     enTargetDir: string,
-    zhTargetDir: string
+    zhTargetDir: string,
+    isIncremental = true
 ) => {
     const proxy = buildProxyEnv();
     if (proxy.sources.length > 0) {
@@ -1080,18 +1284,20 @@ const getHomebrewRepoData = async (
     }
     const execOptions = { stdio: 'inherit' as const, env: proxy.env };
 
-    console.log(`[${getTimestamp()}] 开始克隆 homebrew 数据...`);
+    console.log(
+        `[${getTimestamp()}] 开始${isIncremental ? '增量拉取' : '克隆'} homebrew 数据...`
+    );
 
     // 克隆英文 homebrew
     try {
-        await cloneHomebrewRepo(enRepoUrl, enTargetDir, execOptions);
+        await cloneHomebrewRepo(enRepoUrl, enTargetDir, execOptions, isIncremental);
     } catch (error) {
         console.error(`[${getTimestamp()}] 英文 homebrew 仓库克隆失败: ${error}`);
     }
 
     // 克隆中文 homebrew
     try {
-        await cloneHomebrewRepo(zhRepoUrl, zhTargetDir, execOptions);
+        await cloneHomebrewRepo(zhRepoUrl, zhTargetDir, execOptions, isIncremental);
     } catch (error) {
         console.error(`[${getTimestamp()}] 中文 homebrew 仓库克隆失败: ${error}`);
     }
@@ -1175,30 +1381,50 @@ const getHomebrewRepoData = async (
         const enHomebrewDir = path.join(enRoot, 'homebrew');
         const zhHomebrewDir = path.join(zhRoot, 'homebrew');
 
-        console.log(`[${getTimestamp()}] === Homebrew 模式 ===`);
+        const isLightweight = process.argv.includes('--lightweight');
+        console.log(
+            `[${getTimestamp()}] === Homebrew 模式 (${
+                isLightweight ? '轻量全量克隆' : '增量拉取'
+            }) ===`
+        );
         await getHomebrewRepoData(
             'https://github.com/TheGiddyLimit/homebrew.git',
             'https://github.com/tjliqy/homebrew-deploy.git',
             enHomebrewDir,
-            zhHomebrewDir
+            zhHomebrewDir,
+            !isLightweight
         );
         return;
     }
 
     const patchedRoot = './input/patched/';
 
+    const isLightweight = process.argv.includes('--lightweight');
+
     // 预创建目录
     const paths = [zhRoot, enRoot, patchedRoot];
-    for (const dirPath of paths) {
-        await fs.rm(dirPath, { recursive: true, force: true });
-        await fs.mkdir(dirPath, { recursive: true });
+    if (isLightweight) {
+        // 轻量模式（旧行为）：先清空目录，再重新全量克隆
+        for (const dirPath of paths) {
+            await fs.rm(dirPath, { recursive: true, force: true });
+            await fs.mkdir(dirPath, { recursive: true });
+        }
+    } else {
+        // 增量模式：仅确保目录存在，保留已有数据，避免拉取失败时丢失旧数据
+        for (const dirPath of paths) {
+            await fs.mkdir(dirPath, { recursive: true });
+        }
     }
 
-    console.log(`[${getTimestamp()}] 开始克隆中英数据...`);
-    await getRepoData('https://github.com/tjliqy/5etools-mirror-2.github.io.git', {
-        zh: zhRoot,
-        en: enRoot,
-    });
+    console.log(
+        `[${getTimestamp()}] 开始${isLightweight ? '克隆' : '增量拉取'}中英数据...`
+    );
+    await getRepoData(
+        'https://github.com/tjliqy/5etools-mirror-2.github.io.git',
+        { zh: zhRoot, en: enRoot },
+        undefined,
+        isLightweight ? 'clone' : 'pull'
+    );
     
     const zhDataPath = path.join(zhRoot, 'data');
     const enDataPath = path.join(enRoot, 'data');

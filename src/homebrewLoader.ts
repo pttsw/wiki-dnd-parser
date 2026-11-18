@@ -135,6 +135,67 @@ const buildPartneredSourceSet = async (locale: 'en' | 'zh'): Promise<Set<string>
     return partneredSet;
 };
 
+// ==================== 非合作方来源收集 ====================
+
+/**
+ * 递归收集目录下所有 .json 文件（排除 _ 开头文件）。
+ */
+const walkJsonFiles = async (dir: string): Promise<string[]> => {
+    const results: string[] = [];
+    let entries;
+    try {
+        entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+        return results;
+    }
+    for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...(await walkJsonFiles(fullPath)));
+        } else if (entry.isFile() && entry.name.endsWith('.json') && !entry.name.startsWith('_')) {
+            results.push(fullPath);
+        }
+    }
+    return results;
+};
+
+/**
+ * 收集 homebrew 中全部「非合作方」来源标识符集合。
+ * 非合作方 = 出现在任意 homebrew 文件的 _meta.sources 中、但从未被任何文件标记为 partnered: true 的 source.json。
+ * 支持目录递归（覆盖 collection/ 及各类别子目录）。
+ */
+export const collectNonPartneredSourceIds = async (locale: 'en' | 'zh'): Promise<string[]> => {
+    const baseDir = locale === 'en' ? config.HOMEBREW_EN_DIR : config.HOMEBREW_ZH_DIR;
+
+    const filePaths = await walkJsonFiles(baseDir);
+
+    // 所有 source.json → 是否曾标记为 partnered
+    const appeared = new Map<string, boolean>();
+
+    for (const filePath of filePaths) {
+        const data = await readJsonCached(locale, filePath);
+        if (!data) continue;
+        const sources = data._meta?.sources;
+        if (!Array.isArray(sources)) continue;
+        for (const source of sources) {
+            if (!source.json) continue;
+            if (source.partnered === true) {
+                appeared.set(source.json, true);
+            } else if (!appeared.has(source.json)) {
+                appeared.set(source.json, false);
+            }
+        }
+    }
+
+    // 非合作方 = 出现但从未被动过 partnered=true
+    const nonPartnered = [...appeared.entries()]
+        .filter(([, partnered]) => !partnered)
+        .map(([json]) => json)
+        .sort();
+
+    return nonPartnered;
+};
+
 /**
  * 判断 JSON 数据是否包含第三方合作（partnered）来源标记。
  * 检查逻辑（按优先级）：

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
     BookContents,
     BookFile,
     BookFileEntry,
@@ -89,7 +89,7 @@ import { runFeatExporter } from './exporters/featExporter.js';
 import { escapeFileName, loadSubraceReplacementByNameMap, sectionTextIdMap, SubraceReplacement } from './exporters/shared.js';
 import { generateContents } from './generate-contents.js';
 import { splitBooks } from './split-books.js';
-import { isHomebrewMode, isPartneredMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource, isPartneredSource } from './homebrewLoader.js';
+import { isHomebrewMode, isPartneredMode, mergeHomebrewBilingual, loadHomebrewByKeys, mergeHomebrewData, HOMEBREW_FILE_MAP, collectHomebrewItemSources, isHomebrewSource, isPartneredSource, collectNonPartneredSourceIds } from './homebrewLoader.js';
 import { namelistRegistry } from './namelistRegistry.js';
 
 interface InputChangedArray {
@@ -5987,6 +5987,22 @@ let isnavpillIds = new Set<string>();
             const wikiPageMapPath = './output/_json-page-wiki.json';
             await fs.writeFile(wikiPageMapPath, JSON.stringify(wikiPageGenerator.pageJsonMap, null, 2), 'utf-8');
             printProgress(`已生成 ${wikiPageMapPath}，记录了 ${wikiPageGenerator.pageJsonMap.length} 个页面映射`);
+
+            // partnered 模式下，输出全部非合作方资源的出版物 source id，供其他脚本引用
+            if (isPartneredMode) {
+                try {
+                    const nonPartneredId = await collectNonPartneredSourceIds('zh');
+                    const nonPartneredPath = path.join('./output', 'non-partnered-sources.json');
+                    await fs.writeFile(
+                        nonPartneredPath,
+                        JSON.stringify({ sources: nonPartneredId, count: nonPartneredId.length }, null, 2),
+                        'utf-8'
+                    );
+                    printProgress(`已生成 ${nonPartneredPath}，共 ${nonPartneredId.length} 个非合作方 source id`);
+                } catch (error) {
+                    console.warn('[prepareData] 收集非合作方 source id 失败:', error);
+                }
+            }
         }
 
         const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(2);

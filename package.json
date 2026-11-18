@@ -7,6 +7,8 @@
   "scripts": {
     "getCnRepo": "tsx src/getGitRepo.ts",
     "getCnRepo:homebrew": "tsx src/getGitRepo.ts --homebrew",
+    "getCnRepo-lightweight": "tsx src/getGitRepo.ts --lightweight",
+    "getCnRepo:homebrew-lightweight": "tsx src/getGitRepo.ts --homebrew --lightweight",
     "start": "tsx src/prepareData.ts",
     "start:partnered": "tsx src/prepareData.ts --homebrew --partnered",
     "start:homebrew": "tsx src/prepareData.ts --homebrew",
